@@ -100,6 +100,8 @@ class BaselineObservation:
 @dataclass(frozen=True, slots=True)
 class PreflightRecord:
     repository_id: str
+    direction_digest: str
+    packet_digest: str
     revision: TargetRevision
     instructions: tuple[FileFact, ...]
     dependency_state: tuple[FileFact, ...]
@@ -113,6 +115,7 @@ class PreflightRecord:
         return {
             "affected_baseline": self.affected_baseline.to_json(),
             "dependency_state": [item.to_json() for item in self.dependency_state],
+            "direction_digest": self.direction_digest,
             "eligible": self.eligible,
             "existing_failures": list(self.existing_failures),
             "instructions": [item.to_json() for item in self.instructions],
@@ -120,6 +123,7 @@ class PreflightRecord:
                 "reason": self.irreversible_change_reason,
                 "required": self.irreversible_change_required,
             },
+            "packet_digest": self.packet_digest,
             "repository_id": self.repository_id,
             "revision": self.revision.to_json(),
             "schema_version": 1,
@@ -248,6 +252,8 @@ def preflight(draft: Draft, repository: Path) -> PreflightEnvelope:
     baseline, failures = _baseline(root, draft)
     record = PreflightRecord(
         repository_id=draft.packet.repository_id,
+        direction_digest=draft.direction_digest,
+        packet_digest=draft.packet_digest,
         revision=revision,
         instructions=inspect_instructions(root, draft),
         dependency_state=_dependency_facts(revision),
@@ -319,10 +325,12 @@ def preflight_from_json(value: object) -> PreflightEnvelope:
         {
             "affected_baseline",
             "dependency_state",
+            "direction_digest",
             "eligible",
             "existing_failures",
             "instructions",
             "irreversible_change",
+            "packet_digest",
             "repository_id",
             "revision",
             "schema_version",
@@ -379,6 +387,10 @@ def preflight_from_json(value: object) -> PreflightEnvelope:
     )
     record = PreflightRecord(
         repository_id=_stored_text(record_data["repository_id"], "preflight repository_id"),
+        direction_digest=_stored_text(
+            record_data["direction_digest"], "preflight direction_digest"
+        ),
+        packet_digest=_stored_text(record_data["packet_digest"], "preflight packet_digest"),
         revision=revision,
         instructions=tuple(
             _file_fact_from_json(item)

@@ -34,10 +34,11 @@ uv run second-mate draft \
   > .tmp/fs01/control/draft.json
 ```
 
-Preflight reads Git HEAD, tracked and visible untracked content, applicable
-`AGENTS.md` instructions, dependency files, and the fixture baseline. Write its
-output outside the target so the target worktree, index, branch, and dependency
-state remain unchanged:
+Preflight binds the approved Direction and packet digests while reading Git
+HEAD, tracked and visible untracked content, applicable `AGENTS.md`
+instructions, dependency files, and the fixture baseline. Write its output
+outside the target so the target worktree, index, branch, and dependency state
+remain unchanged:
 
 ```sh
 uv run second-mate preflight \
@@ -64,9 +65,9 @@ document. It must contain exactly schema version 1 and these fields:
 
 Second Mate deliberately has no command that manufactures this grant. A wrong
 field, extra field, stale target revision or applicable instruction file,
-ineligible preflight, or changed Direction or packet refuses execution before
-creating target state or invoking the executor. Applicable instructions remain
-part of this check even when Git ignores them.
+cross-paired preflight, ineligible preflight, or changed Direction or packet
+refuses execution before creating target state or invoking the executor.
+Applicable instructions remain part of this check even when Git ignores them.
 
 After reviewing and recording the exact fixture grant:
 

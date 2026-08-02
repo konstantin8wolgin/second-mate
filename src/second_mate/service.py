@@ -228,6 +228,10 @@ def _parse_grant(value: object) -> AuthorityGrant:
 
 
 def _validate_grant(grant: AuthorityGrant, draft: Draft, basis: PreflightEnvelope) -> None:
+    if basis.record.direction_digest != draft.direction_digest:
+        raise AuthorityError("direction digest does not match the preflight basis")
+    if basis.record.packet_digest != draft.packet_digest:
+        raise AuthorityError("packet digest does not match the preflight basis")
     expected: dict[str, object] = {
         "direction_id": draft.direction.id,
         "direction_digest": draft.direction_digest,

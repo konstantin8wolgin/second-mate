@@ -87,6 +87,8 @@ def test_preflight_records_exact_read_only_repository_basis(tmp_path: Path) -> N
     assert target_snapshot(repository) == before
     assert not (repository / ".second-mate").exists()
     assert result.record.repository_id == "fs01-fixture"
+    assert result.record.direction_digest == draft.direction_digest
+    assert result.record.packet_digest == draft.packet_digest
     assert result.record.revision.head == run_git(repository, "rev-parse", "HEAD")
     assert result.record.affected_baseline.result == "pass"
     assert result.record.affected_baseline.artifact_value == "before\n"

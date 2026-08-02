@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 
 import pytest
@@ -138,4 +139,37 @@ def test_ignored_instruction_drift_never_reaches_executor_or_target(tmp_path: Pa
 
     assert executor.requests == []
     assert target_snapshot(repository) == after_instruction_drift
+    assert not (repository / ".second-mate").exists()
+
+
+@pytest.mark.parametrize("changed_authority", ["packet", "direction"])
+def test_cross_paired_preflight_never_reaches_executor_or_target(
+    tmp_path: Path, changed_authority: str
+) -> None:
+    """A preflight for another packet or Direction cannot authorize this draft."""
+    repository = make_repository(tmp_path)
+    original = second_mate.create_draft(valid_direction(), valid_packet())
+    basis = second_mate.preflight(original, repository)
+    direction = copy.deepcopy(valid_direction())
+    packet = copy.deepcopy(valid_packet())
+    if changed_authority == "packet":
+        packet["proof"]["after"] = "different authorized after\n"
+    else:
+        direction["text"] = "A changed approved Direction."
+    changed = second_mate.create_draft(direction, packet)
+    executor = RecordingExecutor()
+    before = target_snapshot(repository)
+
+    with pytest.raises(second_mate.AuthorityError, match=f"{changed_authority}.*preflight"):
+        second_mate.start_run(
+            draft=changed,
+            basis=basis,
+            grant_data=exact_grant(changed, basis),
+            repository=repository,
+            executor=executor,
+            owner_id="owner-1",
+        )
+
+    assert executor.requests == []
+    assert target_snapshot(repository) == before
     assert not (repository / ".second-mate").exists()
