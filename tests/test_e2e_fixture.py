@@ -236,6 +236,22 @@ def test_cli_rejects_instruction_drift_between_dispatch_and_evidence(tmp_path: P
     assert durable["run"]["phase"] == "evidence_failed"
 
 
+def test_cli_rejects_unrelated_target_drift_between_dispatch_and_evidence(
+    tmp_path: Path,
+) -> None:
+    """Removing the exact-after target comparison must make this journey fail."""
+    target, _ = start_fixture_run(tmp_path, ignore_agents=False)
+    (target / "unrelated.txt").write_text("outside the grant\n", encoding="utf-8")
+
+    evidence = json.loads(run_cli("evidence", "--target", os.fspath(target)).stdout)
+
+    assert evidence["evidence"][-1]["result"] == "fail"
+    assert evidence["evidence"][-1]["observation"]["target_revision_matches_authority"] is False
+    durable = json.loads(run_cli("show", "--target", os.fspath(target)).stdout)
+    assert durable["closed"] is False
+    assert durable["run"]["phase"] == "evidence_failed"
+
+
 def test_cli_rejects_ignored_instruction_drift_after_passing_evidence(tmp_path: Path) -> None:
     """Removing the close-time live instruction guard must make this journey fail."""
     target, _ = start_fixture_run(tmp_path, ignore_agents=True)
@@ -251,6 +267,32 @@ def test_cli_rejects_ignored_instruction_drift_after_passing_evidence(tmp_path: 
         "still_remaining",
         "--handoff",
         "Instruction drift after evidence must block close.",
+        check=False,
+    )
+
+    assert denied_close.returncode != 0
+    durable = json.loads(run_cli("show", "--target", os.fspath(target)).stdout)
+    assert durable["closed"] is False
+    assert durable["route_status"] == "ready"
+    assert durable["run"]["phase"] == "ready_to_close"
+    assert durable["evidence"][-1]["result"] == "pass"
+
+
+def test_cli_rejects_unrelated_target_drift_after_passing_evidence(tmp_path: Path) -> None:
+    """Removing the close-time live target guard must make this journey fail."""
+    target, _ = start_fixture_run(tmp_path, ignore_agents=False)
+    evidence = json.loads(run_cli("evidence", "--target", os.fspath(target)).stdout)
+    assert evidence["evidence"][-1]["result"] == "pass"
+    (target / "unrelated.txt").write_text("outside the grant\n", encoding="utf-8")
+
+    denied_close = run_cli(
+        "close",
+        "--target",
+        os.fspath(target),
+        "--direction-coverage",
+        "still_remaining",
+        "--handoff",
+        "Target drift after evidence must block close.",
         check=False,
     )
 
