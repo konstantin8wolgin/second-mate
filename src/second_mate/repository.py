@@ -196,16 +196,16 @@ def git_private_path(repository: Path, name: str) -> Path:
     return raw if raw.is_absolute() else root / raw
 
 
-def _instruction_facts(repository: Path, draft: Draft) -> tuple[FileFact, ...]:
+def inspect_instructions(repository: Path, draft: Draft) -> tuple[FileFact, ...]:
+    """Fingerprint every applicable instruction file, including ignored files."""
+    root = _repository_root(repository)
     candidates = {"AGENTS.md"}
     for relative_path in draft.packet.boundary.allowed_paths:
         parent = Path(relative_path).parent
         while parent != Path("."):
             candidates.add((parent / "AGENTS.md").as_posix())
             parent = parent.parent
-    return tuple(
-        _file_fact(repository, path) for path in sorted(candidates) if (repository / path).is_file()
-    )
+    return tuple(_file_fact(root, path) for path in sorted(candidates) if (root / path).is_file())
 
 
 def _dependency_facts(revision: TargetRevision) -> tuple[FileFact, ...]:
@@ -249,7 +249,7 @@ def preflight(draft: Draft, repository: Path) -> PreflightEnvelope:
     record = PreflightRecord(
         repository_id=draft.packet.repository_id,
         revision=revision,
-        instructions=_instruction_facts(root, draft),
+        instructions=inspect_instructions(root, draft),
         dependency_state=_dependency_facts(revision),
         affected_baseline=baseline,
         existing_failures=failures,

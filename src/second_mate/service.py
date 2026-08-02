@@ -11,11 +11,20 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Never, Protocol, cast
 
-from second_mate.domain import Draft, JsonObject, JsonValue, ValidationError, draft_from_json
+from second_mate.domain import (
+    Draft,
+    JsonObject,
+    JsonValue,
+    ValidationError,
+    digest_json,
+    draft_from_json,
+)
 from second_mate.repository import (
+    FileFact,
     PreflightEnvelope,
     TargetRevision,
     git_private_path,
+    inspect_instructions,
     inspect_revision,
     preflight_from_json,
 )
@@ -384,6 +393,14 @@ def _revision_is_exact_fixture_after(state: RunState, current: TargetRevision) -
     return True
 
 
+def _instruction_fingerprint(instructions: tuple[FileFact, ...]) -> str:
+    return digest_json({"instructions": [item.to_json() for item in instructions]})
+
+
+def _instructions_match_preflight(state: RunState, repository: Path) -> bool:
+    return inspect_instructions(repository, state.draft) == state.basis.record.instructions
+
+
 def _is_exact_fixture_after(state: RunState, repository: Path) -> bool:
     return _revision_is_exact_fixture_after(state, inspect_revision(repository))
 
@@ -435,6 +452,8 @@ def _restart_run_locked(repository: Path, executor: Executor, *, owner_id: str) 
         raise RunConflictError("restart owner does not match the active run owner")
     if state.closed or state.run.phase not in {"active", "failed"}:
         raise RunConflictError(f"run phase {state.run.phase} cannot be restarted")
+    if not _instructions_match_preflight(state, repository):
+        raise AuthorityError("instruction drift blocks restart")
     store = FileStateStore(repository / ".second-mate" / "state.json")
     if inspect_revision(repository) != state.basis.record.revision:
         if not _is_exact_fixture_after(state, repository):
@@ -526,10 +545,15 @@ def record_evidence(repository: Path) -> RunState:
         failures.append(
             "target revision is not preflight plus exactly the authorized artifact mutation"
         )
+    instructions = inspect_instructions(repository, state.draft)
+    instructions_match_preflight = instructions == state.basis.record.instructions
+    if not instructions_match_preflight:
+        failures.append("applicable instructions changed after preflight")
     result = "pass" if not failures else "fail"
     evidence: JsonObject = {
         "claim": state.draft.packet.outcome,
         "id": f"{state.draft.packet.id}-fixture-evidence-{len(state.evidence) + 1}",
+        "instruction_fingerprint": _instruction_fingerprint(instructions),
         "method": "fixture-probe",
         "observation": {
             "artifact_path": proof.artifact_path,
@@ -541,6 +565,7 @@ def record_evidence(repository: Path) -> RunState:
             "artifact_value": artifact_value,
             "changed_paths": list(changed_paths),
             "failures": failures,
+            "instructions_match_preflight": instructions_match_preflight,
             "sentinel_path": proof.sentinel_path,
             "sentinel_sha256": sentinel_sha256,
             "target_revision_matches_authority": revision_matches_authority,
@@ -605,6 +630,14 @@ def clean_close(
     )
     if inspect_revision(repository).fingerprint != evidence_fingerprint:
         raise AuthorityError("revision drift after evidence blocks clean close")
+    evidence_instruction_fingerprint = _state_text(
+        evidence.get("instruction_fingerprint"), "evidence instruction_fingerprint"
+    )
+    current_instruction_fingerprint = _instruction_fingerprint(
+        inspect_instructions(repository, state.draft)
+    )
+    if current_instruction_fingerprint != evidence_instruction_fingerprint:
+        raise AuthorityError("instruction drift after evidence blocks clean close")
     closed = replace(
         state,
         run=replace(
@@ -672,6 +705,8 @@ def _start_run_locked(
     current_revision = inspect_revision(repository)
     if current_revision != basis.record.revision:
         raise AuthorityError("revision drift invalidated preflight and consent")
+    if inspect_instructions(repository, draft) != basis.record.instructions:
+        raise AuthorityError("instruction drift invalidated preflight and consent")
     if not basis.record.eligible:
         raise AuthorityError("preflight is not eligible for execution")
     if not owner_id.strip():

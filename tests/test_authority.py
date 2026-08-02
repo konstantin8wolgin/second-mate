@@ -4,7 +4,11 @@ from pathlib import Path
 
 import pytest
 from test_draft import valid_direction, valid_packet
-from test_preflight import make_repository, target_snapshot
+from test_preflight import (
+    make_repository,
+    make_repository_with_ignored_instructions,
+    target_snapshot,
+)
 
 import second_mate
 
@@ -109,4 +113,29 @@ def test_revision_drift_never_reaches_executor_or_adds_target_mutation(tmp_path:
 
     assert executor.requests == []
     assert target_snapshot(repository) == after_outside_drift
+    assert not (repository / ".second-mate").exists()
+
+
+def test_ignored_instruction_drift_never_reaches_executor_or_target(tmp_path: Path) -> None:
+    """Ignored applicable instructions remain part of the frozen execution basis."""
+    repository = make_repository_with_ignored_instructions(tmp_path)
+    draft = second_mate.create_draft(valid_direction(), valid_packet())
+    basis = second_mate.preflight(draft, repository)
+    grant = exact_grant(draft, basis)
+    (repository / "AGENTS.md").write_text("Changed after preflight.\n", encoding="utf-8")
+    after_instruction_drift = target_snapshot(repository)
+    executor = RecordingExecutor()
+
+    with pytest.raises(second_mate.AuthorityError, match="instruction drift"):
+        second_mate.start_run(
+            draft=draft,
+            basis=basis,
+            grant_data=grant,
+            repository=repository,
+            executor=executor,
+            owner_id="owner-1",
+        )
+
+    assert executor.requests == []
+    assert target_snapshot(repository) == after_instruction_drift
     assert not (repository / ".second-mate").exists()

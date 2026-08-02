@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from test_authority import exact_grant
 from test_draft import valid_direction, valid_packet
-from test_preflight import make_repository, run_git
+from test_preflight import make_repository, make_repository_with_ignored_instructions, run_git
 
 import second_mate
 
@@ -166,6 +166,30 @@ def test_restart_preserves_owner_and_retries_only_the_failed_dispatch(tmp_path: 
     assert resumed.run.phase == "awaiting_evidence"
     assert resumed.recovery_pressure == "none"
     assert (repository / "artifact.txt").read_text(encoding="utf-8") == "after\n"
+
+
+def test_restart_refuses_ignored_instruction_drift_before_retry(tmp_path: Path) -> None:
+    """A retry cannot dispatch against instructions that changed after preflight."""
+    repository = make_repository_with_ignored_instructions(tmp_path)
+    draft = second_mate.create_draft(valid_direction(), valid_packet())
+    basis = second_mate.preflight(draft, repository)
+    executor = FailOnceFixtureExecutor()
+    with pytest.raises(second_mate.ExecutionFailure):
+        second_mate.start_run(
+            draft=draft,
+            basis=basis,
+            grant_data=exact_grant(draft, basis),
+            repository=repository,
+            executor=executor,
+            owner_id="owner-1",
+        )
+    (repository / "AGENTS.md").write_text("Changed before retry.\n", encoding="utf-8")
+
+    with pytest.raises(second_mate.AuthorityError, match="instruction drift"):
+        second_mate.restart_run(repository, executor, owner_id="owner-1")
+
+    assert executor.invocation_count == 1
+    assert second_mate.load_state(repository).run.phase == "failed"
 
 
 def test_restart_reconciles_interrupted_after_state_without_duplicate_dispatch(

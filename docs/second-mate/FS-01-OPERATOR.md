@@ -63,8 +63,10 @@ document. It must contain exactly schema version 1 and these fields:
   conditions.
 
 Second Mate deliberately has no command that manufactures this grant. A wrong
-field, extra field, stale target, ineligible preflight, or changed Direction or
-packet refuses execution before creating target state or invoking the executor.
+field, extra field, stale target revision or applicable instruction file,
+ineligible preflight, or changed Direction or packet refuses execution before
+creating target state or invoking the executor. Applicable instructions remain
+part of this check even when Git ignores them.
 
 After reviewing and recording the exact fixture grant:
 
@@ -96,7 +98,7 @@ uv run second-mate restart \
 
 If interruption occurred after the exact fixture mutation, restart reconciles
 that after-state without invoking the executor again. Any other revision drift
-blocks restart.
+or applicable-instruction drift blocks restart.
 
 ## Evidence and clean close
 
@@ -110,9 +112,11 @@ uv run second-mate evidence --target "$FS01_TARGET" \
 The fixed probe compares the full target snapshot with preflight and permits
 exactly the declared `artifact.txt` change. It also compares the artifact with
 the declared after value, compares the sentinel hash with preflight, checks the
-executor's one changed path, and binds the result to a fresh target fingerprint.
-An instruction change or any unrelated tracked or untracked file fails evidence
-and blocks close.
+executor's one changed path, and binds the result to fresh target and applicable
+instruction fingerprints. Instruction files are inspected independently so an
+ignored applicable `AGENTS.md` remains inside the authority boundary. An
+instruction change or any unrelated tracked or visible untracked file fails
+evidence and blocks close.
 
 A failed observation leaves the route open with Packet recovery pressure. After
 repairing only the bounded target drift, run the same `evidence` command again.
@@ -140,6 +144,10 @@ divergence; it never assembles a partial completed state:
 ```sh
 uv run second-mate show --target "$FS01_TARGET"
 ```
+
+Immediately before journaling, close re-reads both the target revision and the
+applicable instructions and refuses if either differs from the passing evidence
+record, including drift in an ignored `AGENTS.md`.
 
 At review, confirm route status `completed` is separate from Direction coverage,
 evidence says only what the fixture probe observed, residual uncertainty and

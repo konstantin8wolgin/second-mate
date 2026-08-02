@@ -51,6 +51,15 @@ def make_repository(tmp_path: Path) -> Path:
     return repository
 
 
+def make_repository_with_ignored_instructions(tmp_path: Path) -> Path:
+    repository = make_repository(tmp_path)
+    (repository / ".gitignore").write_text("AGENTS.md\n", encoding="utf-8")
+    run_git(repository, "rm", "--cached", "AGENTS.md")
+    run_git(repository, "add", ".gitignore")
+    run_git(repository, "commit", "-q", "-m", "keep local instructions ignored")
+    return repository
+
+
 def target_snapshot(repository: Path) -> tuple[str, bytes, int, dict[str, bytes]]:
     index = repository / ".git" / "index"
     files = {
