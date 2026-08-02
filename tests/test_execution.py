@@ -227,14 +227,14 @@ def test_concurrent_run_lock_refuses_a_second_executor_owner(tmp_path: Path) -> 
     basis = second_mate.preflight(draft, repository)
     grant = exact_grant(draft, basis)
     executor = CountingFixtureExecutor()
-    git_lock = Path(run_git(repository, "rev-parse", "--git-path", "second-mate-fs01.lock"))
+    git_lock = Path(run_git(repository, "rev-parse", "--git-path", "second-mate-mutation.lock"))
     if not git_lock.is_absolute():
         git_lock = repository / git_lock
     git_lock.parent.mkdir(parents=True, exist_ok=True)
     descriptor = os.open(git_lock, os.O_RDWR | os.O_CREAT, 0o600)
     fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
     try:
-        with pytest.raises(second_mate.RunConflictError, match="lock"):
+        with pytest.raises(second_mate.RunConflictError, match="mutation boundary"):
             second_mate.start_run(
                 draft=draft,
                 basis=basis,

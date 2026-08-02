@@ -35,6 +35,23 @@ def approval(candidate: dict[str, Any], approval_id: str) -> dict[str, object]:
     }
 
 
+def promotion_grant(candidate: dict[str, Any], grant_id: str) -> dict[str, object]:
+    basis = candidate["promotion_basis"]
+    return {
+        "allowed_effects": ["direction_ledger_write"],
+        "allowed_paths": [".second-mate/directions.json"],
+        "candidate_digest": candidate["candidate_digest"],
+        "granted_at": "2026-08-02T12:01:00Z",
+        "granted_by": "fixture-human",
+        "id": grant_id,
+        "schema_version": 1,
+        "stop_conditions": ["revision_drift", "direction_history_drift"],
+        "target_fingerprint": basis["target_fingerprint"],
+        "target_head": basis["target_head"],
+        "target_root": basis["target_root"],
+    }
+
+
 def snapshot(repository: Path) -> tuple[str, dict[str, bytes]]:
     files = {
         path.relative_to(repository).as_posix(): path.read_bytes()
@@ -98,6 +115,21 @@ def test_external_rumble_summary_requires_approval_then_versions_durable_directi
     write_json(changed_path, changed_after_review)
     approval_path = control / "D-01.approval.json"
     write_json(approval_path, approval(candidate, "DA-01"))
+    denied_approval_only = run_cli(
+        "direction",
+        "promote",
+        "--target",
+        os.fspath(target),
+        "--candidate",
+        os.fspath(candidate_path),
+        "--approval",
+        os.fspath(approval_path),
+        check=False,
+    )
+    assert denied_approval_only.returncode != 0
+    assert snapshot(target) == before
+    grant_path = control / "D-01.promotion-grant.json"
+    write_json(grant_path, promotion_grant(candidate, "DPG-01"))
     denied_changed = run_cli(
         "direction",
         "promote",
@@ -107,6 +139,8 @@ def test_external_rumble_summary_requires_approval_then_versions_durable_directi
         os.fspath(changed_path),
         "--approval",
         os.fspath(approval_path),
+        "--grant",
+        os.fspath(grant_path),
         check=False,
     )
     assert denied_changed.returncode != 0
@@ -121,6 +155,8 @@ def test_external_rumble_summary_requires_approval_then_versions_durable_directi
         os.fspath(candidate_path),
         "--approval",
         os.fspath(approval_path),
+        "--grant",
+        os.fspath(grant_path),
     )
     ledger_path = target / ".second-mate" / "directions.json"
     first_entry = json.loads(ledger_path.read_bytes())["versions"][0]
@@ -156,6 +192,8 @@ def test_external_rumble_summary_requires_approval_then_versions_durable_directi
     candidate_v2_path.write_text(prepared_v2.stdout, encoding="utf-8")
     approval_v2_path = control / "D-02.approval.json"
     write_json(approval_v2_path, approval(candidate_v2, "DA-02"))
+    grant_v2_path = control / "D-02.promotion-grant.json"
+    write_json(grant_v2_path, promotion_grant(candidate_v2, "DPG-02"))
     run_cli(
         "direction",
         "promote",
@@ -165,12 +203,15 @@ def test_external_rumble_summary_requires_approval_then_versions_durable_directi
         os.fspath(candidate_v2_path),
         "--approval",
         os.fspath(approval_v2_path),
+        "--grant",
+        os.fspath(grant_v2_path),
     )
 
     ledger_bytes = ledger_path.read_bytes()
     ledger = json.loads(ledger_bytes)
     assert ledger["current_direction_id"] == "D-02"
     assert ledger["versions"][0] == first_entry
+    assert ledger["versions"][1]["promotion_grant"]["allowed_effects"] == ["direction_ledger_write"]
     assert (
         json.loads(
             run_cli("direction", "show", "--target", os.fspath(target), "--id", "D-01").stdout

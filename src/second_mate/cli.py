@@ -83,6 +83,7 @@ def _parser() -> argparse.ArgumentParser:
     direction_promote.add_argument("--target", required=True)
     direction_promote.add_argument("--candidate", required=True)
     direction_promote.add_argument("--approval", required=True)
+    direction_promote.add_argument("--grant", required=True)
 
     direction_show = direction_commands.add_parser(
         "show", help="show a validated approved Direction for downstream use"
@@ -143,6 +144,7 @@ def _run(args: argparse.Namespace) -> object:
                 Path(args.target),
                 _read_json(args.candidate),
                 _read_json(args.approval),
+                _read_json(args.grant),
             )
         if direction_command == "show":
             return load_direction(Path(args.target), args.id)

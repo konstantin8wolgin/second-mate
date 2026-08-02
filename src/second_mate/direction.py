@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import fcntl
 import json
 import os
 import re
+import secrets
+import stat
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
@@ -20,12 +21,21 @@ from second_mate.domain import (
     digest_json,
     direction_from_json,
 )
-from second_mate.repository import git_private_path, repository_root
-from second_mate.store import PosixAtomicWriter, deterministic_document_bytes
+from second_mate.repository import (
+    MutationLockBusyError,
+    inspect_revision,
+    mutation_lock,
+    repository_path_is_ignored,
+    repository_root,
+)
+from second_mate.store import deterministic_document_bytes
 
 _DIRECTION_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _LEDGER_PATH = Path(".second-mate/directions.json")
+_ALLOWED_PATHS = (".second-mate/directions.json",)
+_ALLOWED_EFFECTS = ("direction_ledger_write",)
+_STOP_CONDITIONS = ("revision_drift", "direction_history_drift")
 
 
 class DirectionConflictError(RuntimeError):
@@ -64,6 +74,15 @@ def _sha256(value: object, label: str) -> str:
     return digest
 
 
+def _strings(value: object, label: str) -> tuple[str, ...]:
+    if not isinstance(value, list) or not all(isinstance(item, str) and item for item in value):
+        raise ValidationError(f"{label} must be a list of non-empty strings")
+    result = tuple(cast(list[str], value))
+    if len(result) != len(set(result)):
+        raise ValidationError(f"{label} must contain no duplicates")
+    return result
+
+
 @dataclass(frozen=True, slots=True)
 class DirectionPredecessor:
     direction_id: str
@@ -94,14 +113,30 @@ class DirectionCandidate:
 
 
 @dataclass(frozen=True, slots=True)
+class PromotionBasis:
+    target_root: str
+    target_head: str
+    target_fingerprint: str
+
+    def to_json(self) -> JsonObject:
+        return {
+            "target_fingerprint": self.target_fingerprint,
+            "target_head": self.target_head,
+            "target_root": self.target_root,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class DirectionCandidateEnvelope:
     candidate: DirectionCandidate
     digest: str
+    promotion_basis: PromotionBasis
 
     def to_json(self) -> JsonObject:
         return {
             "candidate": self.candidate.to_json(),
             "candidate_digest": self.digest,
+            "promotion_basis": self.promotion_basis.to_json(),
             "schema_version": 1,
         }
 
@@ -127,10 +162,40 @@ class DirectionApproval:
 
 
 @dataclass(frozen=True, slots=True)
+class PromotionGrant:
+    id: str
+    granted_by: str
+    granted_at: str
+    candidate_digest: str
+    target_root: str
+    target_head: str
+    target_fingerprint: str
+    allowed_paths: tuple[str, ...]
+    allowed_effects: tuple[str, ...]
+    stop_conditions: tuple[str, ...]
+
+    def to_json(self) -> JsonObject:
+        return {
+            "allowed_effects": list(self.allowed_effects),
+            "allowed_paths": list(self.allowed_paths),
+            "candidate_digest": self.candidate_digest,
+            "granted_at": self.granted_at,
+            "granted_by": self.granted_by,
+            "id": self.id,
+            "schema_version": 1,
+            "stop_conditions": list(self.stop_conditions),
+            "target_fingerprint": self.target_fingerprint,
+            "target_head": self.target_head,
+            "target_root": self.target_root,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class ApprovedDirectionVersion:
     direction: Direction
     direction_digest: str
     approval: DirectionApproval
+    promotion_grant: PromotionGrant
     supersedes: DirectionPredecessor | None
     change_note: str | None
 
@@ -140,6 +205,7 @@ class ApprovedDirectionVersion:
             "change_note": self.change_note,
             "direction": self.direction.to_json(),
             "direction_digest": self.direction_digest,
+            "promotion_grant": self.promotion_grant.to_json(),
             "supersedes": None if self.supersedes is None else self.supersedes.to_json(),
         }
 
@@ -177,7 +243,7 @@ def _candidate_envelope_from_json(value: object) -> DirectionCandidateEnvelope:
     data = _object(value, "Direction candidate envelope")
     _exact_keys(
         data,
-        {"schema_version", "candidate", "candidate_digest"},
+        {"schema_version", "candidate", "candidate_digest", "promotion_basis"},
         "Direction candidate envelope",
     )
     if data["schema_version"] != 1:
@@ -202,7 +268,27 @@ def _candidate_envelope_from_json(value: object) -> DirectionCandidateEnvelope:
     stored_digest = _sha256(data["candidate_digest"], "Direction candidate digest")
     if digest_json(candidate.to_json()) != stored_digest:
         raise ValidationError("Direction candidate digest does not match its exact content")
-    return DirectionCandidateEnvelope(candidate=candidate, digest=stored_digest)
+    basis_data = _object(data["promotion_basis"], "Direction promotion basis")
+    _exact_keys(
+        basis_data,
+        {"target_root", "target_head", "target_fingerprint"},
+        "Direction promotion basis",
+    )
+    target_root = _text(basis_data["target_root"], "promotion basis target_root")
+    if not Path(target_root).is_absolute():
+        raise ValidationError("promotion basis target_root must be absolute")
+    basis = PromotionBasis(
+        target_root=target_root,
+        target_head=_text(basis_data["target_head"], "promotion basis target_head"),
+        target_fingerprint=_sha256(
+            basis_data["target_fingerprint"], "promotion basis target_fingerprint"
+        ),
+    )
+    return DirectionCandidateEnvelope(
+        candidate=candidate,
+        digest=stored_digest,
+        promotion_basis=basis,
+    )
 
 
 def _approval_from_json(value: object | None) -> DirectionApproval:
@@ -237,14 +323,71 @@ def _approval_from_json(value: object | None) -> DirectionApproval:
     )
 
 
+def _promotion_grant_from_json(value: object | None) -> PromotionGrant:
+    if value is None:
+        raise ValidationError("explicit Direction promotion authority is required before write")
+    data = _object(value, "Direction promotion grant")
+    _exact_keys(
+        data,
+        {
+            "schema_version",
+            "id",
+            "granted_by",
+            "granted_at",
+            "candidate_digest",
+            "target_root",
+            "target_head",
+            "target_fingerprint",
+            "allowed_paths",
+            "allowed_effects",
+            "stop_conditions",
+        },
+        "Direction promotion grant",
+    )
+    if data["schema_version"] != 1:
+        raise ValidationError("Direction promotion grant schema_version must be 1")
+    target_root = _text(data["target_root"], "promotion grant target_root")
+    if not Path(target_root).is_absolute():
+        raise ValidationError("promotion grant target_root must be absolute")
+    grant = PromotionGrant(
+        id=_direction_id(_text(data["id"], "promotion grant id")),
+        granted_by=_text(data["granted_by"], "promotion grant granted_by"),
+        granted_at=_text(data["granted_at"], "promotion grant granted_at"),
+        candidate_digest=_sha256(data["candidate_digest"], "promotion grant candidate_digest"),
+        target_root=target_root,
+        target_head=_text(data["target_head"], "promotion grant target_head"),
+        target_fingerprint=_sha256(
+            data["target_fingerprint"], "promotion grant target_fingerprint"
+        ),
+        allowed_paths=_strings(data["allowed_paths"], "promotion grant allowed_paths"),
+        allowed_effects=_strings(data["allowed_effects"], "promotion grant allowed_effects"),
+        stop_conditions=_strings(data["stop_conditions"], "promotion grant stop_conditions"),
+    )
+    if grant.allowed_paths != _ALLOWED_PATHS:
+        raise ValidationError("promotion grant allowed_paths do not match the fixed boundary")
+    if grant.allowed_effects != _ALLOWED_EFFECTS:
+        raise ValidationError("promotion grant allowed_effects do not match the fixed boundary")
+    if grant.stop_conditions != _STOP_CONDITIONS:
+        raise ValidationError("promotion grant stop_conditions do not match the fixed boundary")
+    return grant
+
+
 def _version_from_json(value: object) -> ApprovedDirectionVersion:
     data = _object(value, "approved Direction version")
     _exact_keys(
         data,
-        {"approval", "change_note", "direction", "direction_digest", "supersedes"},
+        {
+            "approval",
+            "change_note",
+            "direction",
+            "direction_digest",
+            "promotion_grant",
+            "supersedes",
+        },
         "approved Direction version",
     )
     approval = _approval_from_json(data["approval"])
+    promotion_grant = _promotion_grant_from_json(data["promotion_grant"])
     direction = direction_from_json(data["direction"])
     direction_digest = _sha256(data["direction_digest"], "Direction version digest")
     if digest_json(direction.to_json()) != direction_digest:
@@ -256,6 +399,8 @@ def _version_from_json(value: object) -> ApprovedDirectionVersion:
         approved_at=approval.approved_at,
     ):
         raise ValidationError("Direction approval record disagrees with the approved Direction")
+    if promotion_grant.candidate_digest != approval.candidate_digest:
+        raise ValidationError("promotion authority is not bound to the approved candidate")
     predecessor = _predecessor_from_json(data["supersedes"])
     change_note_raw = data["change_note"]
     if change_note_raw is not None and not isinstance(change_note_raw, str):
@@ -272,6 +417,7 @@ def _version_from_json(value: object) -> ApprovedDirectionVersion:
         direction=direction,
         direction_digest=direction_digest,
         approval=approval,
+        promotion_grant=promotion_grant,
         supersedes=predecessor,
         change_note=change_note_raw,
     )
@@ -292,13 +438,17 @@ def _ledger_from_json(value: object) -> DirectionLedger:
     versions = tuple(_version_from_json(item) for item in versions_raw)
     direction_ids: set[str] = set()
     approval_ids: set[str] = set()
+    promotion_grant_ids: set[str] = set()
     for index, version in enumerate(versions):
         if version.direction.id in direction_ids:
             raise ValidationError("Direction ledger contains a duplicate Direction id")
         if version.approval.id in approval_ids:
             raise ValidationError("Direction ledger contains a duplicate approval id")
+        if version.promotion_grant.id in promotion_grant_ids:
+            raise ValidationError("Direction ledger contains a duplicate promotion grant id")
         direction_ids.add(version.direction.id)
         approval_ids.add(version.approval.id)
+        promotion_grant_ids.add(version.promotion_grant.id)
         if index == 0:
             if version.supersedes is not None or version.change_note is not None:
                 raise ValidationError("initial Direction must not supersede another version")
@@ -322,46 +472,194 @@ def _ledger_from_json(value: object) -> DirectionLedger:
 
 class _DirectionLedgerStore:
     def __init__(self, repository: Path) -> None:
+        self.repository = repository
         self.path = repository / _LEDGER_PATH
-        self.writer = PosixAtomicWriter()
 
     def exists(self) -> bool:
-        return self.path.exists()
+        try:
+            parent_metadata = (self.repository / ".second-mate").lstat()
+        except FileNotFoundError:
+            return False
+        if not stat.S_ISDIR(parent_metadata.st_mode):
+            return False
+        try:
+            self.path.lstat()
+        except FileNotFoundError:
+            return False
+        return True
+
+    @contextmanager
+    def _state_directory(self, *, create: bool) -> Iterator[int]:
+        directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+        root_descriptor = os.open(self.repository, directory_flags)
+        state_descriptor: int | None = None
+        try:
+            if create:
+                try:
+                    os.mkdir(".second-mate", mode=0o755, dir_fd=root_descriptor)
+                    os.fsync(root_descriptor)
+                except FileExistsError:
+                    pass
+            try:
+                state_descriptor = os.open(
+                    ".second-mate",
+                    directory_flags,
+                    dir_fd=root_descriptor,
+                )
+            except OSError as error:
+                raise ValidationError(
+                    "Direction state directory must be a real directory, not a symlink"
+                ) from error
+            yield state_descriptor
+        finally:
+            if state_descriptor is not None:
+                os.close(state_descriptor)
+            os.close(root_descriptor)
+
+    @staticmethod
+    def _read_content(state_descriptor: int) -> bytes:
+        try:
+            descriptor = os.open(
+                "directions.json",
+                os.O_RDONLY | os.O_NOFOLLOW,
+                dir_fd=state_descriptor,
+            )
+        except OSError as error:
+            raise ValidationError("Direction ledger must be a real file, not a symlink") from error
+        try:
+            if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+                raise ValidationError("Direction ledger must be a regular file")
+            with os.fdopen(descriptor, "rb", closefd=False) as stream:
+                return stream.read()
+        finally:
+            os.close(descriptor)
+
+    @staticmethod
+    def _reject_legacy_temporary_symlink(state_descriptor: int) -> None:
+        try:
+            metadata = os.stat(
+                "directions.json.next",
+                dir_fd=state_descriptor,
+                follow_symlinks=False,
+            )
+        except FileNotFoundError:
+            return
+        if stat.S_ISLNK(metadata.st_mode):
+            raise ValidationError("Direction temporary path must not be a symlink")
+
+    @staticmethod
+    def _write_temporary(state_descriptor: int, content: bytes) -> str:
+        temporary = f".directions.json.{secrets.token_hex(12)}.next"
+        descriptor = os.open(
+            temporary,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+            0o644,
+            dir_fd=state_descriptor,
+        )
+        try:
+            with os.fdopen(descriptor, "wb", closefd=False) as stream:
+                stream.write(content)
+                stream.flush()
+                os.fsync(stream.fileno())
+        finally:
+            os.close(descriptor)
+        return temporary
 
     def load(self) -> DirectionLedger:
         try:
-            raw = json.loads(self.path.read_text(encoding="utf-8"))
+            with self._state_directory(create=False) as state_descriptor:
+                raw = json.loads(self._read_content(state_descriptor).decode("utf-8"))
         except (OSError, UnicodeError, json.JSONDecodeError) as error:
             raise ValidationError(f"cannot read Direction ledger: {error}") from error
         return _ledger_from_json(raw)
 
-    def save(self, previous: DirectionLedger | None, ledger: DirectionLedger) -> None:
-        if previous is None:
-            if self.path.exists():
-                raise DirectionConflictError("approved Direction history appeared during promotion")
-        else:
+    def has_open_run(self) -> bool:
+        if not (self.repository / ".second-mate").exists():
+            return False
+        with self._state_directory(create=False) as state_descriptor:
             try:
-                current = self.path.read_bytes()
+                descriptor = os.open(
+                    "state.json",
+                    os.O_RDONLY | os.O_NOFOLLOW,
+                    dir_fd=state_descriptor,
+                )
+            except FileNotFoundError:
+                return False
             except OSError as error:
-                raise DirectionConflictError(
-                    "approved Direction history disappeared during promotion"
-                ) from error
-            if current != deterministic_document_bytes(previous):
+                raise ValidationError("run state must be a real file, not a symlink") from error
+            try:
+                if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+                    raise ValidationError("run state must be a regular file")
+                with os.fdopen(descriptor, "rb", closefd=False) as stream:
+                    raw = json.loads(stream.read().decode("utf-8"))
+            except (UnicodeError, json.JSONDecodeError) as error:
+                raise ValidationError(f"cannot read run state: {error}") from error
+            finally:
+                os.close(descriptor)
+        if not isinstance(raw, dict) or not isinstance(raw.get("closed"), bool):
+            raise ValidationError("run state closed status is invalid")
+        return not raw["closed"]
+
+    def save(self, previous: DirectionLedger | None, ledger: DirectionLedger) -> None:
+        final_content = deterministic_document_bytes(ledger)
+        with self._state_directory(create=True) as state_descriptor:
+            self._reject_legacy_temporary_symlink(state_descriptor)
+            if previous is None:
+                try:
+                    metadata = os.stat(
+                        "directions.json",
+                        dir_fd=state_descriptor,
+                        follow_symlinks=False,
+                    )
+                except FileNotFoundError:
+                    pass
+                else:
+                    if stat.S_ISLNK(metadata.st_mode):
+                        raise ValidationError("Direction ledger must not be a symlink")
+                    raise DirectionConflictError(
+                        "approved Direction history appeared during promotion"
+                    )
+            elif self._read_content(state_descriptor) != deterministic_document_bytes(previous):
                 raise DirectionConflictError("approved Direction history changed during promotion")
-        self.writer.write(self.path, deterministic_document_bytes(ledger))
+
+            temporary = self._write_temporary(state_descriptor, final_content)
+            try:
+                if previous is None:
+                    try:
+                        os.link(
+                            temporary,
+                            "directions.json",
+                            src_dir_fd=state_descriptor,
+                            dst_dir_fd=state_descriptor,
+                            follow_symlinks=False,
+                        )
+                    except FileExistsError as error:
+                        raise DirectionConflictError(
+                            "approved Direction history appeared during promotion"
+                        ) from error
+                    os.unlink(temporary, dir_fd=state_descriptor)
+                else:
+                    os.replace(
+                        temporary,
+                        "directions.json",
+                        src_dir_fd=state_descriptor,
+                        dst_dir_fd=state_descriptor,
+                    )
+                os.fsync(state_descriptor)
+            finally:
+                with suppress(FileNotFoundError):
+                    os.unlink(temporary, dir_fd=state_descriptor)
 
 
 @contextmanager
 def _direction_lock(repository: Path) -> Iterator[None]:
-    lock_path = git_private_path(repository, "second-mate-direction.lock")
-    lock_path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
     try:
-        fcntl.flock(descriptor, fcntl.LOCK_EX)
-        yield
-    finally:
-        fcntl.flock(descriptor, fcntl.LOCK_UN)
-        os.close(descriptor)
+        with mutation_lock(repository):
+            yield
+    except MutationLockBusyError as error:
+        raise DirectionConflictError(
+            "the repository mutation boundary is held by an active operation"
+        ) from error
 
 
 def prepare_direction(
@@ -373,6 +671,8 @@ def prepare_direction(
 ) -> DirectionCandidateEnvelope:
     """Freeze an editable summary into a read-only, approval-ready candidate."""
     root = repository_root(repository)
+    if repository_path_is_ignored(root, _ALLOWED_PATHS[0]):
+        raise ValidationError("approved Direction project state must not be ignored by Git")
     if not summary.strip():
         raise ValidationError("Direction Summary must be non-empty")
     store = _DirectionLedgerStore(root)
@@ -397,22 +697,44 @@ def prepare_direction(
         supersedes=predecessor,
         change_note=change_note,
     )
-    return DirectionCandidateEnvelope(candidate=candidate, digest=digest_json(candidate.to_json()))
+    revision = inspect_revision(root)
+    return DirectionCandidateEnvelope(
+        candidate=candidate,
+        digest=digest_json(candidate.to_json()),
+        promotion_basis=PromotionBasis(
+            target_root=os.fspath(root),
+            target_head=revision.head,
+            target_fingerprint=revision.fingerprint,
+        ),
+    )
 
 
 def promote_direction(
     repository: Path,
     candidate_data: object,
     approval_data: object | None,
+    promotion_grant_data: object | None,
 ) -> ApprovedDirectionVersion:
     """Persist only a separately and exactly approved Direction candidate."""
     root = repository_root(repository)
     candidate = _candidate_envelope_from_json(candidate_data)
     approval = _approval_from_json(approval_data)
+    promotion_grant = _promotion_grant_from_json(promotion_grant_data)
     if approval.direction_id != candidate.candidate.id:
         raise ValidationError("Direction approval identifies a different candidate")
     if approval.candidate_digest != candidate.digest:
         raise ValidationError("Direction approval digest does not match the exact candidate")
+    expected_grant: dict[str, object] = {
+        "candidate_digest": candidate.digest,
+        "target_root": candidate.promotion_basis.target_root,
+        "target_head": candidate.promotion_basis.target_head,
+        "target_fingerprint": candidate.promotion_basis.target_fingerprint,
+    }
+    for field, expected_value in expected_grant.items():
+        if getattr(promotion_grant, field) != expected_value:
+            raise ValidationError(f"promotion grant {field} does not match the prepared basis")
+    if os.fspath(root) != candidate.promotion_basis.target_root:
+        raise ValidationError("Direction candidate was prepared for a different target")
     direction = Direction(
         id=candidate.candidate.id,
         text=candidate.candidate.text,
@@ -423,6 +745,16 @@ def promote_direction(
     )
     with _direction_lock(root):
         store = _DirectionLedgerStore(root)
+        if store.has_open_run():
+            raise DirectionConflictError("an open packet run must close before Direction promotion")
+        if repository_path_is_ignored(root, _ALLOWED_PATHS[0]):
+            raise ValidationError("approved Direction project state must not be ignored by Git")
+        current_revision = inspect_revision(root)
+        if (
+            current_revision.head != candidate.promotion_basis.target_head
+            or current_revision.fingerprint != candidate.promotion_basis.target_fingerprint
+        ):
+            raise DirectionConflictError("revision drift invalidated Direction promotion authority")
         previous = store.load() if store.exists() else None
         if previous is None:
             if (
@@ -437,6 +769,8 @@ def promote_direction(
                 raise DirectionConflictError("an approved Direction id cannot be reused")
             if any(item.approval.id == approval.id for item in previous.versions):
                 raise DirectionConflictError("an explicit Direction approval id cannot be reused")
+            if any(item.promotion_grant.id == promotion_grant.id for item in previous.versions):
+                raise DirectionConflictError("an explicit promotion grant id cannot be reused")
             expected_predecessor = DirectionPredecessor(
                 direction_id=previous.current.direction.id,
                 direction_digest=previous.current.direction_digest,
@@ -456,6 +790,7 @@ def promote_direction(
             direction=direction,
             direction_digest=digest_json(direction.to_json()),
             approval=approval,
+            promotion_grant=promotion_grant,
             supersedes=candidate.candidate.supersedes,
             change_note=candidate.candidate.change_note,
         )

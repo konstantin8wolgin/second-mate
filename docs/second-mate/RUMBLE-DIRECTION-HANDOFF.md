@@ -37,8 +37,10 @@ uv run second-mate direction prepare \
   > "$PRIVATE_CONTROL/D-01.candidate.json"
 ```
 
-Review the exact `candidate.text` and `candidate_digest` in that output. Any
-edit to the text requires running `prepare` again.
+Review the exact `candidate.text`, `candidate_digest`, and read-only
+`promotion_basis` in that output. The basis identifies the target root, Git
+head, and full visible-revision fingerprint. Any edit to the text or target
+requires running `prepare` again.
 
 ## Record explicit human approval
 
@@ -57,10 +59,31 @@ candidate. Second Mate deliberately has no command that manufactures approval:
 }
 ```
 
-Keep this control document private until the normal project authority permits
-promotion. A missing approval, any decision other than the literal `approved`,
-an edited candidate, a mismatched digest, or an unknown approval field is
-refused before a project write.
+Direction approval confirms exact meaning; it does not authorize a project
+write. The human separately creates a promotion grant bound to the prepared
+candidate and repository basis. The two decisions may share one human
+touchpoint, but remain distinct records:
+
+```json
+{
+  "allowed_effects": ["direction_ledger_write"],
+  "allowed_paths": [".second-mate/directions.json"],
+  "candidate_digest": "the exact candidate_digest from prepare",
+  "granted_at": "2026-08-02T12:01:00Z",
+  "granted_by": "human-identifier",
+  "id": "DPG-01",
+  "schema_version": 1,
+  "stop_conditions": ["revision_drift", "direction_history_drift"],
+  "target_fingerprint": "the exact promotion_basis target_fingerprint",
+  "target_head": "the exact promotion_basis target_head",
+  "target_root": "the exact absolute promotion_basis target_root"
+}
+```
+
+Keep both control documents private until the normal project authority permits
+promotion. A missing approval or grant, any decision other than the literal
+`approved`, an edited candidate, a mismatched digest or target, revision drift,
+or an unknown field is refused before a project write.
 
 Promote the reviewed version:
 
@@ -68,14 +91,18 @@ Promote the reviewed version:
 uv run second-mate direction promote \
   --target "$TARGET" \
   --candidate "$PRIVATE_CONTROL/D-01.candidate.json" \
-  --approval "$PRIVATE_CONTROL/D-01.approval.json"
+  --approval "$PRIVATE_CONTROL/D-01.approval.json" \
+  --grant "$PRIVATE_CONTROL/D-01.promotion-grant.json"
 ```
 
 Promotion appends deterministic project authority to
 `.second-mate/directions.json`. The ledger contains only approved Direction
-text, its approval record, exact digests, and version lineage. It never stores
-the source path, prompt, transcript, messages, model metadata, credentials, or
-private reasoning.
+text, its approval record, scoped promotion grant, exact digests, and version
+lineage. It never stores the source path, prompt, transcript, messages, model
+metadata, credentials, or private reasoning.
+
+Review and commit the ledger through the project's normal delivery authority;
+it is accepted project state, not disposable local control data.
 
 Show the current approved Direction in the existing schema consumed by
 `second-mate draft`:
@@ -102,9 +129,9 @@ uv run second-mate direction prepare \
 ```
 
 Second Mate binds the candidate to the current approved identifier and digest.
-After a new separate approval, `promote` appends D-02 without editing D-01.
-Reused identifiers, missing change notes, stale predecessors, competing
-branches, and unchanged replacement text are refused.
+After a new separate approval and promotion grant, `promote` appends D-02
+without editing D-01. Reused identifiers, missing change notes, stale
+predecessors, competing branches, and unchanged replacement text are refused.
 
 ## Authority and deliberate limits
 
@@ -112,6 +139,9 @@ Direction approval confirms exact what and why. It does not approve a route,
 grant Execution Consent, permit provider calls, or authorize other mutations.
 Promote Direction before packet preflight: a later Direction promotion changes
 the target fingerprint and correctly invalidates stale preflight and consent.
+Direction state must remain visible to Git; preparation refuses a target whose
+ignore rules hide the ledger. Promotion also refuses while a packet run is open
+and shares its repository-wide mutation lock with dispatch and restart.
 
 Schema validation prevents transcript or reasoning fields from entering the
 ledger, but software cannot infer whether prose pasted into the Summary is

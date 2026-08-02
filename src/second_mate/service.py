@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
-import os
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, replace
@@ -21,11 +19,12 @@ from second_mate.domain import (
 )
 from second_mate.repository import (
     FileFact,
+    MutationLockBusyError,
     PreflightEnvelope,
     TargetRevision,
-    git_private_path,
     inspect_instructions,
     inspect_revision,
+    mutation_lock,
     preflight_from_json,
 )
 from second_mate.store import FileStateStore
@@ -428,20 +427,11 @@ def _record_dispatch_failure(
 
 @contextmanager
 def _run_lock(repository: Path) -> Iterator[None]:
-    lock_path = git_private_path(repository, "second-mate-fs01.lock")
-    lock_path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
     try:
-        try:
-            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError as error:
-            raise RunConflictError("the packet run lock is held by another active owner") from error
-        yield
-    finally:
-        try:
-            fcntl.flock(descriptor, fcntl.LOCK_UN)
-        finally:
-            os.close(descriptor)
+        with mutation_lock(repository):
+            yield
+    except MutationLockBusyError as error:
+        raise RunConflictError("the repository mutation boundary is already active") from error
 
 
 def restart_run(repository: Path, executor: Executor, *, owner_id: str) -> RunState:

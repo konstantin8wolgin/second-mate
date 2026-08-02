@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import os
 import stat
 import subprocess
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
@@ -29,6 +32,10 @@ _DEPENDENCY_FILES = frozenset(
 _MANAGED_PATHS = frozenset(
     {STATE_PATH, f"{STATE_PATH}.lock", f"{STATE_PATH}.next", f"{STATE_PATH}.pending"}
 )
+
+
+class MutationLockBusyError(RuntimeError):
+    """Another Second Mate operation owns the repository mutation boundary."""
 
 
 def _sha256(content: bytes) -> str:
@@ -155,6 +162,38 @@ def repository_root(repository: Path) -> Path:
     return _repository_root(repository)
 
 
+def repository_path_is_ignored(repository: Path, relative_path: str) -> bool:
+    """Return whether Git excludes one repository-relative path from project state."""
+    path = Path(relative_path)
+    if path.is_absolute() or ".." in path.parts or relative_path in {"", "."}:
+        raise ValidationError("ignored-path inspection requires a safe relative path")
+    root = _repository_root(repository)
+    environment = {**os.environ, "GIT_OPTIONAL_LOCKS": "0"}
+    try:
+        completed = subprocess.run(
+            [
+                "git",
+                "--no-optional-locks",
+                "-C",
+                os.fspath(root),
+                "check-ignore",
+                "-q",
+                "--",
+                relative_path,
+            ],
+            check=False,
+            capture_output=True,
+            env=environment,
+        )
+    except OSError as error:
+        raise ValidationError(f"cannot inspect Git ignore rules: {error}") from error
+    if completed.returncode not in {0, 1}:
+        raise ValidationError(
+            "cannot inspect Git ignore rules; Direction state must not cross a symlink"
+        )
+    return completed.returncode == 0
+
+
 def _repository_paths(repository: Path) -> tuple[str, ...]:
     output = _git(
         repository,
@@ -203,6 +242,27 @@ def git_private_path(repository: Path, name: str) -> Path:
     root = _repository_root(repository)
     raw = Path(os.fsdecode(_git(root, "rev-parse", "--git-path", name)).strip())
     return raw if raw.is_absolute() else root / raw
+
+
+@contextmanager
+def mutation_lock(repository: Path) -> Iterator[None]:
+    """Hold the one repository-wide lock shared by every mutating operation."""
+    lock_path = git_private_path(repository, "second-mate-mutation.lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise MutationLockBusyError(
+                "the repository mutation boundary is held by another operation"
+            ) from error
+        yield
+    finally:
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+        finally:
+            os.close(descriptor)
 
 
 def inspect_instructions(repository: Path, draft: Draft) -> tuple[FileFact, ...]:
