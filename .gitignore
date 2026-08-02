@@ -1,1 +1,8 @@
 .worktrees/
+.venv/
+.cache/uv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+.tmp/fs01/
