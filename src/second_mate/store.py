@@ -21,6 +21,24 @@ class StateRecoveryError(RuntimeError):
     """A close journal cannot be reconciled with the current durable state."""
 
 
+class StrictJsonError(ValueError):
+    """A JSON object contains an ambiguous duplicate field name."""
+
+
+def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    document: dict[str, object] = {}
+    for key, value in pairs:
+        if key in document:
+            raise StrictJsonError(f"duplicate JSON object field: {key}")
+        document[key] = value
+    return document
+
+
+def strict_json_loads(document: str | bytes) -> object:
+    """Decode JSON while rejecting duplicate fields at every nesting level."""
+    return json.loads(document, object_pairs_hook=_strict_object)
+
+
 def deterministic_json_bytes(value: JsonObject) -> bytes:
     return (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
 
@@ -83,8 +101,8 @@ class FileStateStore:
         if not self.pending_path.exists():
             return
         try:
-            raw = json.loads(self.pending_path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            raw = strict_json_loads(self.pending_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError, StrictJsonError) as error:
             raise StateRecoveryError(f"cannot read close recovery journal: {error}") from error
         if not isinstance(raw, dict) or not all(isinstance(key, str) for key in raw):
             raise StateRecoveryError("close recovery journal must be an object")
@@ -126,8 +144,8 @@ class FileStateStore:
     def read_json(self) -> object:
         self._finish_pending_close()
         try:
-            return json.loads(self.path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            return strict_json_loads(self.path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError, StrictJsonError) as error:
             raise RuntimeError(f"cannot read durable state: {error}") from error
 
     def save(self, document: JsonDocument) -> None:

@@ -32,7 +32,7 @@ from second_mate.repository import (
     repository_path_is_ignored,
     repository_root,
 )
-from second_mate.store import deterministic_document_bytes
+from second_mate.store import StrictJsonError, deterministic_document_bytes, strict_json_loads
 
 _DIRECTION_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -40,6 +40,7 @@ _LEDGER_PATH = Path(".second-mate/directions.json")
 _ALLOWED_PATHS = (".second-mate/directions.json",)
 _ALLOWED_EFFECTS = ("direction_ledger_write",)
 _STOP_CONDITIONS = ("revision_drift", "direction_history_drift")
+_RENAME_NOREPLACE = 1
 _RENAME_EXCHANGE = 2
 
 
@@ -49,6 +50,21 @@ class DirectionConflictError(RuntimeError):
 
 class _ExchangeRecoveryError(DirectionConflictError):
     """An exchange could not safely restore the displaced concurrent entry."""
+
+
+@dataclass(frozen=True, slots=True)
+class _PathEntry:
+    kind: str
+    device: int
+    inode: int
+    mode: int
+    content: bytes
+
+
+@dataclass(frozen=True, slots=True)
+class _OwnedTemporary:
+    name: str
+    entry: _PathEntry
 
 
 def _same_revision_except(
@@ -65,17 +81,36 @@ def _matches_installed_ledger(
     current: TargetRevision,
     before: TargetRevision,
     ledger_content: bytes,
+    temporary_path: str | None = None,
+    temporary_entry: _PathEntry | None = None,
 ) -> bool:
-    excluded = frozenset({_LEDGER_PATH.as_posix()})
+    excluded_paths = {_LEDGER_PATH.as_posix()}
+    if temporary_path is not None:
+        excluded_paths.add(temporary_path)
+    excluded = frozenset(excluded_paths)
     if not _same_revision_except(current, before, excluded):
         return False
-    ledger_facts = tuple(item for item in current.files if item.path in excluded)
-    return ledger_facts == (
+    ledger_facts = tuple(item for item in current.files if item.path == _LEDGER_PATH.as_posix())
+    if ledger_facts != (
         FileFact(
             path=_LEDGER_PATH.as_posix(),
             kind="file",
             sha256=hashlib.sha256(ledger_content).hexdigest(),
             executable=False,
+        ),
+    ):
+        return False
+    if temporary_path is None:
+        return True
+    if temporary_entry is None or temporary_entry.kind != "file":
+        return False
+    temporary_facts = tuple(item for item in current.files if item.path == temporary_path)
+    return temporary_facts == (
+        FileFact(
+            path=temporary_path,
+            kind="file",
+            sha256=hashlib.sha256(temporary_entry.content).hexdigest(),
+            executable=bool(temporary_entry.mode & stat.S_IXUSR),
         ),
     )
 
@@ -97,6 +132,11 @@ def _object(value: object, label: str) -> dict[str, object]:
 def _exact_keys(value: dict[str, object], expected: set[str], label: str) -> None:
     if set(value) != expected:
         raise ValidationError(f"{label} fields do not match schema version 1")
+
+
+def _schema_one(value: object, label: str) -> None:
+    if type(value) is not int or value != 1:
+        raise ValidationError(f"{label} schema_version must be the integer 1")
 
 
 def _text(value: object, label: str) -> str:
@@ -284,16 +324,14 @@ def _candidate_envelope_from_json(value: object) -> DirectionCandidateEnvelope:
         {"schema_version", "candidate", "candidate_digest", "promotion_basis"},
         "Direction candidate envelope",
     )
-    if data["schema_version"] != 1:
-        raise ValidationError("Direction candidate envelope schema_version must be 1")
+    _schema_one(data["schema_version"], "Direction candidate envelope")
     candidate_data = _object(data["candidate"], "Direction candidate")
     _exact_keys(
         candidate_data,
         {"schema_version", "id", "text", "supersedes", "change_note"},
         "Direction candidate",
     )
-    if candidate_data["schema_version"] != 1:
-        raise ValidationError("Direction candidate schema_version must be 1")
+    _schema_one(candidate_data["schema_version"], "Direction candidate")
     change_note_raw = candidate_data["change_note"]
     if change_note_raw is not None and not isinstance(change_note_raw, str):
         raise ValidationError("Direction candidate change_note must be a string or null")
@@ -346,8 +384,7 @@ def _approval_from_json(value: object | None) -> DirectionApproval:
         },
         "Direction approval",
     )
-    if data["schema_version"] != 1:
-        raise ValidationError("Direction approval schema_version must be 1")
+    _schema_one(data["schema_version"], "Direction approval")
     if data["decision"] != "approved":
         raise ValidationError("Direction approval decision must be approved")
     direction_id = _direction_id(_text(data["direction_id"], "Direction approval direction_id"))
@@ -382,8 +419,7 @@ def _promotion_grant_from_json(value: object | None) -> PromotionGrant:
         },
         "Direction promotion grant",
     )
-    if data["schema_version"] != 1:
-        raise ValidationError("Direction promotion grant schema_version must be 1")
+    _schema_one(data["schema_version"], "Direction promotion grant")
     target_root = _text(data["target_root"], "promotion grant target_root")
     if not Path(target_root).is_absolute():
         raise ValidationError("promotion grant target_root must be absolute")
@@ -468,8 +504,7 @@ def _ledger_from_json(value: object) -> DirectionLedger:
         {"schema_version", "current_direction_id", "versions"},
         "Direction ledger",
     )
-    if data["schema_version"] != 1:
-        raise ValidationError("Direction ledger schema_version must be 1")
+    _schema_one(data["schema_version"], "Direction ledger")
     versions_raw = data["versions"]
     if not isinstance(versions_raw, list) or not versions_raw:
         raise ValidationError("Direction ledger must contain approved versions")
@@ -527,8 +562,14 @@ class _DirectionLedgerStore:
         return True
 
     @staticmethod
-    def _exchange_paths(state_descriptor: int, left: str, right: str) -> None:
-        """Atomically exchange two existing names in the verified Linux environment."""
+    def _rename_paths(
+        state_descriptor: int,
+        left: str,
+        right: str,
+        *,
+        flags: int,
+    ) -> None:
+        """Use one verified Linux rename operation relative to the pinned state fd."""
         library = ctypes.CDLL(None, use_errno=True)
         try:
             renameat2 = library.renameat2
@@ -550,7 +591,7 @@ class _DirectionLedgerStore:
                 os.fsencode(left),
                 state_descriptor,
                 os.fsencode(right),
-                _RENAME_EXCHANGE,
+                flags,
             )
             != 0
         ):
@@ -558,50 +599,121 @@ class _DirectionLedgerStore:
             raise OSError(error_number, os.strerror(error_number))
 
     @classmethod
+    def _exchange_paths(cls, state_descriptor: int, left: str, right: str) -> None:
+        """Atomically exchange two existing names in the verified Linux environment."""
+        cls._rename_paths(
+            state_descriptor,
+            left,
+            right,
+            flags=_RENAME_EXCHANGE,
+        )
+
+    @classmethod
+    def _move_path_no_replace(
+        cls,
+        state_descriptor: int,
+        source: str,
+        destination: str,
+    ) -> None:
+        """Atomically move one name only when the destination is absent."""
+        cls._rename_paths(
+            state_descriptor,
+            source,
+            destination,
+            flags=_RENAME_NOREPLACE,
+        )
+
+    @staticmethod
+    def _entry_kind(mode: int) -> str:
+        if stat.S_ISREG(mode):
+            return "file"
+        if stat.S_ISLNK(mode):
+            return "symlink"
+        if stat.S_ISDIR(mode):
+            return "directory"
+        return "other"
+
+    @classmethod
+    def _path_entry(cls, state_descriptor: int, name: str) -> _PathEntry:
+        before = os.stat(name, dir_fd=state_descriptor, follow_symlinks=False)
+        kind = cls._entry_kind(before.st_mode)
+        content = b""
+        if kind == "file":
+            descriptor = os.open(
+                name,
+                os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW,
+                dir_fd=state_descriptor,
+            )
+            try:
+                opened = os.fstat(descriptor)
+                if not stat.S_ISREG(opened.st_mode) or (opened.st_dev, opened.st_ino) != (
+                    before.st_dev,
+                    before.st_ino,
+                ):
+                    raise DirectionConflictError(
+                        "Direction entry identity changed while it was inspected"
+                    )
+                with os.fdopen(descriptor, "rb", closefd=False) as stream:
+                    content = stream.read()
+            finally:
+                os.close(descriptor)
+        elif kind == "symlink":
+            content = os.fsencode(os.readlink(name, dir_fd=state_descriptor))
+        after = os.stat(name, dir_fd=state_descriptor, follow_symlinks=False)
+        if cls._entry_kind(after.st_mode) != kind or (
+            after.st_dev,
+            after.st_ino,
+            stat.S_IMODE(after.st_mode),
+        ) != (before.st_dev, before.st_ino, stat.S_IMODE(before.st_mode)):
+            raise DirectionConflictError("Direction entry identity changed while it was inspected")
+        return _PathEntry(
+            kind=kind,
+            device=after.st_dev,
+            inode=after.st_ino,
+            mode=stat.S_IMODE(after.st_mode),
+            content=content,
+        )
+
+    @classmethod
     def _exchange_if_current(
         cls,
         state_descriptor: int,
-        replacement: str,
+        replacement: _OwnedTemporary,
         target: str,
         *,
-        expected_displaced_content: bytes,
-        expected_displaced_mode: int,
-        replacement_content: bytes,
-        replacement_mode: int,
+        expected_displaced: _PathEntry,
     ) -> bool:
         try:
-            cls._exchange_paths(state_descriptor, replacement, target)
+            cls._exchange_paths(state_descriptor, replacement.name, target)
         except OSError as error:
             raise DirectionConflictError("atomic Direction history exchange failed") from error
         try:
-            displaced_content, displaced_mode = cls._read_content_and_mode(
-                state_descriptor,
-                replacement,
-            )
+            displaced = cls._path_entry(state_descriptor, replacement.name)
         except Exception:
-            displaced_matches = False
-        else:
-            displaced_matches = (
-                displaced_content == expected_displaced_content
-                and displaced_mode == expected_displaced_mode
-            )
-        if displaced_matches:
+            displaced = None
+        try:
+            installed = cls._path_entry(state_descriptor, target)
+        except Exception:
+            installed = None
+        if displaced == expected_displaced and installed == replacement.entry:
             return True
         try:
-            current_content, current_mode = cls._read_content_and_mode(
-                state_descriptor,
-                target,
-            )
-            if current_content != replacement_content or current_mode != replacement_mode:
-                raise DirectionConflictError(
-                    "replacement changed before atomic exchange could be restored"
-                )
-            cls._exchange_paths(state_descriptor, replacement, target)
+            cls._exchange_paths(state_descriptor, replacement.name, target)
             os.fsync(state_descriptor)
+            restored_target = cls._path_entry(state_descriptor, target)
+            recovered_temporary = cls._path_entry(state_descriptor, replacement.name)
         except Exception as error:
             raise _ExchangeRecoveryError(
                 "atomic exchange was invalidated; displaced history was retained for recovery"
             ) from error
+        if displaced is None or restored_target != displaced:
+            raise _ExchangeRecoveryError(
+                "atomic exchange was invalidated; displaced history was retained for recovery"
+            )
+        if recovered_temporary != replacement.entry:
+            raise _ExchangeRecoveryError(
+                "atomic exchange was invalidated; a late entry was retained for recovery"
+            )
         return False
 
     @staticmethod
@@ -714,27 +826,30 @@ class _DirectionLedgerStore:
                 os.close(root_descriptor)
             os.close(parent_descriptor)
 
-    @staticmethod
+    @classmethod
     def _read_content_and_mode(
+        cls,
         state_descriptor: int,
         name: str = "directions.json",
     ) -> tuple[bytes, int]:
+        entry = cls._regular_entry(state_descriptor, name)
+        return entry.content, entry.mode
+
+    @classmethod
+    def _regular_entry(
+        cls,
+        state_descriptor: int,
+        name: str = "directions.json",
+    ) -> _PathEntry:
         try:
-            descriptor = os.open(
-                name,
-                os.O_RDONLY | os.O_NOFOLLOW,
-                dir_fd=state_descriptor,
-            )
-        except OSError as error:
+            entry = cls._path_entry(state_descriptor, name)
+        except (OSError, DirectionConflictError) as error:
             raise ValidationError("Direction ledger must be a real file, not a symlink") from error
-        try:
-            metadata = os.fstat(descriptor)
-            if not stat.S_ISREG(metadata.st_mode):
-                raise ValidationError("Direction ledger must be a regular file")
-            with os.fdopen(descriptor, "rb", closefd=False) as stream:
-                return stream.read(), stat.S_IMODE(metadata.st_mode)
-        finally:
-            os.close(descriptor)
+        if entry.kind == "symlink":
+            raise ValidationError("Direction ledger must be a real file, not a symlink")
+        if entry.kind != "file":
+            raise ValidationError("Direction ledger must be a regular file")
+        return entry
 
     @classmethod
     def _read_content(cls, state_descriptor: int, name: str = "directions.json") -> bytes:
@@ -759,7 +874,7 @@ class _DirectionLedgerStore:
         content: bytes,
         *,
         mode: int = 0o644,
-    ) -> str:
+    ) -> _OwnedTemporary:
         temporary = f".directions.json.{secrets.token_hex(12)}.next"
         try:
             descriptor = os.open(
@@ -778,6 +893,17 @@ class _DirectionLedgerStore:
                 stream.write(content)
                 stream.flush()
                 os.fsync(stream.fileno())
+            metadata = os.fstat(descriptor)
+            owned = _OwnedTemporary(
+                name=temporary,
+                entry=_PathEntry(
+                    kind="file",
+                    device=metadata.st_dev,
+                    inode=metadata.st_ino,
+                    mode=stat.S_IMODE(metadata.st_mode),
+                    content=content,
+                ),
+            )
         except OSError as error:
             with suppress(OSError):
                 os.close(descriptor)
@@ -799,7 +925,7 @@ class _DirectionLedgerStore:
         finally:
             with suppress(OSError):
                 os.close(descriptor)
-        return temporary
+        return owned
 
     def load(self) -> DirectionLedger:
         try:
@@ -808,13 +934,13 @@ class _DirectionLedgerStore:
                 root_descriptor,
                 state_descriptor,
             ):
-                raw = json.loads(self._read_content(state_descriptor).decode("utf-8"))
+                raw = strict_json_loads(self._read_content(state_descriptor).decode("utf-8"))
                 self._assert_sink_attached(
                     parent_descriptor,
                     root_descriptor,
                     state_descriptor,
                 )
-        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        except (OSError, UnicodeError, json.JSONDecodeError, StrictJsonError) as error:
             raise ValidationError(f"cannot read Direction ledger: {error}") from error
         return _ledger_from_json(raw)
 
@@ -845,8 +971,8 @@ class _DirectionLedgerStore:
                 if not stat.S_ISREG(os.fstat(descriptor).st_mode):
                     raise ValidationError("run state must be a regular file")
                 with os.fdopen(descriptor, "rb", closefd=False) as stream:
-                    raw = json.loads(stream.read().decode("utf-8"))
-            except (UnicodeError, json.JSONDecodeError) as error:
+                    raw = strict_json_loads(stream.read().decode("utf-8"))
+            except (UnicodeError, json.JSONDecodeError, StrictJsonError) as error:
                 raise ValidationError(f"cannot read run state: {error}") from error
             finally:
                 os.close(descriptor)
@@ -867,52 +993,139 @@ class _DirectionLedgerStore:
             return
         os.fsync(state_descriptor)
 
+    @classmethod
+    def _discard_if_exact(
+        cls,
+        state_descriptor: int,
+        name: str,
+        expected: _PathEntry,
+    ) -> None:
+        try:
+            current = cls._path_entry(state_descriptor, name)
+        except Exception as error:
+            raise _ExchangeRecoveryError(
+                "unexpected Direction entry was retained instead of being deleted"
+            ) from error
+        if current != expected:
+            raise _ExchangeRecoveryError(
+                "unexpected Direction entry was retained instead of being deleted"
+            )
+        cls._discard_temporary(state_descriptor, name)
+
+    @classmethod
+    def _remove_initial_install(
+        cls,
+        state_descriptor: int,
+        installed: _PathEntry,
+        installation_temporary: _OwnedTemporary,
+    ) -> None:
+        quarantine = f".directions.json.{secrets.token_hex(12)}.rollback"
+        try:
+            cls._move_path_no_replace(
+                state_descriptor,
+                "directions.json",
+                quarantine,
+            )
+            os.fsync(state_descriptor)
+        except OSError as error:
+            raise _ExchangeRecoveryError(
+                "initial Direction rollback could not quarantine the final entry"
+            ) from error
+        try:
+            quarantined = cls._path_entry(state_descriptor, quarantine)
+        except Exception as error:
+            raise _ExchangeRecoveryError(
+                "initial Direction rollback retained an unverified final entry"
+            ) from error
+
+        if quarantined == installed:
+            cls._discard_if_exact(state_descriptor, quarantine, quarantined)
+            return
+
+        try:
+            source = cls._path_entry(state_descriptor, installation_temporary.name)
+        except Exception:
+            source = None
+        if source == quarantined and source != installation_temporary.entry:
+            # The link operation duplicated a substituted source. Removing this
+            # quarantined link restores initial absence while the source name
+            # retains the unowned object exactly.
+            cls._discard_if_exact(state_descriptor, quarantine, quarantined)
+            return
+
+        try:
+            cls._move_path_no_replace(
+                state_descriptor,
+                quarantine,
+                "directions.json",
+            )
+            os.fsync(state_descriptor)
+            restored = cls._path_entry(state_descriptor, "directions.json")
+        except Exception as error:
+            raise _ExchangeRecoveryError(
+                "a concurrent final Direction entry was retained for recovery"
+            ) from error
+        if restored != quarantined:
+            raise _ExchangeRecoveryError(
+                "a concurrent final Direction entry changed while it was restored"
+            )
+        raise DirectionConflictError(
+            "a concurrent final Direction entry was restored during rollback"
+        )
+
     def _rollback_install(
         self,
         state_descriptor: int,
         previous: DirectionLedger | None,
-        previous_mode: int | None,
-        installed_content: bytes,
+        previous_entry: _PathEntry | None,
+        installed: _PathEntry,
+        installation_temporary: _OwnedTemporary,
     ) -> None:
-        current_content, current_mode = self._read_content_and_mode(state_descriptor)
-        if current_content != installed_content or current_mode != 0o644:
-            raise DirectionConflictError(
-                "installed Direction changed before invalid promotion could roll back"
-            )
         if previous is None:
-            os.unlink("directions.json", dir_fd=state_descriptor)
+            self._remove_initial_install(
+                state_descriptor,
+                installed,
+                installation_temporary,
+            )
         else:
-            if previous_mode is None:
-                raise DirectionConflictError("previous Direction mode is unavailable for rollback")
+            if previous_entry is None:
+                raise DirectionConflictError("previous Direction entry is unavailable for rollback")
+            current = self._regular_entry(state_descriptor)
+            if current != installed:
+                raise DirectionConflictError(
+                    "installed Direction changed before invalid promotion could roll back"
+                )
             rollback_content = deterministic_document_bytes(previous)
             rollback_temporary = self._write_temporary(
                 state_descriptor,
                 rollback_content,
-                mode=previous_mode,
+                mode=previous_entry.mode,
             )
             preserve_temporary = False
+            cleanup_entry = rollback_temporary.entry
             try:
                 try:
                     displaced_matches = self._exchange_if_current(
                         state_descriptor,
                         rollback_temporary,
                         "directions.json",
-                        expected_displaced_content=installed_content,
-                        expected_displaced_mode=0o644,
-                        replacement_content=rollback_content,
-                        replacement_mode=previous_mode,
+                        expected_displaced=current,
                     )
-                except _ExchangeRecoveryError:
+                    if not displaced_matches:
+                        raise DirectionConflictError(
+                            "installed Direction changed during invalid promotion rollback"
+                        )
+                    cleanup_entry = current
+                except BaseException:
                     preserve_temporary = True
                     raise
-                if not displaced_matches:
-                    raise DirectionConflictError(
-                        "installed Direction changed during invalid promotion rollback"
-                    )
             finally:
                 if not preserve_temporary:
-                    with suppress(OSError):
-                        self._discard_temporary(state_descriptor, rollback_temporary)
+                    self._discard_if_exact(
+                        state_descriptor,
+                        rollback_temporary.name,
+                        cleanup_entry,
+                    )
         os.fsync(state_descriptor)
 
     def save(
@@ -928,7 +1141,7 @@ class _DirectionLedgerStore:
             state_descriptor,
         ):
             self._reject_legacy_temporary_symlink(state_descriptor)
-            previous_mode: int | None = None
+            previous_entry: _PathEntry | None = None
             if previous is None:
                 try:
                     metadata = os.stat(
@@ -945,8 +1158,8 @@ class _DirectionLedgerStore:
                         "approved Direction history appeared during promotion"
                     )
             else:
-                previous_content, previous_mode = self._read_content_and_mode(state_descriptor)
-                if previous_content != deterministic_document_bytes(previous):
+                previous_entry = self._regular_entry(state_descriptor)
+                if previous_entry.content != deterministic_document_bytes(previous):
                     raise DirectionConflictError(
                         "approved Direction history changed during promotion"
                     )
@@ -954,6 +1167,8 @@ class _DirectionLedgerStore:
             temporary = self._write_temporary(state_descriptor, final_content)
             installed = False
             preserve_temporary = False
+            temporary_removed = False
+            cleanup_entry = temporary.entry
             try:
                 self._assert_sink_attached(
                     parent_descriptor,
@@ -966,7 +1181,7 @@ class _DirectionLedgerStore:
                     root_descriptor,
                     state_descriptor,
                 )
-                temporary_path = f".second-mate/{temporary}"
+                temporary_path = f".second-mate/{temporary.name}"
                 if not _same_revision_except(
                     before_install,
                     expected_revision,
@@ -978,7 +1193,7 @@ class _DirectionLedgerStore:
                 if previous is None:
                     try:
                         os.link(
-                            temporary,
+                            temporary.name,
                             "directions.json",
                             src_dir_fd=state_descriptor,
                             dst_dir_fd=state_descriptor,
@@ -989,21 +1204,34 @@ class _DirectionLedgerStore:
                             "approved Direction history appeared during promotion"
                         ) from error
                     installed = True
-                    os.unlink(temporary, dir_fd=state_descriptor)
+                    try:
+                        final_entry = self._path_entry(state_descriptor, "directions.json")
+                        current_temporary = self._path_entry(
+                            state_descriptor,
+                            temporary.name,
+                        )
+                    except Exception as error:
+                        preserve_temporary = True
+                        raise _ExchangeRecoveryError(
+                            "initial Direction temporary identity was retained after link"
+                        ) from error
+                    if final_entry != temporary.entry or current_temporary != temporary.entry:
+                        if current_temporary != temporary.entry:
+                            preserve_temporary = True
+                        raise _ExchangeRecoveryError(
+                            "initial Direction temporary changed across link and was retained"
+                        )
                 else:
-                    if previous_mode is None:
+                    if previous_entry is None:
                         raise DirectionConflictError(
-                            "previous Direction mode is unavailable for exchange"
+                            "previous Direction entry is unavailable for exchange"
                         )
                     try:
                         displaced_matches = self._exchange_if_current(
                             state_descriptor,
                             temporary,
                             "directions.json",
-                            expected_displaced_content=deterministic_document_bytes(previous),
-                            expected_displaced_mode=previous_mode,
-                            replacement_content=final_content,
-                            replacement_mode=0o644,
+                            expected_displaced=previous_entry,
                         )
                     except _ExchangeRecoveryError:
                         preserve_temporary = True
@@ -1013,7 +1241,7 @@ class _DirectionLedgerStore:
                             "Direction history drifted during atomic promotion exchange"
                         )
                     installed = True
-                    os.unlink(temporary, dir_fd=state_descriptor)
+                    cleanup_entry = previous_entry
                 os.fsync(state_descriptor)
                 self._assert_sink_attached(
                     parent_descriptor,
@@ -1030,9 +1258,40 @@ class _DirectionLedgerStore:
                     after_install,
                     expected_revision,
                     final_content,
+                    temporary_path,
+                    cleanup_entry,
                 ):
                     raise DirectionConflictError(
                         "revision drift invalidated Direction promotion during install"
+                    )
+                try:
+                    self._discard_if_exact(
+                        state_descriptor,
+                        temporary.name,
+                        cleanup_entry,
+                    )
+                except _ExchangeRecoveryError:
+                    preserve_temporary = True
+                    raise
+                temporary_removed = True
+                self._assert_sink_attached(
+                    parent_descriptor,
+                    root_descriptor,
+                    state_descriptor,
+                )
+                final_revision = inspect_revision(self.repository)
+                self._assert_sink_attached(
+                    parent_descriptor,
+                    root_descriptor,
+                    state_descriptor,
+                )
+                if not _matches_installed_ledger(
+                    final_revision,
+                    expected_revision,
+                    final_content,
+                ):
+                    raise DirectionConflictError(
+                        "revision drift invalidated Direction promotion during finalization"
                     )
             except BaseException:
                 if installed:
@@ -1040,19 +1299,28 @@ class _DirectionLedgerStore:
                         self._rollback_install(
                             state_descriptor,
                             previous,
-                            previous_mode,
-                            final_content,
+                            previous_entry,
+                            temporary.entry,
+                            temporary,
                         )
                     except Exception as rollback_error:
+                        if previous is not None or isinstance(
+                            rollback_error,
+                            _ExchangeRecoveryError,
+                        ):
+                            preserve_temporary = True
                         raise DirectionConflictError(
                             "Direction promotion was invalidated and prior history "
                             "could not be restored"
                         ) from rollback_error
                 raise
             finally:
-                if not preserve_temporary:
-                    with suppress(OSError):
-                        self._discard_temporary(state_descriptor, temporary)
+                if not preserve_temporary and not temporary_removed:
+                    self._discard_if_exact(
+                        state_descriptor,
+                        temporary.name,
+                        cleanup_entry,
+                    )
 
 
 @contextmanager

@@ -83,7 +83,7 @@ touchpoint, but remain distinct records:
 Keep both control documents private until the normal project authority permits
 promotion. A missing approval or grant, any decision other than the literal
 `approved`, an edited candidate, a mismatched digest or target, revision drift,
-or an unknown field is refused before a project write.
+or an unknown or duplicate field is refused before a project write.
 
 Promote the reviewed version:
 
@@ -149,6 +149,12 @@ installation, restoring the prior ledger if outside drift invalidates an
 in-flight promotion. Changed
 versions use Linux atomic name exchange inside the verified FS-01 filesystem
 boundary; promotion fails closed when that primitive is unavailable.
+
+If promotion reports that an entry was retained for recovery, stop instead of
+retrying: inspect and reconcile the randomized `.second-mate/.directions.*`
+entry and the durable ledger through the project's normal authority boundary.
+Second Mate preserves an unowned or concurrently displaced entry rather than
+guessing that it is safe to delete.
 
 Schema validation prevents transcript or reasoning fields from entering the
 ledger, but software cannot infer whether prose pasted into the Summary is

@@ -29,13 +29,18 @@ from second_mate.service import (
     restart_run,
     start_run,
 )
-from second_mate.store import StateRecoveryError, deterministic_json_bytes
+from second_mate.store import (
+    StateRecoveryError,
+    StrictJsonError,
+    deterministic_json_bytes,
+    strict_json_loads,
+)
 
 
 def _read_json(path: str) -> object:
     try:
-        return json.loads(Path(path).read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        return strict_json_loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError, StrictJsonError) as error:
         raise ValidationError(f"cannot read JSON document {path}: {error}") from error
 
 

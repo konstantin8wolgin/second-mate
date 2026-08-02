@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import pytest
 from test_preflight import run_git
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -63,6 +64,84 @@ def snapshot(repository: Path) -> tuple[str, dict[str, bytes]]:
 
 def write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    ("ambiguous_document", "field", "contradictory_value"),
+    (
+        ("candidate", "candidate_digest", "0" * 64),
+        ("approval", "decision", "denied"),
+        ("grant", "target_root", "/different/target"),
+    ),
+)
+def test_direction_cli_rejects_duplicate_authority_fields_without_target_write(
+    tmp_path: Path,
+    ambiguous_document: str,
+    field: str,
+    contradictory_value: object,
+) -> None:
+    """Last-key-wins JSON must not turn contradictory authority into approval."""
+    target = tmp_path / "target"
+    control = tmp_path / "private-control"
+    shutil.copytree(FIXTURES / "rumble_direction_target", target)
+    control.mkdir()
+    run_git(target, "init", "-q")
+    run_git(target, "add", ".")
+    run_git(target, "commit", "-q", "-m", "Rumble Direction duplicate fixture")
+    before = snapshot(target)
+    prepared = run_cli(
+        "direction",
+        "prepare",
+        "--target",
+        os.fspath(target),
+        "--summary",
+        os.fspath(FIXTURES / "rumble_direction_operator" / "d01.md"),
+        "--id",
+        "D-01",
+    )
+    candidate = json.loads(prepared.stdout)
+    documents: dict[str, object] = {
+        "candidate": candidate,
+        "approval": approval(candidate, "DA-01"),
+        "grant": promotion_grant(candidate, "DPG-01"),
+    }
+    paths: dict[str, Path] = {}
+    for name, document in documents.items():
+        path = control / f"D-01.{name}.json"
+        if name == ambiguous_document:
+            assert isinstance(document, dict)
+            rendered = json.dumps(document, indent=2, sort_keys=True)
+            valid_fragment = f'  "{field}": {json.dumps(document[field])}'
+            duplicate_fragment = (
+                f'  "{field}": {json.dumps(contradictory_value)},\n{valid_fragment}'
+            )
+            assert rendered.count(valid_fragment) == 1
+            path.write_text(
+                rendered.replace(valid_fragment, duplicate_fragment, 1) + "\n",
+                encoding="utf-8",
+            )
+        else:
+            write_json(path, document)
+        paths[name] = path
+
+    result = run_cli(
+        "direction",
+        "promote",
+        "--target",
+        os.fspath(target),
+        "--candidate",
+        os.fspath(paths["candidate"]),
+        "--approval",
+        os.fspath(paths["approval"]),
+        "--grant",
+        os.fspath(paths["grant"]),
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "duplicate" in result.stderr
+    assert snapshot(target) == before
+    assert not (target / ".second-mate").exists()
 
 
 def test_external_rumble_summary_requires_approval_then_versions_durable_direction(
