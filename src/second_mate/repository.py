@@ -32,6 +32,7 @@ _DEPENDENCY_FILES = frozenset(
 _MANAGED_PATHS = frozenset(
     {STATE_PATH, f"{STATE_PATH}.lock", f"{STATE_PATH}.next", f"{STATE_PATH}.pending"}
 )
+_DIRECTION_LEDGER_PATH = ".second-mate/directions.json"
 
 
 class MutationLockBusyError(RuntimeError):
@@ -204,6 +205,21 @@ def _repository_paths(repository: Path) -> tuple[str, ...]:
         "--exclude-standard",
     )
     paths = {os.fsdecode(item) for item in output.split(b"\0") if item}
+    state_directory = repository / ".second-mate"
+    try:
+        state_metadata = state_directory.lstat()
+    except FileNotFoundError:
+        pass
+    else:
+        if stat.S_ISDIR(state_metadata.st_mode):
+            try:
+                (repository / _DIRECTION_LEDGER_PATH).lstat()
+            except FileNotFoundError:
+                pass
+            else:
+                # Accepted Direction is project authority even if a later local
+                # ignore rule would otherwise hide the untracked ledger from Git.
+                paths.add(_DIRECTION_LEDGER_PATH)
     return tuple(sorted(path for path in paths if path not in _MANAGED_PATHS))
 
 

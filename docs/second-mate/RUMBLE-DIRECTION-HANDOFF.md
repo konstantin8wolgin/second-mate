@@ -140,8 +140,10 @@ grant Execution Consent, permit provider calls, or authorize other mutations.
 Promote Direction before packet preflight: a later Direction promotion changes
 the target fingerprint and correctly invalidates stale preflight and consent.
 Direction state must remain visible to Git; preparation refuses a target whose
-ignore rules hide the ledger. Promotion also refuses while a packet run is open
-and shares its repository-wide mutation lock with dispatch and restart.
+ignore rules hide the ledger. Preflight still fingerprints an existing ledger
+if a later ignore rule appears, so hidden authority drift cannot preserve stale
+consent. Promotion also refuses while a packet run is open and shares its
+repository-wide mutation lock with dispatch and restart.
 
 Schema validation prevents transcript or reasoning fields from entering the
 ledger, but software cannot infer whether prose pasted into the Summary is

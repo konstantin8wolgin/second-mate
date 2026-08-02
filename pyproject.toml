@@ -31,6 +31,7 @@ include = [
   "/README.md",
   "/docs/second-mate/FS-01-OPERATOR.md",
   "/docs/second-mate/RUMBLE-DIRECTION-HANDOFF.md",
+  "/docs/placeholder/foundation-first/rumble-direction-skill.md",
   "/pyproject.toml",
   "/src/second_mate",
   "/tests",

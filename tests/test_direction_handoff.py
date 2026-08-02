@@ -13,7 +13,9 @@ from test_draft import valid_packet
 from test_preflight import make_repository as make_fs01_repository
 
 import second_mate
+import second_mate.direction as direction_module
 from second_mate.domain import digest_json
+from second_mate.repository import inspect_revision
 from second_mate.service import ExecutionResult
 
 
@@ -327,6 +329,43 @@ def test_direction_approval_alone_cannot_authorize_project_write(tmp_path: Path)
     assert not (repository / ".second-mate").exists()
 
 
+@pytest.mark.parametrize(
+    ("field", "invalid_value"),
+    [
+        ("allowed_paths", [".second-mate/directions.json", "README.md"]),
+        ("allowed_effects", ["direction_ledger_write", "arbitrary_project_write"]),
+        ("stop_conditions", ["revision_drift"]),
+    ],
+)
+def test_promotion_grant_cannot_broaden_or_drop_its_fixed_boundary(
+    tmp_path: Path,
+    field: str,
+    invalid_value: list[str],
+) -> None:
+    """Weakening fixed path, effect, or stop conditions must authorize excess mutation."""
+    repository = _make_repository(tmp_path)
+    candidate = second_mate.prepare_direction(
+        repository,
+        "Keep human meaning explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    grant = _promotion_grant(candidate)
+    grant[field] = invalid_value
+    before = _snapshot(repository)
+
+    with pytest.raises(second_mate.ValidationError, match="fixed boundary"):
+        second_mate.promote_direction(
+            repository,
+            candidate.to_json(),
+            _approval(candidate),
+            grant,
+        )
+
+    assert _snapshot(repository) == before
+    assert not (repository / ".second-mate").exists()
+
+
 def test_promotion_authority_is_bound_to_exact_target_and_revision(tmp_path: Path) -> None:
     """Replaying one promotion grant across targets or target drift must never write."""
     repository = _make_repository(tmp_path)
@@ -478,32 +517,57 @@ def test_direction_promotion_refuses_while_durable_packet_run_is_open(tmp_path: 
     assert second_mate.load_direction(repository).id == "D-01"
 
 
-def test_direction_promotion_rejects_symlinked_state_directory(tmp_path: Path) -> None:
+def test_direction_promotion_rejects_symlinked_state_directory_at_write_boundary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Following the state directory must let promotion write outside the target."""
     repository = _make_repository(tmp_path)
+    candidate = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
     outside = tmp_path / "outside"
     outside.mkdir()
     (repository / ".second-mate").symlink_to(outside, target_is_directory=True)
+    revision = inspect_revision(repository)
+    candidate_data = candidate.to_json()
+    promotion_basis = candidate_data["promotion_basis"]
+    assert isinstance(promotion_basis, dict)
+    promotion_basis["target_head"] = revision.head
+    promotion_basis["target_fingerprint"] = revision.fingerprint
+    grant = _promotion_grant(candidate)
+    grant["target_head"] = revision.head
+    grant["target_fingerprint"] = revision.fingerprint
+    monkeypatch.setattr(direction_module, "repository_path_is_ignored", lambda *_: False)
 
     with pytest.raises(second_mate.ValidationError, match="symlink"):
-        second_mate.prepare_direction(
+        second_mate.promote_direction(
             repository,
-            "Keep authority explicit.\n",
-            direction_id="D-01",
-            change_note=None,
+            candidate_data,
+            _approval(candidate),
+            grant,
         )
 
     assert not (outside / "directions.json").exists()
 
 
-def test_direction_promotion_rejects_symlinked_temporary_path(tmp_path: Path) -> None:
-    """Following a predictable temporary symlink must let promotion overwrite outside data."""
+def test_direction_promotion_rejects_actual_temporary_symlink_without_overwrite(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Dropping exclusive no-follow creation must overwrite the chosen outside target."""
     repository = _make_repository(tmp_path)
     state_directory = repository / ".second-mate"
     state_directory.mkdir()
     victim = tmp_path / "outside-victim.txt"
     victim.write_text("outside bytes must remain\n", encoding="utf-8")
-    (state_directory / "directions.json.next").symlink_to(victim)
+    token = "ab" * 12
+    temporary = state_directory / f".directions.json.{token}.next"
+    temporary.symlink_to(victim)
+    monkeypatch.setattr(direction_module.secrets, "token_hex", lambda _size: token)
     candidate = second_mate.prepare_direction(
         repository,
         "Keep authority explicit.\n",
@@ -511,7 +575,7 @@ def test_direction_promotion_rejects_symlinked_temporary_path(tmp_path: Path) ->
         change_note=None,
     )
 
-    with pytest.raises(second_mate.ValidationError, match="symlink"):
+    with pytest.raises(second_mate.DirectionConflictError, match="temporary"):
         second_mate.promote_direction(
             repository,
             candidate.to_json(),
@@ -521,6 +585,60 @@ def test_direction_promotion_rejects_symlinked_temporary_path(tmp_path: Path) ->
 
     assert victim.read_text(encoding="utf-8") == "outside bytes must remain\n"
     assert not (state_directory / "directions.json").exists()
+
+
+def test_direction_promotion_rejects_symlinked_final_ledger_without_outside_write(
+    tmp_path: Path,
+) -> None:
+    """Following a final-ledger symlink must treat outside history as project authority."""
+    source_parent = tmp_path / "source"
+    source_parent.mkdir()
+    source = _make_repository(source_parent)
+    source_candidate = second_mate.prepare_direction(
+        source,
+        "Outside bytes must remain exact.\n",
+        direction_id="D-OUTSIDE",
+        change_note=None,
+    )
+    second_mate.promote_direction(
+        source,
+        source_candidate.to_json(),
+        _approval(source_candidate, approval_id="DA-OUTSIDE"),
+        _promotion_grant(source_candidate, grant_id="DPG-OUTSIDE"),
+    )
+    victim = source / ".second-mate" / "directions.json"
+    victim_bytes = victim.read_bytes()
+
+    repository = _make_repository(tmp_path)
+    candidate = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    state_directory = repository / ".second-mate"
+    state_directory.mkdir()
+    (state_directory / "directions.json").symlink_to(victim)
+    revision = inspect_revision(repository)
+    candidate_data = candidate.to_json()
+    promotion_basis = candidate_data["promotion_basis"]
+    assert isinstance(promotion_basis, dict)
+    promotion_basis["target_head"] = revision.head
+    promotion_basis["target_fingerprint"] = revision.fingerprint
+    grant = _promotion_grant(candidate)
+    grant["target_head"] = revision.head
+    grant["target_fingerprint"] = revision.fingerprint
+
+    with pytest.raises(second_mate.ValidationError, match="symlink"):
+        second_mate.promote_direction(
+            repository,
+            candidate_data,
+            _approval(candidate),
+            grant,
+        )
+
+    assert victim.read_bytes() == victim_bytes
+    assert (state_directory / "directions.json").is_symlink()
 
 
 def test_direction_prepare_refuses_project_authority_ignored_by_git(tmp_path: Path) -> None:
@@ -585,3 +703,42 @@ def test_new_direction_after_preflight_invalidates_stale_execution_consent(tmp_p
 
     assert executor.requests == []
     assert not (repository / ".second-mate" / "state.json").exists()
+
+
+def test_approved_direction_remains_in_preflight_after_late_ignore_rule(tmp_path: Path) -> None:
+    """Excluding an accepted ledger later must not hide forged authority from preflight."""
+    repository = make_fs01_repository(tmp_path)
+    candidate = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    promoted = second_mate.promote_direction(
+        repository,
+        candidate.to_json(),
+        _approval(candidate),
+        _promotion_grant(candidate),
+    )
+    (repository / ".gitignore").write_text(".second-mate/\n", encoding="utf-8")
+    _run_git(repository, "add", ".gitignore")
+    _run_git(repository, "commit", "-q", "-m", "late ignore rule")
+    draft = second_mate.create_draft(promoted.direction.to_json(), valid_packet())
+    before = second_mate.preflight(draft, repository)
+
+    ledger_path = repository / ".second-mate" / "directions.json"
+    ledger = json.loads(ledger_path.read_bytes())
+    version = ledger["versions"][0]
+    version["approval"]["approved_by"] = "forged-human"
+    version["direction"]["approval"]["approved_by"] = "forged-human"
+    version["direction_digest"] = digest_json(version["direction"])
+    ledger_path.write_text(
+        json.dumps(ledger, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    assert second_mate.load_direction(repository).approval.approved_by == "forged-human"
+    after = second_mate.preflight(draft, repository)
+
+    assert any(fact.path == ".second-mate/directions.json" for fact in before.record.revision.files)
+    assert after.record.revision.fingerprint != before.record.revision.fingerprint
+    assert after.digest != before.digest

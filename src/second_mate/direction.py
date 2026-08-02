@@ -550,12 +550,17 @@ class _DirectionLedgerStore:
     @staticmethod
     def _write_temporary(state_descriptor: int, content: bytes) -> str:
         temporary = f".directions.json.{secrets.token_hex(12)}.next"
-        descriptor = os.open(
-            temporary,
-            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
-            0o644,
-            dir_fd=state_descriptor,
-        )
+        try:
+            descriptor = os.open(
+                temporary,
+                os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                0o644,
+                dir_fd=state_descriptor,
+            )
+        except FileExistsError as error:
+            raise DirectionConflictError(
+                "secure Direction temporary path already exists"
+            ) from error
         try:
             with os.fdopen(descriptor, "wb", closefd=False) as stream:
                 stream.write(content)
