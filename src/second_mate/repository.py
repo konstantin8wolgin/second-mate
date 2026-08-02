@@ -150,6 +150,11 @@ def _repository_root(repository: Path) -> Path:
     return root
 
 
+def repository_root(repository: Path) -> Path:
+    """Resolve and validate that a target path is exactly a Git worktree root."""
+    return _repository_root(repository)
+
+
 def _repository_paths(repository: Path) -> tuple[str, ...]:
     output = _git(
         repository,

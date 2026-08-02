@@ -203,6 +203,11 @@ def _parse_direction(value: object) -> Direction:
     )
 
 
+def direction_from_json(value: object) -> Direction:
+    """Validate an approved Direction document in the existing schema."""
+    return _parse_direction(value)
+
+
 def _parse_packet(value: object) -> Packet:
     data = _object(value, "packet")
     _exact_keys(

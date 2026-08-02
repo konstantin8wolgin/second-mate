@@ -30,6 +30,7 @@ include = [
   "/.gitignore",
   "/README.md",
   "/docs/second-mate/FS-01-OPERATOR.md",
+  "/docs/second-mate/RUMBLE-DIRECTION-HANDOFF.md",
   "/pyproject.toml",
   "/src/second_mate",
   "/tests",
