@@ -1,4 +1,5 @@
 .worktrees/
+__pycache__/
 .venv/
 .cache/uv/
 .pytest_cache/
