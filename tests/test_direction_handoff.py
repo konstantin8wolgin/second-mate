@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
+import stat
 import subprocess
 import threading
 from pathlib import Path
@@ -639,6 +640,214 @@ def test_direction_promotion_rejects_symlinked_final_ledger_without_outside_writ
 
     assert victim.read_bytes() == victim_bytes
     assert (state_directory / "directions.json").is_symlink()
+
+
+def test_direction_promotion_refuses_detached_state_directory_before_install(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Trusting only an open directory fd must let a rename redirect the final ledger."""
+    repository = _make_repository(tmp_path)
+    state_directory = repository / ".second-mate"
+    state_directory.mkdir()
+    candidate = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    detached = tmp_path / "detached-state"
+    original_write_temporary = direction_module._DirectionLedgerStore._write_temporary
+
+    def write_then_detach(state_descriptor: int, content: bytes) -> str:
+        temporary = original_write_temporary(state_descriptor, content)
+        state_directory.rename(detached)
+        return temporary
+
+    monkeypatch.setattr(
+        direction_module._DirectionLedgerStore,
+        "_write_temporary",
+        staticmethod(write_then_detach),
+    )
+
+    with pytest.raises(second_mate.DirectionConflictError, match="state directory"):
+        second_mate.promote_direction(
+            repository,
+            candidate.to_json(),
+            _approval(candidate),
+            _promotion_grant(candidate),
+        )
+
+    assert not (repository / ".second-mate" / "directions.json").exists()
+    assert not (detached / "directions.json").exists()
+    assert list(detached.iterdir()) == []
+
+
+def test_direction_promotion_refuses_revision_drift_after_temporary_write(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Checking revision only before save must let drift precede ledger installation."""
+    repository = _make_repository(tmp_path)
+    state_directory = repository / ".second-mate"
+    state_directory.mkdir()
+    candidate = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    original_write_temporary = direction_module._DirectionLedgerStore._write_temporary
+
+    def write_then_drift(state_descriptor: int, content: bytes) -> str:
+        temporary = original_write_temporary(state_descriptor, content)
+        (repository / "README.md").write_text("Drift after temporary write.\n", encoding="utf-8")
+        return temporary
+
+    monkeypatch.setattr(
+        direction_module._DirectionLedgerStore,
+        "_write_temporary",
+        staticmethod(write_then_drift),
+    )
+
+    with pytest.raises(second_mate.DirectionConflictError, match="revision drift"):
+        second_mate.promote_direction(
+            repository,
+            candidate.to_json(),
+            _approval(candidate),
+            _promotion_grant(candidate),
+        )
+
+    assert not (state_directory / "directions.json").exists()
+    assert not list(state_directory.glob(".directions.json.*.next"))
+
+
+def test_direction_promotion_rolls_back_if_revision_drifts_during_install(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Omitting post-install validation must certify a ledger after outside drift."""
+    repository = _make_repository(tmp_path)
+    state_directory = repository / ".second-mate"
+    state_directory.mkdir()
+    candidate = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    original_link = direction_module.os.link
+
+    def link_then_drift(*args: object, **kwargs: object) -> None:
+        original_link(*args, **kwargs)
+        (repository / "README.md").write_text("Drift during install.\n", encoding="utf-8")
+
+    monkeypatch.setattr(direction_module.os, "link", link_then_drift)
+
+    with pytest.raises(second_mate.DirectionConflictError, match="revision drift"):
+        second_mate.promote_direction(
+            repository,
+            candidate.to_json(),
+            _approval(candidate),
+            _promotion_grant(candidate),
+        )
+
+    assert not (state_directory / "directions.json").exists()
+    assert not list(state_directory.glob(".directions.json.*.next"))
+
+
+def test_changed_direction_rollback_restores_exact_previous_ledger(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Rolling back only an initial install must let invalid D-02 replace D-01 history."""
+    repository = _make_repository(tmp_path)
+    first_candidate = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    second_mate.promote_direction(
+        repository,
+        first_candidate.to_json(),
+        _approval(first_candidate),
+        _promotion_grant(first_candidate),
+    )
+    ledger_path = repository / ".second-mate" / "directions.json"
+    first_bytes = ledger_path.read_bytes()
+    second_candidate = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit and preserve rollback truth.\n",
+        direction_id="D-02",
+        change_note="Preserve rollback truth.",
+    )
+    original_replace = direction_module.os.replace
+    install_count = 0
+
+    def replace_then_drift(*args: object, **kwargs: object) -> None:
+        nonlocal install_count
+        original_replace(*args, **kwargs)
+        install_count += 1
+        if install_count == 1:
+            (repository / "README.md").write_text(
+                "Drift during changed-Direction install.\n",
+                encoding="utf-8",
+            )
+
+    monkeypatch.setattr(direction_module.os, "replace", replace_then_drift)
+
+    with pytest.raises(second_mate.DirectionConflictError, match="revision drift"):
+        second_mate.promote_direction(
+            repository,
+            second_candidate.to_json(),
+            _approval(second_candidate, approval_id="DA-02"),
+            _promotion_grant(second_candidate, grant_id="DPG-02"),
+        )
+
+    assert install_count == 2
+    assert ledger_path.read_bytes() == first_bytes
+    assert second_mate.load_direction(repository).id == "D-01"
+
+
+def test_direction_temporary_is_removed_when_file_fsync_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Leaving a failed randomized temp must poison retry with unrelated revision drift."""
+    repository = _make_repository(tmp_path)
+    state_directory = repository / ".second-mate"
+    state_directory.mkdir()
+    candidate = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    original_fsync = direction_module.os.fsync
+    failed = False
+
+    def fail_temporary_fsync(descriptor: int) -> None:
+        nonlocal failed
+        metadata = direction_module.os.fstat(descriptor)
+        if not failed and stat.S_ISREG(metadata.st_mode):
+            failed = True
+            raise OSError("fixture temporary fsync failure")
+        original_fsync(descriptor)
+
+    monkeypatch.setattr(direction_module.os, "fsync", fail_temporary_fsync)
+
+    with pytest.raises(second_mate.DirectionConflictError, match="temporary"):
+        second_mate.promote_direction(
+            repository,
+            candidate.to_json(),
+            _approval(candidate),
+            _promotion_grant(candidate),
+        )
+
+    assert failed is True
+    assert not (state_directory / "directions.json").exists()
+    assert not list(state_directory.glob(".directions.json.*.next"))
 
 
 def test_direction_prepare_refuses_project_authority_ignored_by_git(tmp_path: Path) -> None:

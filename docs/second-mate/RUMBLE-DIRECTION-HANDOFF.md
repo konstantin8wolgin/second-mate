@@ -143,7 +143,9 @@ Direction state must remain visible to Git; preparation refuses a target whose
 ignore rules hide the ledger. Preflight still fingerprints an existing ledger
 if a later ignore rule appears, so hidden authority drift cannot preserve stale
 consent. Promotion also refuses while a packet run is open and shares its
-repository-wide mutation lock with dispatch and restart.
+repository-wide mutation lock with dispatch and restart. It rechecks target
+revision and state-directory identity around ledger installation, restoring
+the prior ledger if outside drift invalidates an in-flight promotion.
 
 Schema validation prevents transcript or reasoning fields from entering the
 ledger, but software cannot infer whether prose pasted into the Summary is

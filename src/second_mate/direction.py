@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -22,7 +23,9 @@ from second_mate.domain import (
     direction_from_json,
 )
 from second_mate.repository import (
+    FileFact,
     MutationLockBusyError,
+    TargetRevision,
     inspect_revision,
     mutation_lock,
     repository_path_is_ignored,
@@ -40,6 +43,35 @@ _STOP_CONDITIONS = ("revision_drift", "direction_history_drift")
 
 class DirectionConflictError(RuntimeError):
     """A promotion would replace or branch immutable Direction history."""
+
+
+def _same_revision_except(
+    current: TargetRevision,
+    expected: TargetRevision,
+    excluded_paths: frozenset[str],
+) -> bool:
+    current_facts = tuple(item for item in current.files if item.path not in excluded_paths)
+    expected_facts = tuple(item for item in expected.files if item.path not in excluded_paths)
+    return current.head == expected.head and current_facts == expected_facts
+
+
+def _matches_installed_ledger(
+    current: TargetRevision,
+    before: TargetRevision,
+    ledger_content: bytes,
+) -> bool:
+    excluded = frozenset({_LEDGER_PATH.as_posix()})
+    if not _same_revision_except(current, before, excluded):
+        return False
+    ledger_facts = tuple(item for item in current.files if item.path in excluded)
+    return ledger_facts == (
+        FileFact(
+            path=_LEDGER_PATH.as_posix(),
+            kind="file",
+            sha256=hashlib.sha256(ledger_content).hexdigest(),
+            executable=False,
+        ),
+    )
 
 
 def _direction_id(value: str) -> str:
@@ -488,8 +520,32 @@ class _DirectionLedgerStore:
             return False
         return True
 
+    @staticmethod
+    def _assert_state_directory_attached(
+        root_descriptor: int,
+        state_descriptor: int,
+    ) -> None:
+        try:
+            path_metadata = os.stat(
+                ".second-mate",
+                dir_fd=root_descriptor,
+                follow_symlinks=False,
+            )
+        except OSError as error:
+            raise DirectionConflictError(
+                "Direction state directory is no longer attached to the target"
+            ) from error
+        opened_metadata = os.fstat(state_descriptor)
+        if not stat.S_ISDIR(path_metadata.st_mode) or (
+            path_metadata.st_dev,
+            path_metadata.st_ino,
+        ) != (opened_metadata.st_dev, opened_metadata.st_ino):
+            raise DirectionConflictError(
+                "Direction state directory is no longer attached to the target"
+            )
+
     @contextmanager
-    def _state_directory(self, *, create: bool) -> Iterator[int]:
+    def _state_directory(self, *, create: bool) -> Iterator[tuple[int, int]]:
         directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
         root_descriptor = os.open(self.repository, directory_flags)
         state_descriptor: int | None = None
@@ -510,7 +566,8 @@ class _DirectionLedgerStore:
                 raise ValidationError(
                     "Direction state directory must be a real directory, not a symlink"
                 ) from error
-            yield state_descriptor
+            self._assert_state_directory_attached(root_descriptor, state_descriptor)
+            yield root_descriptor, state_descriptor
         finally:
             if state_descriptor is not None:
                 os.close(state_descriptor)
@@ -566,13 +623,32 @@ class _DirectionLedgerStore:
                 stream.write(content)
                 stream.flush()
                 os.fsync(stream.fileno())
+        except OSError as error:
+            with suppress(OSError):
+                os.close(descriptor)
+            with suppress(OSError):
+                os.unlink(temporary, dir_fd=state_descriptor)
+            with suppress(OSError):
+                os.fsync(state_descriptor)
+            raise DirectionConflictError(
+                "cannot durably write secure Direction temporary file"
+            ) from error
+        except BaseException:
+            with suppress(OSError):
+                os.close(descriptor)
+            with suppress(OSError):
+                os.unlink(temporary, dir_fd=state_descriptor)
+            with suppress(OSError):
+                os.fsync(state_descriptor)
+            raise
         finally:
-            os.close(descriptor)
+            with suppress(OSError):
+                os.close(descriptor)
         return temporary
 
     def load(self) -> DirectionLedger:
         try:
-            with self._state_directory(create=False) as state_descriptor:
+            with self._state_directory(create=False) as (_, state_descriptor):
                 raw = json.loads(self._read_content(state_descriptor).decode("utf-8"))
         except (OSError, UnicodeError, json.JSONDecodeError) as error:
             raise ValidationError(f"cannot read Direction ledger: {error}") from error
@@ -581,7 +657,7 @@ class _DirectionLedgerStore:
     def has_open_run(self) -> bool:
         if not (self.repository / ".second-mate").exists():
             return False
-        with self._state_directory(create=False) as state_descriptor:
+        with self._state_directory(create=False) as (_, state_descriptor):
             try:
                 descriptor = os.open(
                     "state.json",
@@ -605,9 +681,49 @@ class _DirectionLedgerStore:
             raise ValidationError("run state closed status is invalid")
         return not raw["closed"]
 
-    def save(self, previous: DirectionLedger | None, ledger: DirectionLedger) -> None:
+    @staticmethod
+    def _discard_temporary(state_descriptor: int, temporary: str) -> None:
+        try:
+            os.unlink(temporary, dir_fd=state_descriptor)
+        except FileNotFoundError:
+            return
+        os.fsync(state_descriptor)
+
+    def _rollback_install(
+        self,
+        state_descriptor: int,
+        previous: DirectionLedger | None,
+        installed_content: bytes,
+    ) -> None:
+        if self._read_content(state_descriptor) != installed_content:
+            raise DirectionConflictError(
+                "installed Direction changed before invalid promotion could roll back"
+            )
+        if previous is None:
+            os.unlink("directions.json", dir_fd=state_descriptor)
+        else:
+            rollback_content = deterministic_document_bytes(previous)
+            rollback_temporary = self._write_temporary(state_descriptor, rollback_content)
+            try:
+                os.replace(
+                    rollback_temporary,
+                    "directions.json",
+                    src_dir_fd=state_descriptor,
+                    dst_dir_fd=state_descriptor,
+                )
+            finally:
+                with suppress(OSError):
+                    self._discard_temporary(state_descriptor, rollback_temporary)
+        os.fsync(state_descriptor)
+
+    def save(
+        self,
+        previous: DirectionLedger | None,
+        ledger: DirectionLedger,
+        expected_revision: TargetRevision,
+    ) -> None:
         final_content = deterministic_document_bytes(ledger)
-        with self._state_directory(create=True) as state_descriptor:
+        with self._state_directory(create=True) as (root_descriptor, state_descriptor):
             self._reject_legacy_temporary_symlink(state_descriptor)
             if previous is None:
                 try:
@@ -628,7 +744,20 @@ class _DirectionLedgerStore:
                 raise DirectionConflictError("approved Direction history changed during promotion")
 
             temporary = self._write_temporary(state_descriptor, final_content)
+            installed = False
             try:
+                self._assert_state_directory_attached(root_descriptor, state_descriptor)
+                before_install = inspect_revision(self.repository)
+                self._assert_state_directory_attached(root_descriptor, state_descriptor)
+                temporary_path = f".second-mate/{temporary}"
+                if not _same_revision_except(
+                    before_install,
+                    expected_revision,
+                    frozenset({temporary_path}),
+                ):
+                    raise DirectionConflictError(
+                        "revision drift invalidated Direction promotion before install"
+                    )
                 if previous is None:
                     try:
                         os.link(
@@ -642,6 +771,7 @@ class _DirectionLedgerStore:
                         raise DirectionConflictError(
                             "approved Direction history appeared during promotion"
                         ) from error
+                    installed = True
                     os.unlink(temporary, dir_fd=state_descriptor)
                 else:
                     os.replace(
@@ -650,10 +780,32 @@ class _DirectionLedgerStore:
                         src_dir_fd=state_descriptor,
                         dst_dir_fd=state_descriptor,
                     )
+                    installed = True
                 os.fsync(state_descriptor)
+                self._assert_state_directory_attached(root_descriptor, state_descriptor)
+                after_install = inspect_revision(self.repository)
+                self._assert_state_directory_attached(root_descriptor, state_descriptor)
+                if not _matches_installed_ledger(
+                    after_install,
+                    expected_revision,
+                    final_content,
+                ):
+                    raise DirectionConflictError(
+                        "revision drift invalidated Direction promotion during install"
+                    )
+            except BaseException:
+                if installed:
+                    try:
+                        self._rollback_install(state_descriptor, previous, final_content)
+                    except Exception as rollback_error:
+                        raise DirectionConflictError(
+                            "Direction promotion was invalidated and prior history "
+                            "could not be restored"
+                        ) from rollback_error
+                raise
             finally:
-                with suppress(FileNotFoundError):
-                    os.unlink(temporary, dir_fd=state_descriptor)
+                with suppress(OSError):
+                    self._discard_temporary(state_descriptor, temporary)
 
 
 @contextmanager
@@ -802,7 +954,7 @@ def promote_direction(
         ledger = DirectionLedger(
             versions=(version,) if previous is None else (*previous.versions, version)
         )
-        store.save(previous, ledger)
+        store.save(previous, ledger, current_revision)
     return version
 
 
