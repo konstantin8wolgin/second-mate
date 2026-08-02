@@ -107,10 +107,18 @@ uv run second-mate evidence --target "$FS01_TARGET" \
   > .tmp/fs01/control/evidence.json
 ```
 
-The fixed probe compares `artifact.txt` with the declared after value, compares
-the sentinel hash with preflight, checks the executor's one changed path, and
-binds the result to a fresh target fingerprint. A failed observation leaves the
-route open with Packet recovery pressure.
+The fixed probe compares the full target snapshot with preflight and permits
+exactly the declared `artifact.txt` change. It also compares the artifact with
+the declared after value, compares the sentinel hash with preflight, checks the
+executor's one changed path, and binds the result to a fresh target fingerprint.
+An instruction change or any unrelated tracked or untracked file fails evidence
+and blocks close.
+
+A failed observation leaves the route open with Packet recovery pressure. After
+repairing only the bounded target drift, run the same `evidence` command again.
+It re-probes the existing run without invoking the executor, retains the failed
+observation, and appends the repaired result. It becomes ready to close only
+when the latest observation passes.
 
 Close only passing evidence, and state Direction coverage explicitly rather
 than inferring it from route completion:

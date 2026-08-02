@@ -141,3 +141,50 @@ def test_close_failure_recovers_from_old_truthful_state_to_whole_final_state(
     assert recovered.recovery_pressure == "none"
     assert recovered.handoff == "Recover this journal before any continuation."
     assert not state_path.with_name("state.json.pending").exists()
+
+
+def test_failed_evidence_retries_after_bounded_repair_without_redispatch(tmp_path: Path) -> None:
+    """Blocking a repaired re-probe or invoking the executor again must fail recovery."""
+    repository = make_repository(tmp_path)
+    draft = second_mate.create_draft(valid_direction(), valid_packet())
+    basis = second_mate.preflight(draft, repository)
+    executor = CountingFixtureExecutor()
+    second_mate.start_run(
+        draft=draft,
+        basis=basis,
+        grant_data=exact_grant(draft, basis),
+        repository=repository,
+        executor=executor,
+        owner_id="owner-1",
+    )
+    sentinel_path = repository / "sentinel.txt"
+    sentinel_before = sentinel_path.read_bytes()
+    sentinel_path.write_text("temporary out-of-boundary drift\n", encoding="utf-8")
+
+    failed = second_mate.record_evidence(repository)
+
+    assert executor.invocation_count == 1
+    assert failed.closed is False
+    assert failed.route_status == "ready"
+    assert failed.run.phase == "evidence_failed"
+    assert failed.recovery_pressure == "packet"
+    assert [item["result"] for item in failed.evidence] == ["fail"]
+    sentinel_path.write_bytes(sentinel_before)
+
+    repaired = second_mate.record_evidence(repository)
+
+    assert executor.invocation_count == 1
+    assert repaired.closed is False
+    assert repaired.route_status == "ready"
+    assert repaired.run.phase == "ready_to_close"
+    assert repaired.recovery_pressure == "none"
+    assert [item["result"] for item in repaired.evidence] == ["fail", "pass"]
+    closed = second_mate.clean_close(
+        repository,
+        direction_coverage="still_remaining",
+        residual_uncertainty=("The repaired evidence failure remains recorded.",),
+        handoff="Bounded evidence recovery completed without redispatch.",
+    )
+    assert closed.closed is True
+    assert closed.route_status == "completed"
+    assert [item["result"] for item in closed.evidence] == ["fail", "pass"]

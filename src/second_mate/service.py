@@ -14,6 +14,7 @@ from typing import Never, Protocol, cast
 from second_mate.domain import Draft, JsonObject, JsonValue, ValidationError, draft_from_json
 from second_mate.repository import (
     PreflightEnvelope,
+    TargetRevision,
     git_private_path,
     inspect_revision,
     preflight_from_json,
@@ -357,8 +358,7 @@ def _request_for(state: RunState, repository: Path) -> ExecutionRequest:
     )
 
 
-def _is_exact_fixture_after(state: RunState, repository: Path) -> bool:
-    current = inspect_revision(repository)
+def _revision_is_exact_fixture_after(state: RunState, current: TargetRevision) -> bool:
     before = state.basis.record.revision
     if current.head != before.head:
         return False
@@ -370,16 +370,22 @@ def _is_exact_fixture_after(state: RunState, repository: Path) -> bool:
     for path, before_fact in before_files.items():
         current_fact = current_files[path]
         if path == artifact_path:
-            if current_fact.kind != "file" or current_fact.executable != before_fact.executable:
+            expected_sha256 = hashlib.sha256(
+                state.draft.packet.proof.after.encode("utf-8")
+            ).hexdigest()
+            if (
+                current_fact.kind != "file"
+                or current_fact.executable != before_fact.executable
+                or current_fact.sha256 != expected_sha256
+            ):
                 return False
         elif current_fact != before_fact:
             return False
-    try:
-        return (repository / artifact_path).read_text(
-            encoding="utf-8"
-        ) == state.draft.packet.proof.after
-    except (OSError, UnicodeError):
-        return False
+    return True
+
+
+def _is_exact_fixture_after(state: RunState, repository: Path) -> bool:
+    return _revision_is_exact_fixture_after(state, inspect_revision(repository))
 
 
 def _record_dispatch_failure(
@@ -483,9 +489,13 @@ def _restart_run_locked(repository: Path, executor: Executor, *, owner_id: str) 
 def record_evidence(repository: Path) -> RunState:
     """Probe the exact after revision and persist one claim-fit fixture evidence record."""
     state = load_state(repository)
-    if state.run.phase == "ready_to_close" and len(state.evidence) == 1:
+    if (
+        state.run.phase == "ready_to_close"
+        and state.evidence
+        and state.evidence[-1]["result"] == "pass"
+    ):
         return state
-    if state.closed or state.run.phase != "awaiting_evidence":
+    if state.closed or state.run.phase not in {"awaiting_evidence", "evidence_failed"}:
         raise RunConflictError(f"run phase {state.run.phase} cannot record evidence")
     proof = state.draft.packet.proof
     failures: list[JsonValue] = []
@@ -511,10 +521,15 @@ def record_evidence(repository: Path) -> RunState:
     if changed_paths != (proof.artifact_path,):
         failures.append("executor result does not identify exactly the granted artifact")
     revision = inspect_revision(repository)
+    revision_matches_authority = _revision_is_exact_fixture_after(state, revision)
+    if not revision_matches_authority:
+        failures.append(
+            "target revision is not preflight plus exactly the authorized artifact mutation"
+        )
     result = "pass" if not failures else "fail"
     evidence: JsonObject = {
         "claim": state.draft.packet.outcome,
-        "id": f"{state.draft.packet.id}-fixture-evidence",
+        "id": f"{state.draft.packet.id}-fixture-evidence-{len(state.evidence) + 1}",
         "method": "fixture-probe",
         "observation": {
             "artifact_path": proof.artifact_path,
@@ -528,6 +543,7 @@ def record_evidence(repository: Path) -> RunState:
             "failures": failures,
             "sentinel_path": proof.sentinel_path,
             "sentinel_sha256": sentinel_sha256,
+            "target_revision_matches_authority": revision_matches_authority,
         },
         "result": result,
         "target_revision": revision.to_json(),
@@ -543,7 +559,7 @@ def record_evidence(repository: Path) -> RunState:
                 else "repair claim-fit fixture evidence without broadening the packet"
             ),
         ),
-        evidence=(evidence,),
+        evidence=(*state.evidence, evidence),
         recovery_pressure="none" if result == "pass" else "packet",
         handoff=(
             "Claim-fit fixture evidence passed at the recorded target revision."
@@ -572,9 +588,9 @@ def clean_close(
     state = load_state(repository)
     if state.closed:
         return state
-    if state.run.phase != "ready_to_close" or len(state.evidence) != 1:
+    if state.run.phase != "ready_to_close" or not state.evidence:
         raise RunConflictError("passing claim-fit evidence is required before clean close")
-    evidence = _state_object(state.evidence[0], "evidence item")
+    evidence = _state_object(state.evidence[-1], "evidence item")
     if evidence.get("result") != "pass":
         raise RunConflictError("failed or uncertain evidence cannot complete the route")
     if direction_coverage not in _DIRECTION_COVERAGE:

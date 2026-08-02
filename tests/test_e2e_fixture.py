@@ -154,3 +154,72 @@ def test_clean_fixture_cli_replays_refusal_execution_evidence_and_close(tmp_path
     state_bytes = (target / ".second-mate" / "state.json").read_bytes()
     assert b"FIXTURE_SECRET_DO_NOT_COPY" not in state_bytes
     assert run_git(target, "diff", "--", "sentinel.txt", "probe.py") == ""
+
+
+def test_cli_rejects_instruction_drift_between_dispatch_and_evidence(tmp_path: Path) -> None:
+    """Certifying a post-dispatch instruction change must fail this final-revision journey."""
+    target = tmp_path / "target"
+    control = tmp_path / "control"
+    shutil.copytree(FIXTURES / "fs01_target", target)
+    control.mkdir()
+    run_git(target, "init", "-q")
+    run_git(target, "add", ".")
+    run_git(target, "commit", "-q", "-m", "permanent FS-01 fixture")
+
+    draft_result = run_cli(
+        "draft",
+        "--direction",
+        os.fspath(FIXTURES / "fs01_operator" / "direction.json"),
+        "--packet",
+        os.fspath(FIXTURES / "fs01_operator" / "packet.json"),
+    )
+    draft_path = control / "draft.json"
+    draft_path.write_text(draft_result.stdout, encoding="utf-8")
+    draft = json.loads(draft_result.stdout)
+    preflight_result = run_cli(
+        "preflight", "--target", os.fspath(target), "--draft", os.fspath(draft_path)
+    )
+    preflight_path = control / "preflight.json"
+    preflight_path.write_text(preflight_result.stdout, encoding="utf-8")
+    basis = json.loads(preflight_result.stdout)
+    grant_path = control / "grant.json"
+    grant_path.write_text(
+        json.dumps(fixture_grant(draft, basis), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    run_cli(
+        "start",
+        "--target",
+        os.fspath(target),
+        "--draft",
+        os.fspath(draft_path),
+        "--preflight",
+        os.fspath(preflight_path),
+        "--grant",
+        os.fspath(grant_path),
+        "--owner",
+        "owner-1",
+        "--executor",
+        "fixture",
+    )
+    (target / "AGENTS.md").write_text("Instructions changed after dispatch.\n", encoding="utf-8")
+
+    evidence = json.loads(run_cli("evidence", "--target", os.fspath(target)).stdout)
+
+    assert evidence["evidence"][0]["result"] == "fail"
+    assert evidence["evidence"][0]["observation"]["target_revision_matches_authority"] is False
+    denied_close = run_cli(
+        "close",
+        "--target",
+        os.fspath(target),
+        "--direction-coverage",
+        "still_remaining",
+        "--handoff",
+        "Instruction drift must be repaired before close.",
+        check=False,
+    )
+    assert denied_close.returncode != 0
+    durable = json.loads(run_cli("show", "--target", os.fspath(target)).stdout)
+    assert durable["closed"] is False
+    assert durable["route_status"] == "ready"
+    assert durable["run"]["phase"] == "evidence_failed"
