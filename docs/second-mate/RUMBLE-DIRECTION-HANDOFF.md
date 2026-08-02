@@ -39,8 +39,11 @@ uv run second-mate direction prepare \
 
 Review the exact `candidate.text`, `candidate_digest`, and read-only
 `promotion_basis` in that output. The basis identifies the target root, Git
-head, and full visible-revision fingerprint. Any edit to the text or target
-requires running `prepare` again.
+head, and full Direction-authorization fingerprint. That fingerprint includes
+the complete validated durable run state when one exists, even though packet
+runtime state remains excluded from ordinary project-revision fingerprints.
+Any edit to the text or target, or any run-state transition, requires running
+`prepare` again.
 
 ## Record explicit human approval
 
@@ -149,6 +152,10 @@ installation, restoring the prior ledger if outside drift invalidates an
 in-flight promotion. Changed
 versions use Linux atomic name exchange inside the verified FS-01 filesystem
 boundary; promotion fails closed when that primitive is unavailable.
+An unresolved `state.json.pending` close journal blocks promotion until normal
+run recovery completes. A ledger recorded by the Git index or current `HEAD`
+also cannot disappear and be treated as a new initial Direction; recover the
+recorded immutable history before preparing another version.
 
 If promotion reports that an entry was retained for recovery, stop instead of
 retrying: inspect and reconcile the randomized `.second-mate/.directions.*`

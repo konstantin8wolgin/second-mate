@@ -11,7 +11,7 @@ from test_execution import CountingFixtureExecutor
 from test_preflight import make_repository
 
 import second_mate
-from second_mate.store import FileStateStore, PosixAtomicWriter
+from second_mate.store import FileStateStore, PosixAtomicWriter, StateRecoveryError
 
 
 def executed_repository(tmp_path: Path) -> Path:
@@ -141,6 +141,70 @@ def test_close_failure_recovers_from_old_truthful_state_to_whole_final_state(
     assert recovered.recovery_pressure == "none"
     assert recovered.handoff == "Recover this journal before any continuation."
     assert not state_path.with_name("state.json.pending").exists()
+
+
+def test_close_recovery_rejects_contradictory_duplicate_journal_fields(
+    tmp_path: Path,
+) -> None:
+    """Last-key-wins decoding must not authorize an ambiguous recovery journal."""
+    repository = executed_repository(tmp_path)
+    second_mate.record_evidence(repository)
+    state_path = repository / ".second-mate" / "state.json"
+    before = state_path.read_bytes()
+    with pytest.raises(second_mate.CloseFailure):
+        second_mate.clean_close(
+            repository,
+            direction_coverage="still_remaining",
+            residual_uncertainty=("Live provider behavior remains unexercised.",),
+            handoff="Recover this journal before any continuation.",
+            store=FileStateStore(state_path, writer=FailFinalStateWrite()),
+        )
+    pending_path = state_path.with_name("state.json.pending")
+    document = pending_path.read_text(encoding="utf-8")
+    marker = '  "schema_version": 1\n}\n'
+    assert document.endswith(marker)
+    ambiguous = document.removesuffix(marker) + '  "schema_version": 999,\n' + marker
+    pending_path.write_text(ambiguous, encoding="utf-8")
+
+    with pytest.raises(StateRecoveryError, match=r"duplicate.*schema_version"):
+        second_mate.load_state(repository)
+
+    assert state_path.read_bytes() == before
+    assert pending_path.read_text(encoding="utf-8") == ambiguous
+    assert json.loads(ambiguous)["schema_version"] == 1
+
+
+@pytest.mark.parametrize("invalid_version", (True, 1.0))
+def test_close_recovery_requires_literal_integer_journal_schema_version(
+    tmp_path: Path,
+    invalid_version: object,
+) -> None:
+    repository = executed_repository(tmp_path)
+    second_mate.record_evidence(repository)
+    state_path = repository / ".second-mate" / "state.json"
+    before = state_path.read_bytes()
+    with pytest.raises(second_mate.CloseFailure):
+        second_mate.clean_close(
+            repository,
+            direction_coverage="still_remaining",
+            residual_uncertainty=("Live provider behavior remains unexercised.",),
+            handoff="Recover this journal before any continuation.",
+            store=FileStateStore(state_path, writer=FailFinalStateWrite()),
+        )
+    pending_path = state_path.with_name("state.json.pending")
+    journal = json.loads(pending_path.read_bytes())
+    journal["schema_version"] = invalid_version
+    pending_path.write_text(
+        json.dumps(journal, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    pending_bytes = pending_path.read_bytes()
+
+    with pytest.raises(StateRecoveryError, match="journal schema"):
+        second_mate.load_state(repository)
+
+    assert state_path.read_bytes() == before
+    assert pending_path.read_bytes() == pending_bytes
 
 
 def test_failed_evidence_retries_after_bounded_repair_without_redispatch(tmp_path: Path) -> None:

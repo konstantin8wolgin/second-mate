@@ -207,8 +207,8 @@ def _parse_grant(value: object) -> AuthorityGrant:
     }
     if set(data) != expected_keys:
         raise AuthorityError("grant fields do not exactly match the authority contract")
-    if data["schema_version"] != 1:
-        raise AuthorityError("grant schema_version must be 1")
+    if type(data["schema_version"]) is not int or data["schema_version"] != 1:
+        raise AuthorityError("grant schema_version must be the integer 1")
     return AuthorityGrant(
         id=_grant_text(data["id"], "id"),
         granted_by=_grant_text(data["granted_by"], "granted_by"),
@@ -280,7 +280,8 @@ def _execution_result_from_json(value: object) -> ExecutionResult:
     )
 
 
-def _run_state_from_json(value: object) -> RunState:
+def run_state_from_json(value: object) -> RunState:
+    """Reconstruct and validate one complete durable run-state document."""
     data = _state_object(value, "document")
     expected_keys = {
         "closed",
@@ -296,7 +297,11 @@ def _run_state_from_json(value: object) -> RunState:
         "run",
         "schema_version",
     }
-    if set(data) != expected_keys or data["schema_version"] != 1:
+    if (
+        set(data) != expected_keys
+        or type(data["schema_version"]) is not int
+        or data["schema_version"] != 1
+    ):
         raise ValidationError("state fields do not match schema version 1")
     draft = draft_from_json(data["draft"])
     basis = preflight_from_json(data["preflight"])
@@ -326,18 +331,29 @@ def _run_state_from_json(value: object) -> RunState:
     closed = data["closed"]
     if not isinstance(closed, bool):
         raise ValidationError("state closed must be a boolean")
+    phase = _state_text(run_data["phase"], "run.phase")
+    route_status = _state_text(data["route_status"], "route_status")
+    closed_markers_are_consistent = (
+        phase == "closed" and route_status == "completed"
+        if closed
+        else phase != "closed" and route_status != "completed"
+    )
+    if not closed_markers_are_consistent:
+        raise ValidationError(
+            "state closed status is inconsistent with its run phase and route status"
+        )
     return RunState(
         draft=draft,
         basis=basis,
         grant=grant,
         run=RunRecord(
             owner_id=_state_text(run_data["owner_id"], "run.owner_id"),
-            phase=_state_text(run_data["phase"], "run.phase"),
+            phase=phase,
             attempts=attempts,
             executor_result=result,
             recovery_action=_state_text(run_data["recovery_action"], "run.recovery_action"),
         ),
-        route_status=_state_text(data["route_status"], "route_status"),
+        route_status=route_status,
         direction_coverage=_state_text(data["direction_coverage"], "direction_coverage"),
         evidence=tuple(evidence),
         residual_uncertainty=residual_uncertainty,
@@ -352,7 +368,7 @@ def load_state(repository: Path) -> RunState:
     store = FileStateStore(repository / ".second-mate" / "state.json")
     if not store.exists():
         raise RunConflictError("no durable run state exists for this target")
-    return _run_state_from_json(store.read_json())
+    return run_state_from_json(store.read_json())
 
 
 def _request_for(state: RunState, repository: Path) -> ExecutionRequest:

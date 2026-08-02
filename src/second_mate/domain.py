@@ -54,8 +54,8 @@ def _text(value: object, label: str) -> str:
 
 
 def _version(value: object, label: str) -> int:
-    if value != 1:
-        raise ValidationError(f"{label} must be 1")
+    if type(value) is not int or value != 1:
+        raise ValidationError(f"{label} must be the integer 1")
     return 1
 
 

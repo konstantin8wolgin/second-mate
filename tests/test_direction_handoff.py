@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 from test_authority import RecordingExecutor, exact_grant
-from test_draft import valid_packet
+from test_draft import valid_direction, valid_packet
 from test_preflight import make_repository as make_fs01_repository
 
 import second_mate
@@ -18,6 +18,7 @@ import second_mate.direction as direction_module
 from second_mate.domain import digest_json
 from second_mate.repository import inspect_revision
 from second_mate.service import ExecutionResult
+from second_mate.store import FileStateStore, PosixAtomicWriter
 
 
 def _run_git(repository: Path, *args: str) -> str:
@@ -294,12 +295,21 @@ def test_changed_direction_appends_exact_version_and_rejects_stale_branch(
     assert second_mate.load_direction(repository, "D-01").text == first.direction.text
     final_bytes = ledger_path.read_bytes()
 
-    with pytest.raises(second_mate.DirectionConflictError, match="revision drift"):
+    stale_data = stale_candidate.to_json()
+    stale_basis = stale_data["promotion_basis"]
+    assert isinstance(stale_basis, dict)
+    current_revision = inspect_revision(repository)
+    stale_basis["target_head"] = current_revision.head
+    stale_basis["target_fingerprint"] = current_revision.fingerprint
+    stale_grant = _promotion_grant(stale_candidate, grant_id="DPG-STALE")
+    stale_grant["target_head"] = current_revision.head
+    stale_grant["target_fingerprint"] = current_revision.fingerprint
+    with pytest.raises(second_mate.DirectionConflictError, match="stale Direction candidate"):
         second_mate.promote_direction(
             repository,
-            stale_candidate.to_json(),
+            stale_data,
             _approval(stale_candidate, approval_id="DA-STALE"),
-            _promotion_grant(stale_candidate, grant_id="DPG-STALE"),
+            stale_grant,
         )
     with pytest.raises(second_mate.ValidationError, match="change note"):
         second_mate.prepare_direction(
@@ -322,6 +332,188 @@ def test_changed_direction_appends_exact_version_and_rejects_stale_branch(
             _promotion_grant(third_candidate, grant_id="DPG-02"),
         )
     assert ledger_path.read_bytes() == final_bytes
+
+
+@pytest.mark.parametrize("recorded_in", ("head", "index"))
+def test_missing_git_recorded_direction_history_cannot_restart_the_chain(
+    tmp_path: Path,
+    recorded_in: str,
+) -> None:
+    """A missing tracked ledger must not be mistaken for never-created history."""
+    repository = _make_repository(tmp_path)
+    candidate = second_mate.prepare_direction(
+        repository,
+        "Keep immutable history explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    second_mate.promote_direction(
+        repository,
+        candidate.to_json(),
+        _approval(candidate),
+        _promotion_grant(candidate),
+    )
+    ledger_path = repository / ".second-mate" / "directions.json"
+    _run_git(repository, "add", ledger_path.relative_to(repository).as_posix())
+    if recorded_in == "head":
+        _run_git(repository, "commit", "-q", "-m", "record approved Direction")
+    ledger_path.unlink()
+
+    with pytest.raises(second_mate.DirectionConflictError, match=r"history.*missing"):
+        second_mate.prepare_direction(
+            repository,
+            "Attempt to restart a lost chain.\n",
+            direction_id="D-NEW",
+            change_note=None,
+        )
+
+    assert not ledger_path.exists()
+
+
+@pytest.mark.parametrize("retained_history_field", ("supersedes", "change_note"))
+def test_candidate_requiring_missing_untracked_history_cannot_become_initial(
+    tmp_path: Path,
+    retained_history_field: str,
+) -> None:
+    repository = _make_repository(tmp_path)
+    first_candidate = second_mate.prepare_direction(
+        repository,
+        "Keep the initial chain explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    second_mate.promote_direction(
+        repository,
+        first_candidate.to_json(),
+        _approval(first_candidate),
+        _promotion_grant(first_candidate),
+    )
+    second_candidate = second_mate.prepare_direction(
+        repository,
+        "Keep missing-history rejection explicit.\n",
+        direction_id="D-02",
+        change_note="Exercise missing-history shape validation.",
+    )
+    ledger_path = repository / ".second-mate" / "directions.json"
+    ledger_path.unlink()
+    candidate_data = second_candidate.to_json()
+    candidate_body = candidate_data["candidate"]
+    assert isinstance(candidate_body, dict)
+    if retained_history_field == "supersedes":
+        candidate_body["change_note"] = None
+    else:
+        candidate_body["supersedes"] = None
+    candidate_digest = digest_json(candidate_body)
+    candidate_data["candidate_digest"] = candidate_digest
+    revision = inspect_revision(repository)
+    promotion_basis = candidate_data["promotion_basis"]
+    assert isinstance(promotion_basis, dict)
+    promotion_basis["target_head"] = revision.head
+    promotion_basis["target_fingerprint"] = revision.fingerprint
+    approval = _approval(second_candidate, approval_id="DA-02")
+    approval["candidate_digest"] = candidate_digest
+    grant = _promotion_grant(second_candidate, grant_id="DPG-02")
+    grant["candidate_digest"] = candidate_digest
+    grant["target_head"] = revision.head
+    grant["target_fingerprint"] = revision.fingerprint
+
+    with pytest.raises(second_mate.DirectionConflictError, match="history that does not exist"):
+        second_mate.promote_direction(repository, candidate_data, approval, grant)
+
+    assert not ledger_path.exists()
+
+
+def test_direction_and_approval_ids_cannot_be_reused(tmp_path: Path) -> None:
+    repository = _make_repository(tmp_path)
+    first_candidate = second_mate.prepare_direction(
+        repository,
+        "Keep immutable identity explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    second_mate.promote_direction(
+        repository,
+        first_candidate.to_json(),
+        _approval(first_candidate),
+        _promotion_grant(first_candidate),
+    )
+    ledger_path = repository / ".second-mate" / "directions.json"
+    first_bytes = ledger_path.read_bytes()
+
+    with pytest.raises(second_mate.DirectionConflictError, match=r"Direction id.*reused"):
+        second_mate.prepare_direction(
+            repository,
+            "Attempt to reuse immutable Direction identity.\n",
+            direction_id="D-01",
+            change_note="Try to reuse the old identity.",
+        )
+
+    second_candidate = second_mate.prepare_direction(
+        repository,
+        "Keep immutable approval identity explicit.\n",
+        direction_id="D-02",
+        change_note="Exercise approval identity uniqueness.",
+    )
+    with pytest.raises(second_mate.DirectionConflictError, match=r"approval id.*reused"):
+        second_mate.promote_direction(
+            repository,
+            second_candidate.to_json(),
+            _approval(second_candidate, approval_id="DA-01"),
+            _promotion_grant(second_candidate, grant_id="DPG-02"),
+        )
+
+    assert ledger_path.read_bytes() == first_bytes
+    assert second_mate.load_direction(repository).id == "D-01"
+
+
+def test_unchanged_direction_text_cannot_create_a_new_version(tmp_path: Path) -> None:
+    repository = _make_repository(tmp_path)
+    first_text = "Keep approved meaning exact.\n"
+    first_candidate = second_mate.prepare_direction(
+        repository,
+        first_text,
+        direction_id="D-01",
+        change_note=None,
+    )
+    second_mate.promote_direction(
+        repository,
+        first_candidate.to_json(),
+        _approval(first_candidate),
+        _promotion_grant(first_candidate),
+    )
+    ledger_path = repository / ".second-mate" / "directions.json"
+    first_bytes = ledger_path.read_bytes()
+
+    with pytest.raises(second_mate.ValidationError, match="must change the exact approved text"):
+        second_mate.prepare_direction(
+            repository,
+            first_text,
+            direction_id="D-02",
+            change_note="Attempt an unchanged replacement.",
+        )
+
+    changed_candidate = second_mate.prepare_direction(
+        repository,
+        "Prepare a candidate that will be tampered back to old meaning.\n",
+        direction_id="D-02",
+        change_note="Exercise promotion's unchanged-text guard.",
+    )
+    candidate_data = changed_candidate.to_json()
+    candidate_body = candidate_data["candidate"]
+    assert isinstance(candidate_body, dict)
+    candidate_body["text"] = first_text
+    candidate_digest = digest_json(candidate_body)
+    candidate_data["candidate_digest"] = candidate_digest
+    approval = _approval(changed_candidate, approval_id="DA-02")
+    approval["candidate_digest"] = candidate_digest
+    grant = _promotion_grant(changed_candidate, grant_id="DPG-02")
+    grant["candidate_digest"] = candidate_digest
+
+    with pytest.raises(second_mate.ValidationError, match="must change the exact approved text"):
+        second_mate.promote_direction(repository, candidate_data, approval, grant)
+
+    assert ledger_path.read_bytes() == first_bytes
+    assert second_mate.load_direction(repository).id == "D-01"
 
 
 def test_ledger_rejects_approval_identity_that_disagrees_with_direction(tmp_path: Path) -> None:
@@ -384,6 +576,36 @@ def test_direction_ledger_rejects_duplicate_fields_at_any_nesting_level(tmp_path
         second_mate.load_direction(repository)
 
 
+@pytest.mark.parametrize("invalid_version", (True, 1.0))
+def test_direction_ledger_requires_literal_nested_direction_schema_version(
+    tmp_path: Path,
+    invalid_version: object,
+) -> None:
+    repository = _make_repository(tmp_path)
+    candidate = second_mate.prepare_direction(
+        repository,
+        "Keep human meaning explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    second_mate.promote_direction(
+        repository,
+        candidate.to_json(),
+        _approval(candidate),
+        _promotion_grant(candidate),
+    )
+    ledger_path = repository / ".second-mate" / "directions.json"
+    ledger = json.loads(ledger_path.read_bytes())
+    ledger["versions"][0]["direction"]["schema_version"] = invalid_version
+    ledger_path.write_text(
+        json.dumps(ledger, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(second_mate.ValidationError, match="integer 1"):
+        second_mate.load_direction(repository)
+
+
 def test_direction_approval_alone_cannot_authorize_project_write(tmp_path: Path) -> None:
     """Removing distinct promotion authority must let meaning approval authorize mutation."""
     repository = _make_repository(tmp_path)
@@ -400,6 +622,49 @@ def test_direction_approval_alone_cannot_authorize_project_write(tmp_path: Path)
             candidate.to_json(),
             _approval(candidate),
             None,
+        )
+
+    assert not (repository / ".second-mate").exists()
+
+
+@pytest.mark.parametrize(
+    ("document", "field", "invalid_value"),
+    (
+        ("approval", "direction_id", "D-DIFFERENT"),
+        ("grant", "candidate_digest", "0" * 64),
+        ("grant", "target_root", "/different/target"),
+        ("grant", "target_head", "different-head"),
+        ("grant", "target_fingerprint", "f" * 64),
+    ),
+)
+def test_approval_and_grant_must_bind_the_exact_candidate_and_target(
+    tmp_path: Path,
+    document: str,
+    field: str,
+    invalid_value: str,
+) -> None:
+    repository = _make_repository(tmp_path)
+    candidate = second_mate.prepare_direction(
+        repository,
+        "Keep exact authority binding explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    approval = _approval(candidate)
+    grant = _promotion_grant(candidate)
+    if document == "approval":
+        approval[field] = invalid_value
+        expected_error = "approval identifies a different candidate"
+    else:
+        grant[field] = invalid_value
+        expected_error = f"promotion grant {field}"
+
+    with pytest.raises(second_mate.ValidationError, match=expected_error):
+        second_mate.promote_direction(
+            repository,
+            candidate.to_json(),
+            approval,
+            grant,
         )
 
     assert not (repository / ".second-mate").exists()
@@ -489,6 +754,16 @@ class _BlockingExecutor:
             changed_paths=(),
             observation="dispatch released without mutation",
         )
+
+
+class _FailFinalStateWrite:
+    def __init__(self) -> None:
+        self.delegate = PosixAtomicWriter()
+
+    def write(self, path: Path, content: bytes) -> None:
+        if path.name == "state.json":
+            raise OSError("targeted failure after close journal")
+        self.delegate.write(path, content)
 
 
 def test_direction_promotion_cannot_race_authorized_executor_dispatch(tmp_path: Path) -> None:
@@ -591,6 +866,195 @@ def test_direction_promotion_refuses_while_durable_packet_run_is_open(tmp_path: 
         )
 
     assert second_mate.load_direction(repository).id == "D-01"
+
+
+def test_direction_promotion_refuses_pending_run_close_recovery(tmp_path: Path) -> None:
+    repository = make_fs01_repository(tmp_path)
+    first_candidate = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    first = second_mate.promote_direction(
+        repository,
+        first_candidate.to_json(),
+        _approval(first_candidate),
+        _promotion_grant(first_candidate),
+    )
+    draft = second_mate.create_draft(first.direction.to_json(), valid_packet())
+    basis = second_mate.preflight(draft, repository)
+    second_mate.start_run(
+        draft=draft,
+        basis=basis,
+        grant_data=exact_grant(draft, basis),
+        repository=repository,
+        executor=second_mate.FixtureExecutor(),
+        owner_id="pending-close-owner",
+    )
+    second_mate.record_evidence(repository)
+    second_candidate = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit after a recovered close.\n",
+        direction_id="D-02",
+        change_note="Wait for clean-close recovery.",
+    )
+    state_path = repository / ".second-mate" / "state.json"
+    with pytest.raises(second_mate.CloseFailure):
+        second_mate.clean_close(
+            repository,
+            direction_coverage="still_remaining",
+            residual_uncertainty=("Direction promotion remains separately authorized.",),
+            handoff="Recover the run close before changing Direction.",
+            store=FileStateStore(state_path, writer=_FailFinalStateWrite()),
+        )
+    pending_path = state_path.with_name("state.json.pending")
+    state_bytes = state_path.read_bytes()
+    pending_bytes = pending_path.read_bytes()
+
+    with pytest.raises(second_mate.DirectionConflictError, match="pending run-state close"):
+        second_mate.promote_direction(
+            repository,
+            second_candidate.to_json(),
+            _approval(second_candidate, approval_id="DA-02"),
+            _promotion_grant(second_candidate, grant_id="DPG-02"),
+        )
+
+    assert state_path.read_bytes() == state_bytes
+    assert pending_path.read_bytes() == pending_bytes
+    assert second_mate.load_direction(repository).id == "D-01"
+
+
+def test_direction_promotion_rejects_malformed_closed_run_state(
+    tmp_path: Path,
+) -> None:
+    repository = _make_repository(tmp_path)
+    candidate = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    state_directory = repository / ".second-mate"
+    state_directory.mkdir()
+    state_path = state_directory / "state.json"
+    state_path.write_text(
+        '{"closed":true,"unexpected":"target drift"}\n',
+        encoding="utf-8",
+    )
+    state_bytes = state_path.read_bytes()
+
+    with pytest.raises(second_mate.ValidationError, match="state fields"):
+        second_mate.promote_direction(
+            repository,
+            candidate.to_json(),
+            _approval(candidate),
+            _promotion_grant(candidate),
+        )
+
+    assert state_path.read_bytes() == state_bytes
+    assert not (state_directory / "directions.json").exists()
+
+
+def test_closed_run_state_created_after_prepare_invalidates_promotion_basis(
+    tmp_path: Path,
+) -> None:
+    source_parent = tmp_path / "closed-state-source"
+    source_parent.mkdir()
+    source = make_fs01_repository(source_parent)
+    draft = second_mate.create_draft(valid_direction(), valid_packet())
+    basis = second_mate.preflight(draft, source)
+    second_mate.start_run(
+        draft=draft,
+        basis=basis,
+        grant_data=exact_grant(draft, basis),
+        repository=source,
+        executor=second_mate.FixtureExecutor(),
+        owner_id="closed-state-source-owner",
+    )
+    second_mate.record_evidence(source)
+    second_mate.clean_close(
+        source,
+        direction_coverage="still_remaining",
+        residual_uncertainty=("Direction handoff remains independently authorized.",),
+        handoff="The fixture run is closed before Direction promotion.",
+    )
+    source_state = json.loads((source / ".second-mate" / "state.json").read_bytes())
+
+    repository = _make_repository(tmp_path)
+    candidate = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    state_directory = repository / ".second-mate"
+    state_directory.mkdir()
+    state_path = state_directory / "state.json"
+    state_path.write_text(
+        json.dumps(source_state, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    state_bytes = state_path.read_bytes()
+
+    with pytest.raises(second_mate.DirectionConflictError, match="revision drift"):
+        second_mate.promote_direction(
+            repository,
+            candidate.to_json(),
+            _approval(candidate),
+            _promotion_grant(candidate),
+        )
+
+    assert state_path.read_bytes() == state_bytes
+    assert not (state_directory / "directions.json").exists()
+
+
+@pytest.mark.parametrize("false_close_marker", ("closed", "phase", "route"))
+def test_direction_rejects_open_run_state_falsely_marked_closed(
+    tmp_path: Path,
+    false_close_marker: str,
+) -> None:
+    source_parent = tmp_path / "false-closed-state-source"
+    source_parent.mkdir()
+    source = make_fs01_repository(source_parent)
+    draft = second_mate.create_draft(valid_direction(), valid_packet())
+    basis = second_mate.preflight(draft, source)
+    second_mate.start_run(
+        draft=draft,
+        basis=basis,
+        grant_data=exact_grant(draft, basis),
+        repository=source,
+        executor=second_mate.FixtureExecutor(),
+        owner_id="false-closed-state-source-owner",
+    )
+    false_closed_state = json.loads((source / ".second-mate" / "state.json").read_bytes())
+    if false_close_marker == "closed":
+        false_closed_state["closed"] = True
+    elif false_close_marker == "phase":
+        false_closed_state["run"]["phase"] = "closed"
+    else:
+        false_closed_state["route_status"] = "completed"
+
+    repository = _make_repository(tmp_path)
+    state_directory = repository / ".second-mate"
+    state_directory.mkdir()
+    state_path = state_directory / "state.json"
+    state_path.write_text(
+        json.dumps(false_closed_state, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    state_bytes = state_path.read_bytes()
+
+    with pytest.raises(second_mate.ValidationError, match="closed status is inconsistent"):
+        second_mate.prepare_direction(
+            repository,
+            "Keep authority explicit.\n",
+            direction_id="D-01",
+            change_note=None,
+        )
+
+    assert state_path.read_bytes() == state_bytes
+    assert not (state_directory / "directions.json").exists()
 
 
 def test_direction_promotion_rejects_symlinked_state_directory_at_write_boundary(
@@ -1079,6 +1543,156 @@ def test_changed_direction_rollback_restores_exact_previous_ledger(
     assert second_mate.load_direction(repository).id == "D-01"
 
 
+@pytest.mark.parametrize("replacement_kind", ("file", "symlink"))
+def test_changed_direction_retains_replaced_displaced_history_during_cleanup(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    replacement_kind: str,
+) -> None:
+    """Cleanup must not erase an entry replacing the displaced prior-history temp."""
+    repository = _make_repository(tmp_path)
+    first_candidate = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    second_mate.promote_direction(
+        repository,
+        first_candidate.to_json(),
+        _approval(first_candidate),
+        _promotion_grant(first_candidate),
+    )
+    state_directory = repository / ".second-mate"
+    ledger_path = state_directory / "directions.json"
+    ledger_path.chmod(0o755)
+    first_bytes = ledger_path.read_bytes()
+    first_mode = stat.S_IMODE(ledger_path.stat().st_mode)
+    intended = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit through cleanup.\n",
+        direction_id="D-02",
+        change_note="Exercise displaced-history cleanup.",
+    )
+    marker_content = b"unowned cleanup replacement must be retained\n"
+    victim = tmp_path / "outside-cleanup-target.json"
+    victim.write_text("outside cleanup target remains exact\n", encoding="utf-8")
+    original_discard = direction_module._DirectionLedgerStore._discard_if_exact
+    injected = False
+
+    def replace_displaced_then_discard(
+        state_descriptor: int,
+        name: str,
+        expected: direction_module._PathEntry,
+    ) -> None:
+        nonlocal injected
+        if not injected and expected.content == first_bytes:
+            injected = True
+            temporary_path = state_directory / name
+            temporary_path.unlink()
+            if replacement_kind == "file":
+                temporary_path.write_bytes(marker_content)
+                temporary_path.chmod(0o600)
+            else:
+                temporary_path.symlink_to(victim)
+        original_discard(state_descriptor, name, expected)
+
+    monkeypatch.setattr(
+        direction_module._DirectionLedgerStore,
+        "_discard_if_exact",
+        staticmethod(replace_displaced_then_discard),
+    )
+
+    with pytest.raises(second_mate.DirectionConflictError, match="retained"):
+        second_mate.promote_direction(
+            repository,
+            intended.to_json(),
+            _approval(intended, approval_id="DA-02"),
+            _promotion_grant(intended, grant_id="DPG-02"),
+        )
+
+    assert injected is True
+    assert ledger_path.read_bytes() == first_bytes
+    assert stat.S_IMODE(ledger_path.stat().st_mode) == first_mode
+    assert second_mate.load_direction(repository).id == "D-01"
+    recovery_entries = list(state_directory.glob(".directions.json.*.next"))
+    assert len(recovery_entries) == 1
+    if replacement_kind == "file":
+        assert recovery_entries[0].read_bytes() == marker_content
+        assert stat.S_IMODE(recovery_entries[0].stat().st_mode) == 0o600
+    else:
+        assert recovery_entries[0].is_symlink()
+        assert recovery_entries[0].readlink() == victim
+        assert victim.read_text(encoding="utf-8") == "outside cleanup target remains exact\n"
+
+
+def test_changed_direction_rolls_back_revision_drift_after_cleanup(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The finalization guard must reject drift introduced after normal temp cleanup."""
+    repository = _make_repository(tmp_path)
+    first_candidate = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    second_mate.promote_direction(
+        repository,
+        first_candidate.to_json(),
+        _approval(first_candidate),
+        _promotion_grant(first_candidate),
+    )
+    state_directory = repository / ".second-mate"
+    ledger_path = state_directory / "directions.json"
+    ledger_path.chmod(0o755)
+    first_bytes = ledger_path.read_bytes()
+    first_mode = stat.S_IMODE(ledger_path.stat().st_mode)
+    intended = second_mate.prepare_direction(
+        repository,
+        "Keep authority explicit through finalization.\n",
+        direction_id="D-02",
+        change_note="Exercise post-cleanup finalization.",
+    )
+    original_discard = direction_module._DirectionLedgerStore._discard_if_exact
+    drifted = False
+
+    def discard_then_drift(
+        state_descriptor: int,
+        name: str,
+        expected: direction_module._PathEntry,
+    ) -> None:
+        nonlocal drifted
+        original_discard(state_descriptor, name, expected)
+        if not drifted and expected.content == first_bytes:
+            drifted = True
+            (repository / "README.md").write_text(
+                "Drift after displaced-history cleanup.\n",
+                encoding="utf-8",
+            )
+
+    monkeypatch.setattr(
+        direction_module._DirectionLedgerStore,
+        "_discard_if_exact",
+        staticmethod(discard_then_drift),
+    )
+
+    with pytest.raises(second_mate.DirectionConflictError, match="finalization"):
+        second_mate.promote_direction(
+            repository,
+            intended.to_json(),
+            _approval(intended, approval_id="DA-02"),
+            _promotion_grant(intended, grant_id="DPG-02"),
+        )
+
+    assert drifted is True
+    assert ledger_path.read_bytes() == first_bytes
+    assert stat.S_IMODE(ledger_path.stat().st_mode) == first_mode
+    assert second_mate.load_direction(repository).id == "D-01"
+    assert not list(state_directory.glob(".directions.json.*.next"))
+
+
 def test_changed_direction_does_not_erase_concurrent_history_before_exchange(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1479,6 +2093,67 @@ def test_direction_temporary_is_removed_when_file_fsync_fails(
     assert failed is True
     assert not (state_directory / "directions.json").exists()
     assert not list(state_directory.glob(".directions.json.*.next"))
+
+
+@pytest.mark.parametrize("replacement_kind", ("file", "symlink"))
+def test_failed_direction_temporary_write_retains_a_replacement(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    replacement_kind: str,
+) -> None:
+    repository = _make_repository(tmp_path)
+    state_directory = repository / ".second-mate"
+    state_directory.mkdir()
+    candidate = second_mate.prepare_direction(
+        repository,
+        "Keep failure cleanup authority explicit.\n",
+        direction_id="D-01",
+        change_note=None,
+    )
+    marker_content = b"unowned failed-write replacement must remain\n"
+    victim = tmp_path / "outside-failed-write-target.json"
+    victim.write_text("outside failed-write target remains exact\n", encoding="utf-8")
+    original_fsync = direction_module.os.fsync
+    injected = False
+
+    def replace_temporary_then_fail(descriptor: int) -> None:
+        nonlocal injected
+        metadata = direction_module.os.fstat(descriptor)
+        if not injected and stat.S_ISREG(metadata.st_mode):
+            temporary_entries = list(state_directory.glob(".directions.json.*.next"))
+            assert len(temporary_entries) == 1
+            temporary_path = temporary_entries[0]
+            temporary_path.unlink()
+            if replacement_kind == "file":
+                temporary_path.write_bytes(marker_content)
+                temporary_path.chmod(0o600)
+            else:
+                temporary_path.symlink_to(victim)
+            injected = True
+            raise OSError("fixture failure after temporary replacement")
+        original_fsync(descriptor)
+
+    monkeypatch.setattr(direction_module.os, "fsync", replace_temporary_then_fail)
+
+    with pytest.raises(second_mate.DirectionConflictError, match="temporary"):
+        second_mate.promote_direction(
+            repository,
+            candidate.to_json(),
+            _approval(candidate),
+            _promotion_grant(candidate),
+        )
+
+    assert injected is True
+    assert not (state_directory / "directions.json").exists()
+    recovery_entries = list(state_directory.glob(".directions.json.*.next"))
+    assert len(recovery_entries) == 1
+    if replacement_kind == "file":
+        assert recovery_entries[0].read_bytes() == marker_content
+        assert stat.S_IMODE(recovery_entries[0].stat().st_mode) == 0o600
+    else:
+        assert recovery_entries[0].is_symlink()
+        assert recovery_entries[0].readlink() == victim
+        assert victim.read_text(encoding="utf-8") == "outside failed-write target remains exact\n"
 
 
 def test_direction_prepare_refuses_project_authority_ignored_by_git(tmp_path: Path) -> None:

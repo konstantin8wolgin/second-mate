@@ -115,6 +115,7 @@ class FileStateStore:
                 "final_sha256",
                 "schema_version",
             }
+            or type(journal["schema_version"]) is not int
             or journal["schema_version"] != 1
         ):
             raise StateRecoveryError("close recovery journal schema is invalid")

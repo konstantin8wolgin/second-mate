@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import cast
 
 from second_mate.domain import (
+    STATE_PATH,
     Approval,
     Direction,
     JsonObject,
@@ -30,6 +31,7 @@ from second_mate.repository import (
     inspect_revision,
     mutation_lock,
     repository_path_is_ignored,
+    repository_path_is_recorded,
     repository_root,
 )
 from second_mate.store import StrictJsonError, deterministic_document_bytes, strict_json_loads
@@ -113,6 +115,25 @@ def _matches_installed_ledger(
             executable=bool(temporary_entry.mode & stat.S_IXUSR),
         ),
     )
+
+
+def _inspect_direction_revision(
+    repository: Path,
+    store: _DirectionLedgerStore | None = None,
+) -> TargetRevision:
+    """Include durable run state in the revision that authorizes Direction writes."""
+    revision = inspect_revision(repository)
+    state_fact, _ = (store or _DirectionLedgerStore(repository))._run_state_snapshot()
+    if state_fact is None:
+        return revision
+    facts = tuple(sorted((*revision.files, state_fact), key=lambda item: item.path))
+    fingerprint = digest_json(
+        {
+            "files": [item.to_json() for item in facts],
+            "head": revision.head,
+        }
+    )
+    return TargetRevision(head=revision.head, fingerprint=fingerprint, files=facts)
 
 
 def _direction_id(value: str) -> str:
@@ -561,6 +582,15 @@ class _DirectionLedgerStore:
             return False
         return True
 
+    def reject_missing_recorded_history(self) -> None:
+        if not self.exists() and repository_path_is_recorded(
+            self.repository,
+            _LEDGER_PATH.as_posix(),
+        ):
+            raise DirectionConflictError(
+                "approved Direction history is recorded by Git but missing from the target"
+            )
+
     @staticmethod
     def _rename_paths(
         state_descriptor: int,
@@ -868,8 +898,48 @@ class _DirectionLedgerStore:
         if stat.S_ISLNK(metadata.st_mode):
             raise ValidationError("Direction temporary path must not be a symlink")
 
-    @staticmethod
+    @classmethod
+    def _cleanup_failed_temporary(
+        cls,
+        state_descriptor: int,
+        temporary: str,
+        owned_identity: tuple[int, int],
+    ) -> None:
+        """Delete a failed temp only after atomically quarantining its owned inode."""
+        quarantine = f".directions.json.{secrets.token_hex(12)}.failed"
+        try:
+            cls._move_path_no_replace(state_descriptor, temporary, quarantine)
+            os.fsync(state_descriptor)
+        except Exception:
+            # Absence, an occupied quarantine name, or an unavailable atomic
+            # move leaves the original path untouched for explicit recovery.
+            return
+        try:
+            quarantined = cls._path_entry(state_descriptor, quarantine)
+        except Exception:
+            return
+        if (
+            quarantined.kind == "file"
+            and (
+                quarantined.device,
+                quarantined.inode,
+            )
+            == owned_identity
+        ):
+            with suppress(Exception):
+                cls._discard_if_exact(state_descriptor, quarantine, quarantined)
+            return
+        try:
+            cls._move_path_no_replace(state_descriptor, quarantine, temporary)
+            os.fsync(state_descriptor)
+        except Exception:
+            # An unowned entry remains under the quarantine name if its
+            # original name cannot be restored without replacing another.
+            return
+
+    @classmethod
     def _write_temporary(
+        cls,
         state_descriptor: int,
         content: bytes,
         *,
@@ -887,7 +957,10 @@ class _DirectionLedgerStore:
             raise DirectionConflictError(
                 "secure Direction temporary path already exists"
             ) from error
+        owned_identity: tuple[int, int] | None = None
         try:
+            opened_metadata = os.fstat(descriptor)
+            owned_identity = (opened_metadata.st_dev, opened_metadata.st_ino)
             os.fchmod(descriptor, mode)
             with os.fdopen(descriptor, "wb", closefd=False) as stream:
                 stream.write(content)
@@ -905,22 +978,22 @@ class _DirectionLedgerStore:
                 ),
             )
         except OSError as error:
-            with suppress(OSError):
-                os.close(descriptor)
-            with suppress(OSError):
-                os.unlink(temporary, dir_fd=state_descriptor)
-            with suppress(OSError):
-                os.fsync(state_descriptor)
+            if owned_identity is not None:
+                cls._cleanup_failed_temporary(
+                    state_descriptor,
+                    temporary,
+                    owned_identity,
+                )
             raise DirectionConflictError(
                 "cannot durably write secure Direction temporary file"
             ) from error
         except BaseException:
-            with suppress(OSError):
-                os.close(descriptor)
-            with suppress(OSError):
-                os.unlink(temporary, dir_fd=state_descriptor)
-            with suppress(OSError):
-                os.fsync(state_descriptor)
+            if owned_identity is not None:
+                cls._cleanup_failed_temporary(
+                    state_descriptor,
+                    temporary,
+                    owned_identity,
+                )
             raise
         finally:
             with suppress(OSError):
@@ -944,46 +1017,72 @@ class _DirectionLedgerStore:
             raise ValidationError(f"cannot read Direction ledger: {error}") from error
         return _ledger_from_json(raw)
 
-    def has_open_run(self) -> bool:
-        if not (self.repository / ".second-mate").exists():
-            return False
+    def _run_state_snapshot(self) -> tuple[FileFact | None, bool]:
+        try:
+            state_directory_metadata = (self.repository / ".second-mate").lstat()
+        except FileNotFoundError:
+            return None, False
+        if not stat.S_ISDIR(state_directory_metadata.st_mode):
+            raise ValidationError(
+                "Direction state directory must be a real directory, not a symlink"
+            )
         with self._state_directory(create=False) as (
             parent_descriptor,
             root_descriptor,
             state_descriptor,
         ):
             try:
-                descriptor = os.open(
-                    "state.json",
-                    os.O_RDONLY | os.O_NOFOLLOW,
+                os.stat(
+                    "state.json.pending",
                     dir_fd=state_descriptor,
+                    follow_symlinks=False,
                 )
+            except FileNotFoundError:
+                pass
+            else:
+                raise DirectionConflictError(
+                    "a pending run-state close must recover before Direction promotion"
+                )
+            try:
+                entry = self._path_entry(state_descriptor, "state.json")
             except FileNotFoundError:
                 self._assert_sink_attached(
                     parent_descriptor,
                     root_descriptor,
                     state_descriptor,
                 )
-                return False
-            except OSError as error:
+                return None, False
+            except (OSError, DirectionConflictError) as error:
                 raise ValidationError("run state must be a real file, not a symlink") from error
+            if entry.kind == "symlink":
+                raise ValidationError("run state must be a real file, not a symlink")
+            if entry.kind != "file":
+                raise ValidationError("run state must be a regular file")
             try:
-                if not stat.S_ISREG(os.fstat(descriptor).st_mode):
-                    raise ValidationError("run state must be a regular file")
-                with os.fdopen(descriptor, "rb", closefd=False) as stream:
-                    raw = strict_json_loads(stream.read().decode("utf-8"))
+                raw = strict_json_loads(entry.content.decode("utf-8"))
             except (UnicodeError, json.JSONDecodeError, StrictJsonError) as error:
                 raise ValidationError(f"cannot read run state: {error}") from error
-            finally:
-                os.close(descriptor)
+            from second_mate.service import run_state_from_json
+
+            state = run_state_from_json(raw)
             self._assert_sink_attached(
                 parent_descriptor,
                 root_descriptor,
                 state_descriptor,
             )
-        if not isinstance(raw, dict) or not isinstance(raw.get("closed"), bool):
-            raise ValidationError("run state closed status is invalid")
-        return not raw["closed"]
+        return (
+            FileFact(
+                path=STATE_PATH,
+                kind="file",
+                sha256=hashlib.sha256(entry.content).hexdigest(),
+                executable=bool(entry.mode & stat.S_IXUSR),
+            ),
+            not state.closed,
+        )
+
+    def has_open_run(self) -> bool:
+        _, is_open = self._run_state_snapshot()
+        return is_open
 
     @staticmethod
     def _discard_temporary(state_descriptor: int, temporary: str) -> None:
@@ -1175,7 +1274,7 @@ class _DirectionLedgerStore:
                     root_descriptor,
                     state_descriptor,
                 )
-                before_install = inspect_revision(self.repository)
+                before_install = _inspect_direction_revision(self.repository, self)
                 self._assert_sink_attached(
                     parent_descriptor,
                     root_descriptor,
@@ -1248,7 +1347,7 @@ class _DirectionLedgerStore:
                     root_descriptor,
                     state_descriptor,
                 )
-                after_install = inspect_revision(self.repository)
+                after_install = _inspect_direction_revision(self.repository, self)
                 self._assert_sink_attached(
                     parent_descriptor,
                     root_descriptor,
@@ -1279,7 +1378,7 @@ class _DirectionLedgerStore:
                     root_descriptor,
                     state_descriptor,
                 )
-                final_revision = inspect_revision(self.repository)
+                final_revision = _inspect_direction_revision(self.repository, self)
                 self._assert_sink_attached(
                     parent_descriptor,
                     root_descriptor,
@@ -1348,6 +1447,7 @@ def prepare_direction(
     if not summary.strip():
         raise ValidationError("Direction Summary must be non-empty")
     store = _DirectionLedgerStore(root)
+    store.reject_missing_recorded_history()
     predecessor: DirectionPredecessor | None = None
     if store.exists():
         ledger = store.load()
@@ -1369,7 +1469,7 @@ def prepare_direction(
         supersedes=predecessor,
         change_note=change_note,
     )
-    revision = inspect_revision(root)
+    revision = _inspect_direction_revision(root, store)
     return DirectionCandidateEnvelope(
         candidate=candidate,
         digest=digest_json(candidate.to_json()),
@@ -1417,11 +1517,12 @@ def promote_direction(
     )
     with _direction_lock(root):
         store = _DirectionLedgerStore(root)
+        store.reject_missing_recorded_history()
         if store.has_open_run():
             raise DirectionConflictError("an open packet run must close before Direction promotion")
         if repository_path_is_ignored(root, _ALLOWED_PATHS[0]):
             raise ValidationError("approved Direction project state must not be ignored by Git")
-        current_revision = inspect_revision(root)
+        current_revision = _inspect_direction_revision(root, store)
         if (
             current_revision.head != candidate.promotion_basis.target_head
             or current_revision.fingerprint != candidate.promotion_basis.target_fingerprint

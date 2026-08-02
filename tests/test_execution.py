@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import fcntl
+import json
 import os
 from pathlib import Path
 
@@ -135,6 +136,81 @@ def test_executor_failure_preserves_truthful_state_and_recovery_action(tmp_path:
     assert state.route_status == "ready"
     assert state.recovery_pressure == "packet"
     assert state.run.recovery_action == "retry dispatch with owner owner-1 after diagnosis"
+
+
+def test_load_state_rejects_contradictory_duplicate_fields(tmp_path: Path) -> None:
+    """Last-key-wins decoding must not reinterpret ambiguous durable run state."""
+    repository = make_repository(tmp_path)
+    draft = second_mate.create_draft(valid_direction(), valid_packet())
+    basis = second_mate.preflight(draft, repository)
+    second_mate.start_run(
+        draft=draft,
+        basis=basis,
+        grant_data=exact_grant(draft, basis),
+        repository=repository,
+        executor=CountingFixtureExecutor(),
+        owner_id="owner-1",
+    )
+    state_path = repository / ".second-mate" / "state.json"
+    document = state_path.read_text(encoding="utf-8")
+    assert document.startswith('{\n  "closed": false,')
+    ambiguous = document.replace(
+        '{\n  "closed": false,',
+        '{\n  "closed": true,\n  "closed": false,',
+        1,
+    )
+    state_path.write_text(ambiguous, encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match=r"duplicate.*closed"):
+        second_mate.load_state(repository)
+
+    assert state_path.read_text(encoding="utf-8") == ambiguous
+    assert json.loads(ambiguous)["closed"] is False
+
+
+@pytest.mark.parametrize(
+    "field_path",
+    (
+        ("schema_version",),
+        ("grant", "schema_version"),
+        ("preflight", "schema_version"),
+        ("preflight", "preflight", "schema_version"),
+    ),
+)
+@pytest.mark.parametrize("invalid_version", (True, 1.0))
+def test_load_state_requires_literal_integer_schema_versions(
+    tmp_path: Path,
+    field_path: tuple[str, ...],
+    invalid_version: object,
+) -> None:
+    repository = make_repository(tmp_path)
+    draft = second_mate.create_draft(valid_direction(), valid_packet())
+    basis = second_mate.preflight(draft, repository)
+    second_mate.start_run(
+        draft=draft,
+        basis=basis,
+        grant_data=exact_grant(draft, basis),
+        repository=repository,
+        executor=CountingFixtureExecutor(),
+        owner_id="owner-1",
+    )
+    state_path = repository / ".second-mate" / "state.json"
+    document = json.loads(state_path.read_bytes())
+    owner = document
+    for field in field_path[:-1]:
+        owner = owner[field]
+        assert isinstance(owner, dict)
+    owner[field_path[-1]] = invalid_version
+    state_path.write_text(
+        json.dumps(document, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        (second_mate.AuthorityError, second_mate.ValidationError),
+        match=r"schema|integer 1",
+    ):
+        second_mate.load_state(repository)
 
 
 def test_restart_preserves_owner_and_retries_only_the_failed_dispatch(tmp_path: Path) -> None:

@@ -195,6 +195,33 @@ def repository_path_is_ignored(repository: Path, relative_path: str) -> bool:
     return completed.returncode == 0
 
 
+def repository_path_is_recorded(repository: Path, relative_path: str) -> bool:
+    """Return whether the Git index or current HEAD records one exact path."""
+    path = Path(relative_path)
+    if path.is_absolute() or ".." in path.parts or relative_path in {"", "."}:
+        raise ValidationError("recorded-path inspection requires a safe relative path")
+    root = _repository_root(repository)
+    encoded = os.fsencode(relative_path)
+    index_paths = tuple(
+        item for item in _git(root, "ls-files", "-z", "--", relative_path).split(b"\0") if item
+    )
+    head_paths = tuple(
+        item
+        for item in _git(
+            root,
+            "ls-tree",
+            "-z",
+            "--name-only",
+            "--full-tree",
+            "HEAD",
+            "--",
+            relative_path,
+        ).split(b"\0")
+        if item
+    )
+    return encoded in index_paths or encoded in head_paths
+
+
 def _repository_paths(repository: Path) -> tuple[str, ...]:
     output = _git(
         repository,
@@ -398,8 +425,8 @@ def preflight_from_json(value: object) -> PreflightEnvelope:
         {"schema_version", "preflight", "preflight_digest"},
         "preflight envelope",
     )
-    if envelope_data["schema_version"] != 1:
-        raise ValidationError("preflight envelope schema_version must be 1")
+    if type(envelope_data["schema_version"]) is not int or envelope_data["schema_version"] != 1:
+        raise ValidationError("preflight envelope schema_version must be the integer 1")
     record_data = _stored_object(envelope_data["preflight"], "preflight")
     _stored_keys(
         record_data,
@@ -418,8 +445,8 @@ def preflight_from_json(value: object) -> PreflightEnvelope:
         },
         "preflight",
     )
-    if record_data["schema_version"] != 1:
-        raise ValidationError("preflight schema_version must be 1")
+    if type(record_data["schema_version"]) is not int or record_data["schema_version"] != 1:
+        raise ValidationError("preflight schema_version must be the integer 1")
     revision_data = _stored_object(record_data["revision"], "preflight revision")
     _stored_keys(revision_data, {"head", "fingerprint", "files"}, "preflight revision")
     files = tuple(
