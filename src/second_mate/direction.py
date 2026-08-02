@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ctypes
 import hashlib
 import json
 import os
@@ -39,10 +40,15 @@ _LEDGER_PATH = Path(".second-mate/directions.json")
 _ALLOWED_PATHS = (".second-mate/directions.json",)
 _ALLOWED_EFFECTS = ("direction_ledger_write",)
 _STOP_CONDITIONS = ("revision_drift", "direction_history_drift")
+_RENAME_EXCHANGE = 2
 
 
 class DirectionConflictError(RuntimeError):
     """A promotion would replace or branch immutable Direction history."""
+
+
+class _ExchangeRecoveryError(DirectionConflictError):
+    """An exchange could not safely restore the displaced concurrent entry."""
 
 
 def _same_revision_except(
@@ -521,6 +527,109 @@ class _DirectionLedgerStore:
         return True
 
     @staticmethod
+    def _exchange_paths(state_descriptor: int, left: str, right: str) -> None:
+        """Atomically exchange two existing names in the verified Linux environment."""
+        library = ctypes.CDLL(None, use_errno=True)
+        try:
+            renameat2 = library.renameat2
+        except AttributeError as error:
+            raise ValidationError(
+                "atomic Direction history exchange is unavailable on this platform"
+            ) from error
+        renameat2.argtypes = (
+            ctypes.c_int,
+            ctypes.c_char_p,
+            ctypes.c_int,
+            ctypes.c_char_p,
+            ctypes.c_uint,
+        )
+        renameat2.restype = ctypes.c_int
+        if (
+            renameat2(
+                state_descriptor,
+                os.fsencode(left),
+                state_descriptor,
+                os.fsencode(right),
+                _RENAME_EXCHANGE,
+            )
+            != 0
+        ):
+            error_number = ctypes.get_errno()
+            raise OSError(error_number, os.strerror(error_number))
+
+    @classmethod
+    def _exchange_if_current(
+        cls,
+        state_descriptor: int,
+        replacement: str,
+        target: str,
+        *,
+        expected_displaced_content: bytes,
+        expected_displaced_mode: int,
+        replacement_content: bytes,
+        replacement_mode: int,
+    ) -> bool:
+        try:
+            cls._exchange_paths(state_descriptor, replacement, target)
+        except OSError as error:
+            raise DirectionConflictError("atomic Direction history exchange failed") from error
+        try:
+            displaced_content, displaced_mode = cls._read_content_and_mode(
+                state_descriptor,
+                replacement,
+            )
+        except Exception:
+            displaced_matches = False
+        else:
+            displaced_matches = (
+                displaced_content == expected_displaced_content
+                and displaced_mode == expected_displaced_mode
+            )
+        if displaced_matches:
+            return True
+        try:
+            current_content, current_mode = cls._read_content_and_mode(
+                state_descriptor,
+                target,
+            )
+            if current_content != replacement_content or current_mode != replacement_mode:
+                raise DirectionConflictError(
+                    "replacement changed before atomic exchange could be restored"
+                )
+            cls._exchange_paths(state_descriptor, replacement, target)
+            os.fsync(state_descriptor)
+        except Exception as error:
+            raise _ExchangeRecoveryError(
+                "atomic exchange was invalidated; displaced history was retained for recovery"
+            ) from error
+        return False
+
+    @staticmethod
+    def _assert_repository_root_attached(
+        parent_descriptor: int,
+        root_descriptor: int,
+        root_name: str,
+    ) -> None:
+        try:
+            path_metadata = os.stat(
+                root_name,
+                dir_fd=parent_descriptor,
+                follow_symlinks=False,
+            )
+        except OSError as error:
+            raise DirectionConflictError(
+                "repository root is no longer attached to its authorized path"
+            ) from error
+        opened_metadata = os.fstat(root_descriptor)
+        if not stat.S_ISDIR(path_metadata.st_mode) or (
+            path_metadata.st_dev,
+            path_metadata.st_ino,
+        ) != (opened_metadata.st_dev, opened_metadata.st_ino):
+            raise DirectionConflictError(
+                "repository root is no longer attached to its authorized path"
+            )
+
+    @staticmethod
     def _assert_state_directory_attached(
         root_descriptor: int,
         state_descriptor: int,
@@ -544,12 +653,38 @@ class _DirectionLedgerStore:
                 "Direction state directory is no longer attached to the target"
             )
 
+    def _assert_sink_attached(
+        self,
+        parent_descriptor: int,
+        root_descriptor: int,
+        state_descriptor: int,
+    ) -> None:
+        self._assert_repository_root_attached(
+            parent_descriptor,
+            root_descriptor,
+            self.repository.name,
+        )
+        self._assert_state_directory_attached(root_descriptor, state_descriptor)
+
     @contextmanager
-    def _state_directory(self, *, create: bool) -> Iterator[tuple[int, int]]:
+    def _state_directory(self, *, create: bool) -> Iterator[tuple[int, int, int]]:
         directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
-        root_descriptor = os.open(self.repository, directory_flags)
+        if self.repository.parent == self.repository:
+            raise ValidationError("repository root must have an attachable parent directory")
+        parent_descriptor = os.open(self.repository.parent, directory_flags)
+        root_descriptor: int | None = None
         state_descriptor: int | None = None
         try:
+            try:
+                root_descriptor = os.open(
+                    self.repository.name,
+                    directory_flags,
+                    dir_fd=parent_descriptor,
+                )
+            except OSError as error:
+                raise ValidationError(
+                    "repository root must remain a real directory, not a symlink"
+                ) from error
             if create:
                 try:
                     os.mkdir(".second-mate", mode=0o755, dir_fd=root_descriptor)
@@ -566,30 +701,44 @@ class _DirectionLedgerStore:
                 raise ValidationError(
                     "Direction state directory must be a real directory, not a symlink"
                 ) from error
-            self._assert_state_directory_attached(root_descriptor, state_descriptor)
-            yield root_descriptor, state_descriptor
+            self._assert_sink_attached(
+                parent_descriptor,
+                root_descriptor,
+                state_descriptor,
+            )
+            yield parent_descriptor, root_descriptor, state_descriptor
         finally:
             if state_descriptor is not None:
                 os.close(state_descriptor)
-            os.close(root_descriptor)
+            if root_descriptor is not None:
+                os.close(root_descriptor)
+            os.close(parent_descriptor)
 
     @staticmethod
-    def _read_content(state_descriptor: int) -> bytes:
+    def _read_content_and_mode(
+        state_descriptor: int,
+        name: str = "directions.json",
+    ) -> tuple[bytes, int]:
         try:
             descriptor = os.open(
-                "directions.json",
+                name,
                 os.O_RDONLY | os.O_NOFOLLOW,
                 dir_fd=state_descriptor,
             )
         except OSError as error:
             raise ValidationError("Direction ledger must be a real file, not a symlink") from error
         try:
-            if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            metadata = os.fstat(descriptor)
+            if not stat.S_ISREG(metadata.st_mode):
                 raise ValidationError("Direction ledger must be a regular file")
             with os.fdopen(descriptor, "rb", closefd=False) as stream:
-                return stream.read()
+                return stream.read(), stat.S_IMODE(metadata.st_mode)
         finally:
             os.close(descriptor)
+
+    @classmethod
+    def _read_content(cls, state_descriptor: int, name: str = "directions.json") -> bytes:
+        return cls._read_content_and_mode(state_descriptor, name)[0]
 
     @staticmethod
     def _reject_legacy_temporary_symlink(state_descriptor: int) -> None:
@@ -605,13 +754,18 @@ class _DirectionLedgerStore:
             raise ValidationError("Direction temporary path must not be a symlink")
 
     @staticmethod
-    def _write_temporary(state_descriptor: int, content: bytes) -> str:
+    def _write_temporary(
+        state_descriptor: int,
+        content: bytes,
+        *,
+        mode: int = 0o644,
+    ) -> str:
         temporary = f".directions.json.{secrets.token_hex(12)}.next"
         try:
             descriptor = os.open(
                 temporary,
                 os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
-                0o644,
+                mode,
                 dir_fd=state_descriptor,
             )
         except FileExistsError as error:
@@ -619,6 +773,7 @@ class _DirectionLedgerStore:
                 "secure Direction temporary path already exists"
             ) from error
         try:
+            os.fchmod(descriptor, mode)
             with os.fdopen(descriptor, "wb", closefd=False) as stream:
                 stream.write(content)
                 stream.flush()
@@ -648,8 +803,17 @@ class _DirectionLedgerStore:
 
     def load(self) -> DirectionLedger:
         try:
-            with self._state_directory(create=False) as (_, state_descriptor):
+            with self._state_directory(create=False) as (
+                parent_descriptor,
+                root_descriptor,
+                state_descriptor,
+            ):
                 raw = json.loads(self._read_content(state_descriptor).decode("utf-8"))
+                self._assert_sink_attached(
+                    parent_descriptor,
+                    root_descriptor,
+                    state_descriptor,
+                )
         except (OSError, UnicodeError, json.JSONDecodeError) as error:
             raise ValidationError(f"cannot read Direction ledger: {error}") from error
         return _ledger_from_json(raw)
@@ -657,7 +821,11 @@ class _DirectionLedgerStore:
     def has_open_run(self) -> bool:
         if not (self.repository / ".second-mate").exists():
             return False
-        with self._state_directory(create=False) as (_, state_descriptor):
+        with self._state_directory(create=False) as (
+            parent_descriptor,
+            root_descriptor,
+            state_descriptor,
+        ):
             try:
                 descriptor = os.open(
                     "state.json",
@@ -665,6 +833,11 @@ class _DirectionLedgerStore:
                     dir_fd=state_descriptor,
                 )
             except FileNotFoundError:
+                self._assert_sink_attached(
+                    parent_descriptor,
+                    root_descriptor,
+                    state_descriptor,
+                )
                 return False
             except OSError as error:
                 raise ValidationError("run state must be a real file, not a symlink") from error
@@ -677,6 +850,11 @@ class _DirectionLedgerStore:
                 raise ValidationError(f"cannot read run state: {error}") from error
             finally:
                 os.close(descriptor)
+            self._assert_sink_attached(
+                parent_descriptor,
+                root_descriptor,
+                state_descriptor,
+            )
         if not isinstance(raw, dict) or not isinstance(raw.get("closed"), bool):
             raise ValidationError("run state closed status is invalid")
         return not raw["closed"]
@@ -693,27 +871,48 @@ class _DirectionLedgerStore:
         self,
         state_descriptor: int,
         previous: DirectionLedger | None,
+        previous_mode: int | None,
         installed_content: bytes,
     ) -> None:
-        if self._read_content(state_descriptor) != installed_content:
+        current_content, current_mode = self._read_content_and_mode(state_descriptor)
+        if current_content != installed_content or current_mode != 0o644:
             raise DirectionConflictError(
                 "installed Direction changed before invalid promotion could roll back"
             )
         if previous is None:
             os.unlink("directions.json", dir_fd=state_descriptor)
         else:
+            if previous_mode is None:
+                raise DirectionConflictError("previous Direction mode is unavailable for rollback")
             rollback_content = deterministic_document_bytes(previous)
-            rollback_temporary = self._write_temporary(state_descriptor, rollback_content)
+            rollback_temporary = self._write_temporary(
+                state_descriptor,
+                rollback_content,
+                mode=previous_mode,
+            )
+            preserve_temporary = False
             try:
-                os.replace(
-                    rollback_temporary,
-                    "directions.json",
-                    src_dir_fd=state_descriptor,
-                    dst_dir_fd=state_descriptor,
-                )
+                try:
+                    displaced_matches = self._exchange_if_current(
+                        state_descriptor,
+                        rollback_temporary,
+                        "directions.json",
+                        expected_displaced_content=installed_content,
+                        expected_displaced_mode=0o644,
+                        replacement_content=rollback_content,
+                        replacement_mode=previous_mode,
+                    )
+                except _ExchangeRecoveryError:
+                    preserve_temporary = True
+                    raise
+                if not displaced_matches:
+                    raise DirectionConflictError(
+                        "installed Direction changed during invalid promotion rollback"
+                    )
             finally:
-                with suppress(OSError):
-                    self._discard_temporary(state_descriptor, rollback_temporary)
+                if not preserve_temporary:
+                    with suppress(OSError):
+                        self._discard_temporary(state_descriptor, rollback_temporary)
         os.fsync(state_descriptor)
 
     def save(
@@ -723,8 +922,13 @@ class _DirectionLedgerStore:
         expected_revision: TargetRevision,
     ) -> None:
         final_content = deterministic_document_bytes(ledger)
-        with self._state_directory(create=True) as (root_descriptor, state_descriptor):
+        with self._state_directory(create=True) as (
+            parent_descriptor,
+            root_descriptor,
+            state_descriptor,
+        ):
             self._reject_legacy_temporary_symlink(state_descriptor)
+            previous_mode: int | None = None
             if previous is None:
                 try:
                     metadata = os.stat(
@@ -740,15 +944,28 @@ class _DirectionLedgerStore:
                     raise DirectionConflictError(
                         "approved Direction history appeared during promotion"
                     )
-            elif self._read_content(state_descriptor) != deterministic_document_bytes(previous):
-                raise DirectionConflictError("approved Direction history changed during promotion")
+            else:
+                previous_content, previous_mode = self._read_content_and_mode(state_descriptor)
+                if previous_content != deterministic_document_bytes(previous):
+                    raise DirectionConflictError(
+                        "approved Direction history changed during promotion"
+                    )
 
             temporary = self._write_temporary(state_descriptor, final_content)
             installed = False
+            preserve_temporary = False
             try:
-                self._assert_state_directory_attached(root_descriptor, state_descriptor)
+                self._assert_sink_attached(
+                    parent_descriptor,
+                    root_descriptor,
+                    state_descriptor,
+                )
                 before_install = inspect_revision(self.repository)
-                self._assert_state_directory_attached(root_descriptor, state_descriptor)
+                self._assert_sink_attached(
+                    parent_descriptor,
+                    root_descriptor,
+                    state_descriptor,
+                )
                 temporary_path = f".second-mate/{temporary}"
                 if not _same_revision_except(
                     before_install,
@@ -774,17 +991,41 @@ class _DirectionLedgerStore:
                     installed = True
                     os.unlink(temporary, dir_fd=state_descriptor)
                 else:
-                    os.replace(
-                        temporary,
-                        "directions.json",
-                        src_dir_fd=state_descriptor,
-                        dst_dir_fd=state_descriptor,
-                    )
+                    if previous_mode is None:
+                        raise DirectionConflictError(
+                            "previous Direction mode is unavailable for exchange"
+                        )
+                    try:
+                        displaced_matches = self._exchange_if_current(
+                            state_descriptor,
+                            temporary,
+                            "directions.json",
+                            expected_displaced_content=deterministic_document_bytes(previous),
+                            expected_displaced_mode=previous_mode,
+                            replacement_content=final_content,
+                            replacement_mode=0o644,
+                        )
+                    except _ExchangeRecoveryError:
+                        preserve_temporary = True
+                        raise
+                    if not displaced_matches:
+                        raise DirectionConflictError(
+                            "Direction history drifted during atomic promotion exchange"
+                        )
                     installed = True
+                    os.unlink(temporary, dir_fd=state_descriptor)
                 os.fsync(state_descriptor)
-                self._assert_state_directory_attached(root_descriptor, state_descriptor)
+                self._assert_sink_attached(
+                    parent_descriptor,
+                    root_descriptor,
+                    state_descriptor,
+                )
                 after_install = inspect_revision(self.repository)
-                self._assert_state_directory_attached(root_descriptor, state_descriptor)
+                self._assert_sink_attached(
+                    parent_descriptor,
+                    root_descriptor,
+                    state_descriptor,
+                )
                 if not _matches_installed_ledger(
                     after_install,
                     expected_revision,
@@ -796,7 +1037,12 @@ class _DirectionLedgerStore:
             except BaseException:
                 if installed:
                     try:
-                        self._rollback_install(state_descriptor, previous, final_content)
+                        self._rollback_install(
+                            state_descriptor,
+                            previous,
+                            previous_mode,
+                            final_content,
+                        )
                     except Exception as rollback_error:
                         raise DirectionConflictError(
                             "Direction promotion was invalidated and prior history "
@@ -804,8 +1050,9 @@ class _DirectionLedgerStore:
                         ) from rollback_error
                 raise
             finally:
-                with suppress(OSError):
-                    self._discard_temporary(state_descriptor, temporary)
+                if not preserve_temporary:
+                    with suppress(OSError):
+                        self._discard_temporary(state_descriptor, temporary)
 
 
 @contextmanager
