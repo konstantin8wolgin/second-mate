@@ -1,7 +1,8 @@
 # Second Mate design
 
-Status: canonical design; FS-01 technical evidence is locally verified, but
-canonical Foundation-baseline adoption is blocked on POL-01
+Status: canonical design; POL-01 narrowly selected, the verified FS-01
+Foundation baseline canonically adopted, CAP-01 complete; MS-01 remains blocked
+only on the human operator/D-01 product check
 
 Second Mate is a lean coordinator for AI coding work. It preserves human-owned product Direction, gives capable models room to solve technical problems, and requires evidence that fits each completion claim. It is a clean project, not a retrofit of FirstMate, Knowless, or their backlog and worker structures.
 
@@ -35,31 +36,35 @@ Second Mate is not:
 
 Mechanisms outside the canonical workflow enter scope only after pilots show a repeated need that cannot be met more simply.
 
-## Prospective decisions and unresolved authority gate — 2026-08-03
+## Recorded narrow pre-Program envelope — 2026-08-03
 
 The human has approved exact Direction D-01, the documented evidence-based
-Foundation route, and Python 3.12 and ENV-01. The user's instruction to
-“approve it, gnhf until you finish the project” records willingness to continue
-toward completion; it does not select POL-01, canonically adopt FS-01, or grant
-consent for unnamed future packets. POL-01 remains **decision-blocked**: the
-human must deliberately choose either narrow pre-Program consent with its exact
-envelope or full-Program-first control.
+Foundation route, and Python 3.12 and ENV-01. The human selected **POL-01:
+narrow pre-Program consent**, canonically adopted the already verified FS-01
+baseline, and approved CAP-01 as complete. The narrow decision answers only the
+dangerous question of whether fixture-only FS-01 is sufficient as Second Mate's
+permanent authority, evidence, and recovery foundation.
 
-These records do not backdate the missing bootstrap grant. No broad or future
-Second Mate Execution Consent is recorded. The locally verified FS-01 evidence
-is not yet canonically adopted as the Foundation baseline. After POL-01 is
-explicitly chosen, every new bounded mutating packet still needs its own current
-read-only preflight followed by exactly fitting Execution Consent. Direction
-approval, route approval, toolchain/environment acceptance, preflight, and
-Execution Consent remain distinct records. Provider or host selection,
-credentials, external execution, pushing, publishing, deployment, Rumble
-integration, and pilots remain unauthorized.
+Its boundary is this clean checkout, the existing Python FS-01 implementation
+and tests, and the checked-in fixture. Its resources are local Python 3.12,
+Git, filesystem, CPU, and disk. It permits no network, credentials, provider,
+external target, or external commitment; disposable run state is discarded and
+at most the existing FS-01 Foundation Slice is retained. This exact docs-only
+packet has separately scoped Execution Consent on the recorded current
+read-only preflight. It authorizes neither a later packet nor any Validation or
+Foundation mutation or expansion.
 
-The next human action is to choose POL-01 explicitly. Narrow consent requires
-the dangerous question, code/data/infrastructure boundary, resource and
-side-effect limits, discard policy, and at most one permanent Foundation Slice;
-full-Program-first permits only non-mutating work until a complete Program and
-Execution Consent exist. The choice must also precede canonical adoption of the
-existing FS-01 evidence as a Foundation baseline, and any new Validation or
-Foundation mutation or expansion. MS-01 additionally remains blocked on the
-documented human check of the fixture operator journey.
+The record does not backdate or prove the missing historical bootstrap grant.
+No broad or future Second Mate Execution Consent is recorded. Direction
+approval, route approval, toolchain/environment acceptance, current preflight,
+and this packet's scoped Execution Consent remain distinct records. Any later
+bounded mutating packet needs its own current read-only preflight and exactly
+fitting Execution Consent. Provider or host selection, credentials, external
+execution, pushing, publishing, deployment, Rumble integration, and pilots
+remain unauthorized.
+
+MS-01 remains blocked only on the human personally reviewing the fixture
+operator journey and judging its CLI/output clarity and D-01 fit. Binding
+Direction coverage remains `still_remaining`; neither CAP-01 completion nor
+canonical FS-01 adoption proves broader Direction coverage or product
+completion.

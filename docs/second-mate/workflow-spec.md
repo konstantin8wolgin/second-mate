@@ -1,16 +1,17 @@
 # Second Mate workflow specification
 
-Status: canonical design; FS-01 subset locally verified; canonical adoption as
-the Foundation baseline is blocked on POL-01
+Status: canonical design; POL-01 narrowly selected and FS-01 canonically
+adopted as the Foundation baseline; CAP-01 is complete and MS-01 awaits only
+the human operator/D-01 product check
 Date: 2026-08-03
 
 The implementation currently exercises only one supervised, fixture-based
 direct packet. Its evidence does not prove a live provider path or the broader
-workflow. The human has separately approved D-01, the documented Foundation
-route, Python 3.12 and ENV-01. FS-01 is technical evidence, not a canonically
-adopted Foundation baseline while POL-01 remains unresolved. POL-01 and all
-future Execution Consent remain unresolved human gates; the exact record and
-its remaining limits are in [PROGRAM.md](PROGRAM.md).
+workflow. The human separately approved D-01, the documented Foundation route,
+Python 3.12 and ENV-01, selected narrow pre-Program POL-01, and canonically
+adopted the verified FS-01 baseline. This resolves no broad or future Execution
+Consent; the exact narrow envelope and remaining limits are in
+[PROGRAM.md](PROGRAM.md).
 
 ## 1. Direction basis
 
@@ -62,11 +63,18 @@ FS-01 code alone is historical evidence, not a convenient default:
 1. **Narrow pre-Program consent.** A written consent names the dangerous question, code/data/infrastructure boundary, resource and side-effect limits, discard policy, and at most one permanent Foundation Slice. Material learning that changes the permanent boundary requires refreshed consent. Expansion still waits for full Execution Consent.
 2. **Full-Program-first control.** Before the complete Program and Execution Consent, only non-mutating inspection, research, modeling, and challenge are allowed. Validation and Foundation execution occur afterward.
 
-The current Second Mate record selects neither control. POL-01 remains
-decision-blocked until the human deliberately chooses one; no exact narrow
-envelope and no broad or future Execution Consent have been recorded. The
-choice cannot retroactively establish the missing bootstrap authority record;
-see [PROGRAM.md](PROGRAM.md) for the current decisions and limits.
+The current Second Mate record selects narrow pre-Program consent. Its exact
+dangerous question is whether the existing fixture-only FS-01 is sufficient as
+Second Mate's permanent authority, evidence, and recovery foundation. Its
+boundary is the clean checkout, existing Python FS-01 implementation and tests,
+and checked-in fixture; its resources are local Python 3.12, Git, filesystem,
+CPU, and disk; it permits no network, credentials, provider, external target,
+or external commitment; disposable run state is discarded and at most the
+existing FS-01 Foundation Slice is retained. On that basis the human
+canonically adopted verified FS-01 and approved CAP-01 complete. The selection
+cannot retroactively establish the missing bootstrap authority record, and it
+does not create broad or future Execution Consent; see [PROGRAM.md](PROGRAM.md)
+for the current decisions and limits.
 
 For this policy decision, a **complete Second Mate Program** means the approved Direction, grounded route decision, non-mutating Backbone and planned Foundation Slice boundary when applicable, revised and human-approved Living Delivery Map, and the outcome, proof, risk, and authority boundaries needed for the first execution. It does not silently import a Metric Charter, Implementation Atlas, Program Landmarks, or any other artifact from the noncanonical reference; add a project-specific artifact only when the approved Direction or completion claim genuinely requires it.
 
@@ -78,6 +86,13 @@ marks unavailable Foundation evidence `uncertain` or `blocked`; the complete
 Program and exactly fitting Execution Consent precede canonical adoption or
 Validation/Foundation execution, and material Foundation evidence must revise
 and, when needed, re-challenge the Map before expansion.
+
+This exact docs-only packet has its own scoped Execution Consent based on its
+recorded current read-only preflight. It changes only the four authorized
+canonical documents and authorizes neither a later packet nor any runtime
+mutation or expansion. MS-01 remains blocked only on the human operator review
+of the observed fixture journey for CLI/output clarity and D-01 fit; binding
+Direction coverage remains `still_remaining`.
 
 ## 3. Scaled Rumble and Direction
 
