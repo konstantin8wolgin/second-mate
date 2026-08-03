@@ -1,15 +1,16 @@
 # Second Mate workflow specification
 
-Status: canonical design; FS-01 subset locally verified and prospectively
-accepted as the Foundation baseline
+Status: canonical design; FS-01 subset locally verified; canonical adoption as
+the Foundation baseline is blocked on POL-01
 Date: 2026-08-03
 
 The implementation currently exercises only one supervised, fixture-based
 direct packet. Its evidence does not prove a live provider path or the broader
 workflow. The human has separately approved D-01, the documented Foundation
-route, Python 3.12 and ENV-01, and prospective adoption of FS-01. POL-01 and
-all future Execution Consent remain unresolved human gates; the exact record
-and its remaining limits are in [PROGRAM.md](PROGRAM.md).
+route, Python 3.12 and ENV-01. FS-01 is technical evidence, not a canonically
+adopted Foundation baseline while POL-01 remains unresolved. POL-01 and all
+future Execution Consent remain unresolved human gates; the exact record and
+its remaining limits are in [PROGRAM.md](PROGRAM.md).
 
 ## 1. Direction basis
 
@@ -53,9 +54,10 @@ Three approvals have different meanings:
 
 ### Pre-Program consent policy
 
-Every program must select one of these controls before a new Validation or
-Foundation mutation or expansion. The presence of FS-01 code alone is
-historical evidence, not a convenient default:
+Every program must select one of these controls before canonically adopting
+existing Validation or Foundation slice evidence as a Foundation baseline, or
+before any new Validation or Foundation mutation or expansion. The presence of
+FS-01 code alone is historical evidence, not a convenient default:
 
 1. **Narrow pre-Program consent.** A written consent names the dangerous question, code/data/infrastructure boundary, resource and side-effect limits, discard policy, and at most one permanent Foundation Slice. Material learning that changes the permanent boundary requires refreshed consent. Expansion still waits for full Execution Consent.
 2. **Full-Program-first control.** Before the complete Program and Execution Consent, only non-mutating inspection, research, modeling, and challenge are allowed. Validation and Foundation execution occur afterward.
@@ -68,7 +70,14 @@ see [PROGRAM.md](PROGRAM.md) for the current decisions and limits.
 
 For this policy decision, a **complete Second Mate Program** means the approved Direction, grounded route decision, non-mutating Backbone and planned Foundation Slice boundary when applicable, revised and human-approved Living Delivery Map, and the outcome, proof, risk, and authority boundaries needed for the first execution. It does not silently import a Metric Charter, Implementation Atlas, Program Landmarks, or any other artifact from the noncanonical reference; add a project-specific artifact only when the approved Direction or completion claim genuinely requires it.
 
-Under narrow pre-Program consent, the named Validation/Foundation envelope may run before the complete Program; expansion still requires Execution Consent over the approved Map. Under full-Program-first control, the initial Map uses non-mutating evidence and marks unavailable Foundation evidence `uncertain` or `blocked`; Execution Consent precedes Validation/Foundation execution, and material Foundation evidence must revise and, when needed, re-challenge the Map before expansion.
+Under narrow pre-Program consent, only the named Validation/Foundation envelope
+may authorize its canonical adoption or execution before the complete Program;
+expansion still requires Execution Consent over the approved Map. Under
+full-Program-first control, the initial Map uses non-mutating evidence and
+marks unavailable Foundation evidence `uncertain` or `blocked`; the complete
+Program and exactly fitting Execution Consent precede canonical adoption or
+Validation/Foundation execution, and material Foundation evidence must revise
+and, when needed, re-challenge the Map before expansion.
 
 ## 3. Scaled Rumble and Direction
 

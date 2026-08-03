@@ -1,7 +1,7 @@
 # Second Mate implementation and pilot readiness
 
-Status: canonical readiness checklist; initial approvals are recorded, FS-01
-operator/product evidence remains incomplete
+Status: canonical readiness checklist; initial approvals and FS-01 technical
+evidence are recorded, but canonical adoption remains blocked on POL-01
 
 This checklist records gates and observable readiness. It does not assign tasks, define a backlog, impose ordering beyond the workflow's authority gates, or recreate a Milestone Spine.
 
@@ -21,8 +21,8 @@ claim-fit proof; they do not backdate the historical bootstrap.
 
 | First-workflow requirement area | Classification | Current evidence or exact gap |
 |---|---|---|
-| D-01, route, T-01/ENV-01, and FS-01 baseline adoption | **proved** | Explicit prospective human decisions are recorded in [PROGRAM.md](PROGRAM.md). |
-| POL-01 selection and all future Execution Consent | **blocked on explicit human authority/product decision** | The human has not deliberately chosen narrow pre-Program consent or full-Program-first control, and no broad or future Execution Consent is recorded. |
+| D-01, route, and T-01/ENV-01 | **proved** | Explicit, separate human decisions are recorded in [PROGRAM.md](PROGRAM.md); they do not select POL-01 or canonically adopt FS-01. |
+| POL-01 selection, canonical FS-01 adoption, and all future Execution Consent | **blocked on explicit human authority/product decision** | The human has not deliberately chosen narrow pre-Program consent or full-Program-first control. FS-01 is locally verified technical evidence, not an adopted Foundation baseline; no broad, future, or currently scoped Execution Consent is recorded. |
 | FS-01 deterministic local lifecycle and its stated invariants | **proved** | The implementation, fixture journey, refusal/recovery tests, and repository gates are recorded in [PROGRAM.md](PROGRAM.md) and [FS-01-OPERATOR.md](FS-01-OPERATOR.md). |
 | FS-01 operator clarity and D-01 fit | **implemented but insufficiently verified** | The operator surface and guide exist, but the required human product check of the observed fixture journey has not been recorded. |
 | Scaled Rumble/Direction handoff and broader workflow automation | **defective or incomplete** | The current branch implements only FS-01; the separate local Rumble/Direction handoff is preserved but unintegrated and has no canonical acceptance or current-branch proof. |
@@ -33,7 +33,9 @@ claim-fit proof; they do not backdate the historical bootstrap.
 - [ ] The user has chosen narrow pre-Program consent or full-Program-first control.
 - [x] Direction approval, route approval, and execution authority are represented as distinct states.
 - [ ] A future Execution Consent exists for a named bounded packet after a current read-only preflight; no broad or future consent may be inferred from a persistence instruction.
-- [x] No new pre-Program Validation or Foundation mutation or expansion proceeds while the consent-policy choice is unresolved.
+- [x] No canonical adoption of existing slice evidence, or new pre-Program
+  Validation or Foundation mutation or expansion, proceeds while the
+  consent-policy choice is unresolved.
 - [x] External effects and irreversible actions are denied unless explicitly inside current authority.
 - [ ] The initial runtime boundary fits the rough 4–9k handwritten implementation-code scope or documents a pilot-derived reason to exceed it.
 - [x] FirstMate and Knowless are sources or optional primitive providers only; Second Mate has no retrofit dependency on their workflow structures.
