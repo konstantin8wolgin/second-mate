@@ -35,22 +35,26 @@ Second Mate is not:
 
 Mechanisms outside the canonical workflow enter scope only after pilots show a repeated need that cannot be met more simply.
 
-## Prospective authority record — 2026-08-03
+## Prospective decisions and unresolved authority gate — 2026-08-03
 
 The human has prospectively approved exact Direction D-01, the documented
 evidence-based Foundation route, Python 3.12 and ENV-01, and adoption of the
-already verified FS-01 implementation as the Foundation baseline. The selected
-POL-01 policy is narrow pre-Program consent: bounded local, no-external
-Foundation work may proceed before a provider is selected.
+already verified FS-01 implementation as the Foundation baseline. POL-01
+remains **decision-blocked**: the human must deliberately choose either narrow
+pre-Program consent with its exact envelope or full-Program-first control.
 
-These records do not backdate the missing bootstrap grant. Separately, the
-human has granted Execution Consent for the local repository mutations needed
-to finish the approved first workflow, but only after a fresh read-only
-preflight for each bounded packet. That consent excludes provider or host
-selection, credentials, external execution, pushing, publishing, deployment,
-and any other external commitment. Direction approval, route approval, and
-Execution Consent remain distinct records.
+These records do not backdate the missing bootstrap grant. No broad or future
+Second Mate Execution Consent is recorded: the persistence instruction to
+finish the project is not consent for unnamed future packets. After POL-01 is
+explicitly chosen, every new bounded mutating packet still needs its own
+current read-only preflight followed by exactly fitting Execution Consent.
+Direction approval, route approval, and Execution Consent remain distinct
+records. Provider or host selection, credentials, external execution, pushing,
+publishing, deployment, Rumble integration, and pilots remain unauthorized.
 
-The remaining product gate for the accepted FS-01 baseline is the documented
-human check of the fixture operator journey. A real provider/host selection is
-an intentionally later, blocked decision; FS-01 evidence does not authorize it.
+The next human action is to choose POL-01 explicitly. Narrow consent requires
+the dangerous question, code/data/infrastructure boundary, resource and
+side-effect limits, discard policy, and at most one permanent Foundation Slice;
+full-Program-first permits only non-mutating work until a complete Program and
+Execution Consent exist. The separate remaining product gate for the accepted
+FS-01 baseline is the documented human check of the fixture operator journey.

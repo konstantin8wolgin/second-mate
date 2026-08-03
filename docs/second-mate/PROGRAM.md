@@ -1,7 +1,7 @@
 # Second Mate bootstrap Program
 
-Status: approved initial Program; FS-01 baseline prospectively accepted;
-operator/product check outstanding
+Status: initial Program; planning and future mutation remain blocked on POL-01;
+FS-01 baseline prospectively accepted; operator/product check outstanding
 
 Date: 2026-08-03
 
@@ -26,26 +26,29 @@ tip is already an ancestor of merge commit `d06937d` on `main` and is not a
 second implementation to replay or merge.
 
 The human made the following prospective decisions on 2026-08-03. They are
-separate records even though they were supplied in one instruction:
+separate records even though they were supplied in one instruction; POL-01 and
+future Execution Consent were not among them:
 
 | Record | Accepted fact | Scope and consequence |
 |---|---|---|
 | Direction approval | Exact D-01 in section 2 | Confirms the product meaning; it does not itself authorize mutation or effects. |
 | Route approval | The documented evidence-based Foundation route | Accepts FND-01 through ADP-01 as the initial route, subject to their stated boundaries. |
-| POL-01 | Narrow pre-Program consent | Bounded local, no-external Foundation work may proceed before provider selection. |
+| POL-01 | **Decision-blocked:** deliberate choice between narrow pre-Program consent and full-Program-first control | No unselected control or narrow envelope may authorize a new mutation or expansion. |
 | T-01 / ENV-01 | Python 3.12 and the recorded local Git/filesystem environment | Accepts the verified initial runtime boundary, not cross-platform or remote support. |
 | FS-01 adoption | The verified FS-01 implementation is the Foundation baseline | Accepts the evidence prospectively; it does not backdate the absent bootstrap grant. |
-| Execution Consent | Local mutations needed to finish the approved first workflow | Every bounded packet still requires a fresh read-only preflight. It excludes providers/hosts, credentials, external execution, push, publication, deployment, and external commitments. |
+| Execution Consent | No broad or future Execution Consent is recorded | The persistence instruction to finish the project is not consent for unnamed future packets. Each new bounded mutating packet remains blocked on POL-01, then needs a current read-only preflight and exactly fitting Execution Consent. |
 
 The historical repository cannot prove which pre-Program control or Execution
 Consent governed the original bootstrap. This record does not rewrite that
-history. It authorizes only future local packets that fit the approved Direction
-and route and pass their current preflight.
+history or authorize future local packets. Provider/host selection, credentials,
+external execution, push, publication, deployment, Rumble integration, and
+pilots remain unauthorized.
 
-The Program is now planning-ready. FS-01 still lacks its required human
-operator/product check, so neither the FS-01 packet nor MS-01 may be called
-`completed`; the missing check is a product-evidence gate, not a missing
-Direction, route, policy, toolchain, or adoption decision.
+The Program is not planning-ready while POL-01 is decision-blocked. FS-01 still
+lacks its required human operator/product check, so neither the FS-01 packet
+nor MS-01 may be called `completed`; that missing check is a separate
+product-evidence gate, not a missing Direction, route, toolchain, or adoption
+decision.
 
 ## 2. Approved Direction D-01
 
@@ -96,7 +99,7 @@ rather than editing D-01 in place.
 
 | ID | State | Decision needed | What it blocks | Resolution |
 |---|---|---|---|---|
-| POL-01 | **ACCEPTED** | Narrow pre-Program consent and prospective adoption of FS-01 despite the absent historical bootstrap record. | Enables bounded local/no-external Foundation work before provider selection. | The record is prospective and does not backdate authority. |
+| POL-01 | **DECISION-BLOCKED** | Deliberately choose narrow pre-Program consent or full-Program-first control. | Planning-ready status and every further mutating packet. | Narrow consent requires the dangerous question, code/data/infrastructure boundary, resource and side-effect limits, discard policy, and at most one permanent Foundation Slice; full-Program-first permits only non-mutating work until a complete Program and Execution Consent exist. |
 | T-01 | **ACCEPTED** | Python 3.12 plus ENV-01's tested Linux/filesystem, Git, locking, atomic-write/recovery, packaging, and operator assumptions. | Accepts the initial local runtime boundary and later local work that fits it. | It does not claim product acceptance for other platforms or providers. |
 | PRV-01 | **DECISION-BLOCKED, LATER** | Select the first real provider/host integration and its credential, interruption, and continuation boundary. | A live AI coding run and pilot, but not the fixture-based Foundation Slice. | Evidence-based adapter decision after Foundation review; choose one provider, not an abstraction framework. |
 
@@ -373,12 +376,13 @@ create a speculative backlog.
 
 ### Readiness gates
 
-- **Planning-ready:** achieved prospectively on 2026-08-03: D-01, POL-01, and
-  T-01/ENV-01 are resolved, the documented route is approved, and the accepted
-  scope remains bounded by the records in section 1.
+- **Planning-ready:** **blocked** on the deliberate POL-01 choice. D-01,
+  T-01/ENV-01, the documented route, and prospective FS-01 adoption are
+  accepted, but they do not choose a control or authorize mutation.
 - **Foundation-execution-ready:** the accepted historical FS-01 baseline is not
-  replayed. Any new Foundation packet needs its own current non-mutating
-  preflight and exact Execution Consent.
+  replayed. Any new Foundation packet first needs the chosen POL-01 control,
+  then its own current non-mutating preflight and exactly fitting Execution
+  Consent.
 - **Pilot-ready:** MS-01 and CAP-02 are proved; POL-01 is chosen; the target
   pilot has a known baseline, bounded data/provider authority, approved
   Direction and route, and claim-fit milestone proof.
@@ -400,24 +404,28 @@ B-01. A local implementation difficulty, different file layout, failed test, or
 better packet order is Packet or Map pressure, not permission to build a
 platform.
 
-## 10. Next human product action
+## 10. Next human action
 
-Perform the documented FS-01 fixture journey and record whether the CLI/output
-is clear and the observed behavior fits D-01. That review must not turn the
-fixture evidence into a live-provider or broader-workflow claim. Any later
-mutation starts with a fresh read-only preflight and an exactly fitting Execution
-Consent; a provider/host decision remains separately blocked.
+Deliberately choose POL-01 without a default: either narrow pre-Program consent
+that states the dangerous question, code/data/infrastructure boundary, resource
+and side-effect limits, discard policy, and at most one permanent Foundation
+Slice, or full-Program-first control, under which only non-mutating work may
+continue until a complete Program and Execution Consent exist. This choice does
+not authorize an unnamed packet. The separate FS-01 operator/product check
+remains required for MS-01. Do not select a provider/host or continue into a
+runtime packet.
 
-## 11. Continuation prompt while the remaining product gate is open
+## 11. Continuation prompt while human gates are open
 
 > Read `docs/second-mate/PROGRAM.md` and the canonical workflow specification.
 > Do not reimplement FS-01 merely because its historical branch remains visible;
-> it is already merged. First verify the recorded human decisions and whether
-> the existing implementation/evidence was accepted as the Foundation baseline.
+> it is already merged. First verify the recorded human decisions, including
+> that POL-01 remains decision-blocked, and whether the existing
+> implementation/evidence was accepted as the Foundation baseline.
 > If the human product check is still missing, operate the documented fixture
 > journey without mutation to Second Mate itself and return that observation.
 > Do not select or build a provider adapter, pilot, generalized orchestration
-> machinery, or other next packet without a newly approved route, current
-> read-only preflight, and exact Execution Consent. Stop and classify pressure
-> if authority, Direction, Backbone, or proof no longer fits. Do not publish,
-> deploy, or push.
+> machinery, or other next packet without the chosen POL-01 control, current
+> read-only preflight, and exactly fitting Execution Consent. Stop and classify
+> pressure if authority, Direction, Backbone, or proof no longer fits. Do not
+> publish, deploy, or push.
