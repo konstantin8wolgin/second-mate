@@ -92,7 +92,7 @@ rather than editing D-01 in place.
 
 | ID | State | Decision | Basis and consequence |
 |---|---|---|---|
-| FND-01 | **ACCEPTED** | **New foundation.** | FS-01 supplies evidence for shared authority, packet, evidence, and recovery semantics. |
+| FND-01 | **ACCEPTED** | **New foundation route.** | This accepts the documented Foundation route; FS-01 is locally verified technical evidence for later assessment, not a canonically adopted Foundation baseline. |
 | VAL-01 | **ACCEPTED** | **No separate Validation Slice now.** | No concrete technical unknown has yet shown a need for disposable code; reopen only for a decision-changing feasibility risk. |
 | EXE-01 | **ACCEPTED** | **Second Mate does not coordinate its own bootstrap.** | A human starts approved coding runs manually; the fixture does not plan, authorize, or execute its own implementation. |
 | EXE-02 | **ACCEPTED** | **A manually launched Sol xhigh coding agent executes the Foundation Slice.** | Sol Ultra owns architecture/route challenge and material recovery review; this is not a permanent agent mesh. |
