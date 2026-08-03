@@ -97,7 +97,7 @@ rather than editing D-01 in place.
 | ENV-01 | **ACCEPTED** | **The first compatibility target is one trusted local operator, this repository's Git worktree model, and the operating-system/filesystem family verified by T-01 preflight.** | This does not claim multi-user, every-VCS, remote-workspace, or cross-platform support. |
 | ADP-01 | **ACCEPTED** | **The first permanent slice has no live provider adapter.** | FS-01 proves only the deterministic executor seam; one real provider adapter remains a later candidate, not an abstraction framework. |
 
-### Decisions that remain open
+### Runtime boundary and later open decision
 
 | ID | State | Decision needed | What it blocks | Resolution |
 |---|---|---|---|---|

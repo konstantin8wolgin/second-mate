@@ -16,7 +16,7 @@ fixture suite.
 
 ## Current evidence classification
 
-The four classifications below apply to the current branch and the prospective
+The evidence classifications below apply to the current branch and the prospective
 2026-08-03 authority record. They distinguish code or document existence from
 claim-fit proof; they do not backdate the historical bootstrap.
 
