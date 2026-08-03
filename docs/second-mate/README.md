@@ -60,5 +60,6 @@ the dangerous question, code/data/infrastructure boundary, resource and
 side-effect limits, discard policy, and at most one permanent Foundation Slice;
 full-Program-first permits only non-mutating work until a complete Program and
 Execution Consent exist. The choice must also precede canonical adoption of the
-existing FS-01 evidence as a Foundation baseline. MS-01 additionally remains
-blocked on the documented human check of the fixture operator journey.
+existing FS-01 evidence as a Foundation baseline, and any new Validation or
+Foundation mutation or expansion. MS-01 additionally remains blocked on the
+documented human check of the fixture operator journey.

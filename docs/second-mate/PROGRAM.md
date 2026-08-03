@@ -1,7 +1,8 @@
 # Second Mate bootstrap Program
 
-Status: candidate initial Program; planning, canonical FS-01 adoption, and
-future mutation remain blocked on POL-01; operator/product check outstanding
+Status: candidate initial Program; planning, canonical FS-01 adoption, and any
+new Validation or Foundation mutation or expansion remain blocked on POL-01;
+operator/product check outstanding
 
 Date: 2026-08-03
 
@@ -35,7 +36,7 @@ selection nor blanket future Execution Consent.
 |---|---|---|
 | Direction approval | Exact D-01 in section 2 | Confirms the product meaning; it does not itself authorize mutation or effects. |
 | Route approval | The documented evidence-based Foundation route | Accepts FND-01 through ADP-01 as the initial route, subject to their stated boundaries. |
-| POL-01 | **Decision-blocked:** deliberate choice between narrow pre-Program consent and full-Program-first control | No unselected control or narrow envelope may authorize canonical adoption of existing FS-01 evidence, a new mutation, or an expansion. |
+| POL-01 | **Decision-blocked:** deliberate choice between narrow pre-Program consent and full-Program-first control | No unselected control or narrow envelope may authorize canonical adoption of existing FS-01 evidence, or any new Validation or Foundation mutation or expansion. |
 | T-01 / ENV-01 | Python 3.12 and the recorded local Git/filesystem environment | Accepts the verified initial runtime boundary, not cross-platform or remote support. |
 | FS-01 technical evidence | The verified FS-01 implementation and local repository evidence are ready for assessment | This is not canonical Foundation-baseline adoption; POL-01 selection remains required before that adoption. |
 | Current preflight | No current preflight exists for a prospective packet | Repository verification and historical fixture evidence do not substitute for a packet's current read-only preflight. |
@@ -103,7 +104,7 @@ rather than editing D-01 in place.
 
 | ID | State | Decision needed | What it blocks | Resolution |
 |---|---|---|---|---|
-| POL-01 | **DECISION-BLOCKED** | Deliberately choose narrow pre-Program consent or full-Program-first control. | Planning-ready status, canonical adoption of existing FS-01 evidence, and every further mutating packet. | Narrow consent requires the dangerous question, code/data/infrastructure boundary, resource and side-effect limits, discard policy, and at most one permanent Foundation Slice; full-Program-first permits only non-mutating work until a complete Program and Execution Consent exist. |
+| POL-01 | **DECISION-BLOCKED** | Deliberately choose narrow pre-Program consent or full-Program-first control. | Planning-ready status, canonical adoption of existing FS-01 evidence, and any new Validation or Foundation mutation or expansion. | Narrow consent requires the dangerous question, code/data/infrastructure boundary, resource and side-effect limits, discard policy, and at most one permanent Foundation Slice; full-Program-first permits only non-mutating work until a complete Program and Execution Consent exist. |
 | T-01 | **ACCEPTED** | Python 3.12 plus ENV-01's tested Linux/filesystem, Git, locking, atomic-write/recovery, packaging, and operator assumptions. | Accepts the initial local runtime boundary and later local work that fits it. | It does not claim product acceptance for other platforms or providers. |
 | PRV-01 | **DECISION-BLOCKED, LATER** | Select the first real provider/host integration and its credential, interruption, and continuation boundary. | A live AI coding run and pilot, but not the fixture-based Foundation Slice. | Evidence-based adapter decision after Foundation review; choose one provider, not an abstraction framework. |
 
@@ -386,9 +387,10 @@ create a speculative backlog.
   T-01/ENV-01, and the documented route are accepted, but they do not choose a
   control, canonically adopt FS-01, or authorize mutation.
 - **Foundation-execution-ready:** the historical FS-01 implementation is not
-  replayed as a new packet. Any canonical adoption or new Foundation packet
-  first needs the chosen POL-01 control; a new packet then needs its own current
-  non-mutating preflight and exactly fitting Execution Consent.
+  replayed as a new packet. Canonical FS-01 adoption, or any new Validation or
+  Foundation mutation or expansion, first needs the chosen POL-01 control; a
+  new packet then needs its own current non-mutating preflight and exactly
+  fitting Execution Consent.
 - **Pilot-ready:** MS-01 and CAP-02 are proved; POL-01 is chosen; the target
   pilot has a known baseline, bounded data/provider authority, approved
   Direction and route, and claim-fit milestone proof.
