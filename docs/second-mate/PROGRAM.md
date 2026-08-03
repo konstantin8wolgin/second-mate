@@ -36,8 +36,8 @@ separate records even when supplied in one instruction.
 | POL-01 | **Selected: narrow pre-Program consent.** The dangerous question is whether fixture-only FS-01 is sufficient as Second Mate's permanent authority, evidence, and recovery foundation. | The envelope is this clean checkout, existing Python FS-01 implementation/tests, and checked-in fixture; resources are local Python 3.12, Git, filesystem, CPU, and disk; no network, credentials, provider, external target, or external commitment; discard disposable run state and retain at most existing FS-01. It canonically adopts verified FS-01 and completes CAP-01 only. |
 | T-01 / ENV-01 | Python 3.12 and the recorded local Git/filesystem environment | Accepts the verified initial runtime boundary, not cross-platform or remote support. |
 | FS-01 technical evidence | The verified FS-01 implementation and local repository evidence are canonically adopted as the Foundation baseline | Its claims remain limited to the fixture lifecycle; the adoption does not prove a live model/provider run, broad workflow, autonomous recovery, provider security, pilot usefulness, or product completion. |
-| Current preflight | The recorded clean preflight applies only to this documentation packet | Repository verification and historical fixture evidence do not substitute for a later packet's current read-only preflight. |
-| Execution Consent | This docs-only packet has separately scoped Execution Consent based on that recorded preflight | It permits only the four authorized canonical-document mutations. No broad or future Execution Consent is recorded; every later bounded mutating packet needs its own current read-only preflight and exactly fitting Execution Consent. |
+| Current preflight | The recorded clean preflight covers exact pre-mutation repository basis `ede1bcb61358c48679c09e850d044752c7493d6f` for this documentation packet | Repository verification and historical fixture evidence do not substitute for a later packet's current read-only preflight. |
+| Execution Consent | This docs-only packet has separately scoped Execution Consent bound to that recorded preflight and exact pre-mutation basis | It permits only the four authorized canonical-document mutations. No broad or future Execution Consent is recorded; every later bounded mutating packet needs its own current read-only preflight and exactly fitting Execution Consent. |
 
 The historical repository cannot prove which pre-Program control or Execution
 Consent governed the original bootstrap. This record does not rewrite or
@@ -90,7 +90,7 @@ rather than editing D-01 in place.
 
 | ID | State | Decision | Basis and consequence |
 |---|---|---|---|
-| FND-01 | **ACCEPTED** | **New foundation route.** | This accepts the documented Foundation route and, under selected POL-01, the verified FS-01 Foundation baseline. |
+| FND-01 | **ACCEPTED** | **New foundation route.** | This accepts only the documented Foundation route. Canonical FS-01 adoption is a separate POL-01 authority record in section 1 and cannot be inferred from route approval. |
 | VAL-01 | **ACCEPTED** | **No separate Validation Slice now.** | No concrete technical unknown has yet shown a need for disposable code; reopen only for a decision-changing feasibility risk. |
 | EXE-01 | **ACCEPTED** | **Second Mate does not coordinate its own bootstrap.** | A human starts approved coding runs manually; the fixture does not plan, authorize, or execute its own implementation. |
 | EXE-02 | **ACCEPTED** | **A manually launched Sol xhigh coding agent executes the Foundation Slice.** | Sol Ultra owns architecture/route challenge and material recovery review; this is not a permanent agent mesh. |
