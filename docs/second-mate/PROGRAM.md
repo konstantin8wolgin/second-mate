@@ -1,8 +1,8 @@
 # Second Mate bootstrap Program
 
 Status: candidate initial Program; POL-01 narrowly selected, FS-01 canonically
-adopted as the Foundation baseline, and CAP-01 complete; MS-01 remains blocked
-only on the human operator/D-01 product check
+adopted as the Foundation baseline, and CAP-01 and MS-01 complete; MS-01 closes
+only under the 2026-08-04 one-time scoped acceptance
 
 Date: 2026-08-03
 
@@ -36,8 +36,10 @@ separate records even when supplied in one instruction.
 | POL-01 | **Selected: narrow pre-Program consent.** The dangerous question is whether fixture-only FS-01 is sufficient as Second Mate's permanent authority, evidence, and recovery foundation. | The envelope is this clean checkout, existing Python FS-01 implementation/tests, and checked-in fixture; resources are local Python 3.12, Git, filesystem, CPU, and disk; no network, credentials, provider, external target, or external commitment; discard disposable run state and retain at most existing FS-01. It canonically adopts verified FS-01 and completes CAP-01 only. |
 | T-01 / ENV-01 | Python 3.12 and the recorded local Git/filesystem environment | Accepts the verified initial runtime boundary, not cross-platform or remote support. |
 | FS-01 technical evidence | The verified FS-01 implementation and local repository evidence are canonically adopted as the Foundation baseline | Its claims remain limited to the fixture lifecycle; the adoption does not prove a live model/provider run, broad workflow, autonomous recovery, provider security, pilot usefulness, or product completion. |
-| Current preflight | The recorded clean preflight covers exact pre-mutation repository basis `ede1bcb61358c48679c09e850d044752c7493d6f` for this documentation packet | Repository verification and historical fixture evidence do not substitute for a later packet's current read-only preflight. |
-| Execution Consent | This docs-only packet has separately scoped Execution Consent bound to that recorded preflight and exact pre-mutation basis | It permits only the four authorized canonical-document mutations. No broad or future Execution Consent is recorded; every later bounded mutating packet needs its own current read-only preflight and exactly fitting Execution Consent. |
+| 2026-08-03 packet preflight | The recorded clean preflight covers exact pre-mutation repository basis `ede1bcb61358c48679c09e850d044752c7493d6f` for that documentation packet | Repository verification and historical fixture evidence do not substitute for a later packet's current read-only preflight. |
+| 2026-08-03 Execution Consent | That docs-only packet had separately scoped Execution Consent bound to its recorded preflight and exact pre-mutation basis | It permitted only the four authorized canonical-document mutations. No broad or future Execution Consent was recorded. |
+| 2026-08-04 read-only preflight | The current read-only preflight covers exact repository basis `e46c6dc82df54e16ecd39d6ab826c6146d401739` for this status reconciliation | It is evidence only for this local close and does not substitute for a later packet's current read-only preflight. |
+| 2026-08-04 Execution Consent | The latest request supplies scoped Execution Consent only for local status-document edits to `README.md`, `workflow-spec.md`, this Program, and `implementation-checklist.md` | It authorizes no runtime mutation, later packet, provider, credential, external target, push, publication, deployment, or external effect. Every later bounded mutating packet needs its own current read-only preflight and exactly fitting Execution Consent. |
 
 The historical repository cannot prove which pre-Program control or Execution
 Consent governed the original bootstrap. This record does not rewrite or
@@ -46,11 +48,18 @@ selection, credentials, external execution, push, publication, deployment,
 Rumble integration, and pilots remain unauthorized.
 
 POL-01 selection removes the prior policy block: verified FS-01 is canonically
-adopted and CAP-01 is complete. MS-01 remains blocked only on the distinct
-human operator/product check of the observed fixture journey. Binding Direction
-coverage remains `still_remaining`. These states remain separate from Direction
-approval, route approval, toolchain/environment acceptance, current preflight,
-and this packet's scoped Execution Consent.
+adopted and CAP-01 is complete. On 2026-08-04, the human accepted
+plan-conformant FS-01 completion without personally observing the fixture
+CLI/output journey and declined further FS-01 decision requests. For MS-01
+only, this one-time scoped acceptance replaces the former personal-observation
+gate and completes MS-01. It does not record a human review, observation,
+CLI/output-clarity judgment, or D-01-fit proof; those unobserved qualities
+remain accepted residual uncertainty. The fixed FS-01 first workflow is
+terminal with no further user decision. Binding Direction coverage remains
+`still_remaining`. These states remain separate from Direction approval, route
+approval, toolchain/environment acceptance, current preflight, and each
+packet's scoped Execution Consent. The general milestone human-product-review
+rule remains unchanged.
 
 ## 2. Approved Direction D-01
 
@@ -242,8 +251,11 @@ but the repository cannot prove it.
   reviewable, and contains no fixture secret or private transcript field;
 - the selected toolchain's full repository lint, type/static, test, and build
   gates; and
-- one human review of CLI/output clarity and whether the observed journey still
-  matches D-01.
+- the originally planned human review of CLI/output clarity and whether the
+  observed journey still matches D-01. That observation was not supplied;
+  instead, the 2026-08-04 one-time scoped acceptance completes MS-01 without
+  claiming that review, clarity judgment, or D-01-fit proof. The unobserved
+  qualities remain accepted residual uncertainty.
 
 This evidence may prove only the local lifecycle, refusal behavior, durable
 state, and executor seam exercised by the fixture. It does **not** prove a live
@@ -270,9 +282,12 @@ technical repository evidence separately from the authority records in section
    failing. The slice does not call a live model, exercise credentials or
    provider interruption, automate Rumble/Direction or Foundation routing,
    validate a medium pilot, prove autonomous recovery, or establish general
-   security or compatibility. The required human review of CLI/output clarity
-   and fit to approved D-01 has not been recorded. Python/ENV-01 acceptance is
-   recorded separately in section 1; it does not widen those technical claims.
+   security or compatibility. The human did not personally observe the
+   CLI/output journey or record a clarity or D-01-fit judgment. The 2026-08-04
+   one-time scoped acceptance completes MS-01 without converting that missing
+   observation into evidence; it remains accepted residual uncertainty.
+   Python/ENV-01 acceptance is recorded separately in section 1; it does not
+   widen those technical claims.
 3. **Backbone consequence.** The exercised B-01 concepts and invariants held;
    no broader Backbone was earned. Verification tightened existing boundaries
    rather than adding a platform: strict JSON/schema parsing; semantic state,
@@ -289,11 +304,12 @@ technical repository evidence separately from the authority records in section
    write retryable without treating a pathname, digest, Unix owner, or private
    mode as ownership.
 4. **Future-route consequence.** Selected narrow POL-01 canonically adopts the
-   verified FS-01 Foundation baseline and completes CAP-01. MS-01 is blocked
-   only on the distinct documented human operator/product check. PRV-01 remains
-   a later human decision about one real adapter; it unlocks neither an adapter
-   nor a pilot. CAP-02 and later Map items remain candidates or blocked as
-   shown below. Direction coverage remains `still_remaining`.
+   verified FS-01 Foundation baseline and completes CAP-01. The 2026-08-04
+   one-time scoped acceptance completes MS-01 without a personal observation;
+   the fixed FS-01 first workflow is terminal with no further user decision.
+   PRV-01 remains a later human decision about one real adapter; it unlocks
+   neither an adapter nor a pilot. CAP-02 and later Map items remain candidates
+   or blocked as shown below. Direction coverage remains `still_remaining`.
 
 The repository has therefore reached a truthful technical terminal state for
 the fixed FS-01 fixture route, not a completed Second Mate Program or product.
@@ -303,15 +319,16 @@ the fixed FS-01 fixture route, not a completed Second Mate Program or product.
 | Capability or milestone | Direction coverage | Status now | Dependencies and proof intent |
 |---|---|---|---|
 | CAP-01: Durable authority and direct-packet lifecycle | DIR-01, DIR-02, DIR-04, DIR-05; supports DIR-03; constrained by DIR-06 | `completed` | The human selected the narrow FS-01 envelope, canonically adopted verified FS-01 as the Foundation baseline, and approved this capability complete. Its evidence remains limited to the local fixture lifecycle. |
-| MS-01: Foundation Slice proven | The FS-01 subset of DIR-01, DIR-02, DIR-04, DIR-05; DIR-03 and full product use remain | `blocked` | The only remaining gate is the human check of the actual operator journey for CLI/output clarity and D-01 fit. The repository evidence review cannot replace that product judgment. |
-| CAP-02: One real provider-owned direct run | DIR-01 through DIR-05; constrained by DIR-06 | `candidate` | MS-01, PRV-01, credential/privacy boundary, interruption recovery, and a newly consented packet. Proof must include a real user-facing change and final-revision replay. |
+| MS-01: Foundation Slice close | The FS-01 subset of DIR-01, DIR-02, DIR-04, DIR-05; DIR-03 and full product use remain | `completed` | The 2026-08-04 one-time scoped acceptance replaces the former personal-observation gate. It records no human review, observation, CLI/output-clarity judgment, or D-01-fit proof; those remain accepted residual uncertainty. |
+| CAP-02: One real provider-owned direct run | DIR-01 through DIR-05; constrained by DIR-06 | `candidate` | PRV-01, credential/privacy boundary, interruption recovery, and a newly consented packet. Proof must include a real user-facing change and final-revision replay. |
 | MS-02: Usable manually supervised coordinator | DIR-01 through DIR-06 within one-provider direct-route scope | `candidate` | CAP-02; one real direct packet closes without authority drift or hidden remaining work. Human product check required. |
-| CAP-03: Foundation-route records and Map frontier | DIR-01 through DIR-05; constrained by DIR-06 | `candidate` | MS-01 evidence and CAP-01 concepts; implement only the minimal Backbone/evidence/Map states required by a selected pilot. |
+| CAP-03: Foundation-route records and Map frontier | DIR-01 through DIR-05; constrained by DIR-06 | `candidate` | The limited FS-01 close and CAP-01 concepts; implement only the minimal Backbone/evidence/Map states required by a selected pilot. |
 | MS-03: Medium Foundation-route pilot | DIR-01 through DIR-06 at the pilot envelope | `blocked` | CAP-02, CAP-03, an external target with known baseline, separately scoped pilot consent, several packets, and one meaningful milestone. |
 | CAP-04: Hardening or additional automation | Unassigned until evidence shows which Direction claim needs it | `uncertain` | Only repeated pilot failures may justify more persistence, roles, concurrency, UI, provider abstraction, or repository knowledge machinery. |
 
-Binding DIR-01 through DIR-06 coverage is currently `still_remaining`. MS-01
-may prove only the foundation journey it exercises. MS-02 or MS-03 must not
+Binding DIR-01 through DIR-06 coverage is currently `still_remaining`. The
+MS-01 scoped acceptance closes only the fixed FS-01 first workflow and does not
+prove the unobserved qualities or the whole Direction. MS-02 or MS-03 must not
 declare the whole Direction proven without evidence for the actual completion
 claim.
 
@@ -322,9 +339,12 @@ candidates intentionally have no packet-level implementation detail.
 
 Evidence classification: **technically verified and canonically adopted within
 the selected narrow envelope**. The implementation already exists, its
-technical proof has been replayed, and CAP-01 is complete. MS-01 remains
-blocked only on the human operator/product check. This historical packet must
-not be treated as prospective permission to reimplement or expand FS-01.
+technical proof has been replayed, and CAP-01 and MS-01 are complete. MS-01 is
+complete only under the 2026-08-04 scoped acceptance, not a human observation
+or product-fit proof; its unobserved qualities remain accepted residual
+uncertainty. The fixed FS-01 first workflow is terminal with no further user
+decision. This historical packet must not be treated as prospective permission
+to reimplement or expand FS-01.
 
 **Outcome.** Deliver and prove FS-01 as one coherent permanent vertical slice.
 
@@ -349,9 +369,11 @@ does not backdate a grant. Every new mutating packet still needs a fresh
 preflight and exact Execution Consent.
 
 **Proof.** The automated, structural, packaging, recovery, and clean-fixture
-items are recorded in the repository evidence review above. The human
-CLI/output and D-01 product review remains outstanding. A green unit suite alone
-would not have been completion; the dedicated fixture journey was replayed.
+items are recorded in the repository evidence review above. The human did not
+personally observe the CLI/output journey or provide a D-01-fit judgment; the
+one-time scoped acceptance completes MS-01 without claiming either, and they
+remain accepted residual uncertainty. A green unit suite alone would not have
+been completion; the dedicated fixture journey was replayed.
 
 **Stop and recovery conditions.** Stop before mutation if any gate or baseline
 is unclear. Stop during execution on scope/authority drift, an unapproved
@@ -360,12 +382,15 @@ demonstrate pre-consent non-execution, or evidence that the atomic/recoverable
 close design is false. Classify the smallest pressure layer; do not silently
 expand the packet or reopen Direction.
 
-**Unlock.** A proved MS-01 permits an evidence-informed decision and packet for
-exactly one live provider adapter. It does not authorize that work.
+**Unlock.** MS-01 completes only the fixed FS-01 first workflow. Any future
+provider-adapter decision or packet remains separate unauthorized scope and
+needs a new decision, current read-only preflight, and exactly fitting
+Execution Consent.
 
-No second implementation packet is detailed. The remaining FS-01 product check
-does not justify a new runtime packet, and detailing CAP-02 before PRV-01 would
-create a speculative backlog.
+No second implementation packet is detailed. The former FS-01
+personal-observation gate is closed only by the scoped acceptance and does not
+justify a new runtime packet; detailing CAP-02 before PRV-01 would create a
+speculative backlog.
 
 ## 8. Traceability and readiness
 
@@ -385,8 +410,9 @@ create a speculative backlog.
   replayed as a new packet. The narrow envelope adopted FS-01 only; any new
   Validation or Foundation mutation or expansion needs its own current
   non-mutating preflight and exactly fitting Execution Consent.
-- **Pilot-ready:** MS-01 and CAP-02 are proved; POL-01 is chosen; the target
-  pilot has a known baseline, bounded data/provider authority, approved
+- **Pilot-ready:** MS-01 is complete only under its documented limited scoped
+  acceptance and CAP-02 has its own claim-fit proof; POL-01 is chosen; the
+  target pilot has a known baseline, bounded data/provider authority, approved
   Direction and route, and claim-fit milestone proof.
 - **Release/expansion-ready:** binding completion coverage is proven or
   explicitly and humanly changed/deferred; project-wide quality and relevant
@@ -408,23 +434,25 @@ platform.
 
 ## 10. Next human action
 
-Personally review the observed fixture operator journey and judge its CLI/output
-clarity and D-01 fit; that explicit product observation is the only remaining
-MS-01 gate. Do not infer it from technical evidence. Do not select a
-provider/host or continue into a runtime packet.
+No further FS-01 decision is requested: the fixed first workflow is terminal
+under the 2026-08-04 one-time scoped acceptance. The absent personal
+CLI/output observation, clarity judgment, and D-01-fit proof remain accepted
+residual uncertainty. Do not select a provider/host or continue into a runtime
+packet; those and CAP-02 onward, pilots, Rumble, push, publication, deployment,
+and external work remain separate future unauthorized scope.
 
 ## 11. Continuation prompt while human gates are open
 
 > Read `docs/second-mate/PROGRAM.md` and the canonical workflow specification.
 > Do not reimplement FS-01 merely because its historical branch remains visible;
 > it is already merged. First verify the recorded human decisions, including
-> the selected narrow POL-01 envelope, canonical FS-01 adoption, and CAP-01
-> completion. Treat the existing implementation and evidence as limited to the
-> fixture lifecycle, not as proof of a broader product or a future grant.
-> If the human product check is still missing, operate the documented fixture
-> journey without mutation to Second Mate itself and return that observation.
-> Do not select or build a provider adapter, pilot, generalized orchestration
-> machinery, or other next packet without the chosen POL-01 control, current
-> read-only preflight, and exactly fitting Execution Consent. Stop and classify
-> pressure if authority, Direction, Backbone, or proof no longer fits. Do not
-> publish, deploy, or push.
+> the selected narrow POL-01 envelope, canonical FS-01 adoption, CAP-01
+> completion, and the 2026-08-04 scoped MS-01 acceptance. Treat the existing
+> implementation and evidence as limited to the fixture lifecycle, not as proof
+> of a broader product or a future grant. The fixed FS-01 first workflow is
+> terminal; do not request another FS-01 decision or manufacture a human
+> observation, clarity judgment, or D-01-fit proof. Do not select or build a
+> provider adapter, pilot, generalized orchestration machinery, or other next
+> packet without the chosen POL-01 control, current read-only preflight, and
+> exactly fitting Execution Consent. Stop and classify pressure if authority,
+> Direction, Backbone, or proof no longer fits. Do not publish, deploy, or push.

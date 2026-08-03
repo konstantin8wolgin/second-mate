@@ -1,8 +1,9 @@
 # Second Mate design
 
 Status: canonical design; POL-01 narrowly selected, the verified FS-01
-Foundation baseline canonically adopted, CAP-01 complete; MS-01 remains blocked
-only on the human operator/D-01 product check
+Foundation baseline canonically adopted, CAP-01 complete, and MS-01 completed
+under the 2026-08-04 one-time scoped acceptance; the fixed FS-01 first workflow
+is terminal and binding Direction coverage remains `still_remaining`
 
 Second Mate is a lean coordinator for AI coding work. It preserves human-owned product Direction, gives capable models room to solve technical problems, and requires evidence that fits each completion claim. It is a clean project, not a retrofit of FirstMate, Knowless, or their backlog and worker structures.
 
@@ -49,10 +50,10 @@ Its boundary is this clean checkout, the existing Python FS-01 implementation
 and tests, and the checked-in fixture. Its resources are local Python 3.12,
 Git, filesystem, CPU, and disk. It permits no network, credentials, provider,
 external target, or external commitment; disposable run state is discarded and
-at most the existing FS-01 Foundation Slice is retained. This exact docs-only
-packet has separately scoped Execution Consent on the recorded current
-read-only preflight. It authorizes neither a later packet nor any Validation or
-Foundation mutation or expansion.
+at most the existing FS-01 Foundation Slice is retained. The recorded
+2026-08-03 docs-only packet had separately scoped Execution Consent on its
+recorded current read-only preflight. It authorized neither a later packet nor
+any Validation or Foundation mutation or expansion.
 
 The record does not backdate or prove the missing historical bootstrap grant.
 No broad or future Second Mate Execution Consent is recorded. Direction
@@ -63,8 +64,29 @@ fitting Execution Consent. Provider or host selection, credentials, external
 execution, pushing, publishing, deployment, Rumble integration, and pilots
 remain unauthorized.
 
-MS-01 remains blocked only on the human personally reviewing the fixture
-operator journey and judging its CLI/output clarity and D-01 fit. Binding
-Direction coverage remains `still_remaining`; neither CAP-01 completion nor
-canonical FS-01 adoption proves broader Direction coverage or product
-completion.
+At the time of the 2026-08-03 packet record, MS-01 remained blocked on a
+personal operator/product check. Binding Direction coverage remained
+`still_remaining`; neither CAP-01 completion nor canonical FS-01 adoption
+proved broader Direction coverage or product completion.
+
+## Recorded status reconciliation — 2026-08-04
+
+Read-only preflight established repository basis
+`e46c6dc82df54e16ecd39d6ab826c6146d401739`. The latest request supplies
+scoped Execution Consent only for local status-document edits to this README,
+`workflow-spec.md`, `PROGRAM.md`, and `implementation-checklist.md`; it
+authorizes no runtime mutation, later packet, or external effect.
+
+On this basis, the human accepted plan-conformant FS-01 completion without
+personally observing the fixture CLI/output journey and declined further FS-01
+decision requests. For MS-01 only, that one-time scoped acceptance replaces the
+former personal-observation gate and completes MS-01. It is not a human review,
+observation, CLI/output-clarity judgment, or proof of D-01 fit; those unobserved
+qualities remain accepted residual uncertainty.
+
+The fixed FS-01 first workflow is therefore terminal, with no further user
+decision. This narrow close does not amend the general milestone human-product
+review rule, turn technical evidence into broader product evidence, or change
+binding Direction coverage from `still_remaining`. Provider or host selection,
+credentials, CAP-02 onward, pilot work, Rumble, push, publication, deployment,
+and all external work remain separate future unauthorized scope.

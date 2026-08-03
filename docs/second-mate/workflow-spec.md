@@ -1,8 +1,8 @@
 # Second Mate workflow specification
 
 Status: canonical design; POL-01 narrowly selected and FS-01 canonically
-adopted as the Foundation baseline; CAP-01 is complete and MS-01 awaits only
-the human operator/D-01 product check
+adopted as the Foundation baseline; CAP-01 and MS-01 are complete, with MS-01
+closed only under the 2026-08-04 one-time scoped acceptance
 Date: 2026-08-03
 
 The implementation currently exercises only one supervised, fixture-based
@@ -87,12 +87,27 @@ Program and exactly fitting Execution Consent precede canonical adoption or
 Validation/Foundation execution, and material Foundation evidence must revise
 and, when needed, re-challenge the Map before expansion.
 
-This exact docs-only packet has its own scoped Execution Consent based on its
-recorded current read-only preflight. It changes only the four authorized
-canonical documents and authorizes neither a later packet nor any runtime
-mutation or expansion. MS-01 remains blocked only on the human operator review
-of the observed fixture journey for CLI/output clarity and D-01 fit; binding
-Direction coverage remains `still_remaining`.
+The 2026-08-03 docs-only packet had its own scoped Execution Consent based on
+its recorded current read-only preflight. It changed only the four authorized
+canonical documents and authorized neither a later packet nor any runtime
+mutation or expansion. At that time, MS-01 was blocked on the human
+operator/product check; binding Direction coverage remained `still_remaining`.
+
+On 2026-08-04, read-only preflight recorded repository basis
+`e46c6dc82df54e16ecd39d6ab826c6146d401739`. The latest request supplies
+Execution Consent only for local status-document edits to `README.md`, this
+specification, `PROGRAM.md`, and `implementation-checklist.md`. The human
+accepted plan-conformant FS-01 completion without personally observing the
+fixture CLI/output journey and declined further FS-01 decision requests. For
+MS-01 only, that one-time scoped acceptance replaces the former
+personal-observation gate and completes MS-01. It records no human review,
+observation, CLI/output-clarity judgment, or D-01-fit proof; those unobserved
+qualities remain accepted residual uncertainty. The fixed FS-01 first workflow
+is terminal with no further user decision. This exception does not amend the
+general milestone human-product-review rule below, widen technical evidence,
+or change binding Direction coverage from `still_remaining`; all later provider,
+credentials, CAP-02 onward, pilot, Rumble, push, publication, deployment, and
+external work remain separately unauthorized future scope.
 
 ## 3. Scaled Rumble and Direction
 
