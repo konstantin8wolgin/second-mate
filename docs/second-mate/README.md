@@ -1,6 +1,7 @@
 # Second Mate design
 
-Status: canonical design with a verified FS-01 implementation subset
+Status: canonical design; FS-01 baseline prospectively accepted, with its
+operator/product check still outstanding
 
 Second Mate is a lean coordinator for AI coding work. It preserves human-owned product Direction, gives capable models room to solve technical problems, and requires evidence that fits each completion claim. It is a clean project, not a retrofit of FirstMate, Knowless, or their backlog and worker structures.
 
@@ -34,15 +35,22 @@ Second Mate is not:
 
 Mechanisms outside the canonical workflow enter scope only after pilots show a repeated need that cannot be met more simply.
 
-## Open execution-policy gate
+## Prospective authority record — 2026-08-03
 
-The user must choose one policy before any further pre-Program Validation Slice
-or Foundation Slice execution is treated as canonically authorized:
+The human has prospectively approved exact Direction D-01, the documented
+evidence-based Foundation route, Python 3.12 and ENV-01, and adoption of the
+already verified FS-01 implementation as the Foundation baseline. The selected
+POL-01 policy is narrow pre-Program consent: bounded local, no-external
+Foundation work may proceed before a provider is selected.
 
-- explicit narrow consent for a named, bounded pre-Program learning and Foundation envelope; or
-- full-Program-first control, under which pre-Program work remains non-mutating until the complete Program receives Execution Consent.
+These records do not backdate the missing bootstrap grant. Separately, the
+human has granted Execution Consent for the local repository mutations needed
+to finish the approved first workflow, but only after a fresh read-only
+preflight for each bounded packet. That consent excludes provider or host
+selection, credentials, external execution, pushing, publishing, deployment,
+and any other external commitment. Direction approval, route approval, and
+Execution Consent remain distinct records.
 
-This package intentionally does not choose. The existing FS-01 code and its
-technical evidence do not retroactively resolve the missing policy record.
-Direction approval and Delivery Map approval do not silently authorize code or
-external effects.
+The remaining product gate for the accepted FS-01 baseline is the documented
+human check of the fixture operator journey. A real provider/host selection is
+an intentionally later, blocked decision; FS-01 evidence does not authorize it.

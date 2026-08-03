@@ -1,6 +1,7 @@
 # Second Mate implementation and pilot readiness
 
-Status: canonical readiness checklist; FS-01 evidence exists, Program readiness remains blocked
+Status: canonical readiness checklist; initial approvals are recorded, FS-01
+operator/product evidence remains incomplete
 
 This checklist records gates and observable readiness. It does not assign tasks, define a backlog, impose ordering beyond the workflow's authority gates, or recreate a Milestone Spine.
 
@@ -8,19 +9,33 @@ An unchecked item means the broader workflow or Program gate has not been
 proved and accepted; it does not mean no supporting code exists. The local
 FS-01 slice now supplies executable evidence for a narrow subset of the
 Foundation, packet, safeguard, and persistence items. [PROGRAM.md](PROGRAM.md)
-records that evidence and its limits. The authority choices, human product
-review, provider path, and pilot evidence remain unchecked and must not be
-inferred from a green fixture suite.
+records that evidence and its limits. The human product review, provider path,
+and pilot evidence remain unchecked and must not be inferred from a green
+fixture suite.
+
+## Current evidence classification
+
+The four classifications below apply to the current branch and the prospective
+2026-08-03 authority record. They distinguish code or document existence from
+claim-fit proof; they do not backdate the historical bootstrap.
+
+| First-workflow requirement area | Classification | Current evidence or exact gap |
+|---|---|---|
+| D-01, route, POL-01, T-01/ENV-01, and FS-01 baseline adoption | **proved** | Explicit prospective human decisions are recorded in [PROGRAM.md](PROGRAM.md). |
+| FS-01 deterministic local lifecycle and its stated invariants | **proved** | The implementation, fixture journey, refusal/recovery tests, and repository gates are recorded in [PROGRAM.md](PROGRAM.md) and [FS-01-OPERATOR.md](FS-01-OPERATOR.md). |
+| FS-01 operator clarity and D-01 fit | **implemented but insufficiently verified** | The operator surface and guide exist, but the required human product check of the observed fixture journey has not been recorded. |
+| Scaled Rumble/Direction handoff and broader workflow automation | **defective or incomplete** | The current branch implements only FS-01; the separate local Rumble/Direction handoff is preserved but unintegrated and has no canonical acceptance or current-branch proof. |
+| One real provider-owned run, provider/host boundary, and medium pilot | **blocked on explicit human authority/product decision** | A provider/host, credentials/privacy boundary, external target, and separately scoped authority have not been selected. |
 
 ## Authority and scope
 
-- [ ] The user has chosen narrow pre-Program consent or full-Program-first control.
-- [ ] Direction approval, route approval, and execution authority are represented as distinct states.
-- [ ] Execution Consent is resolved or obtained and recorded before the first mutation; an earlier explicit grant is reused only when its boundary still fits exactly.
-- [ ] No new pre-Program Validation or Foundation mutation, canonical adoption, or expansion proceeds while the consent-policy choice is unresolved.
-- [ ] External effects and irreversible actions are denied unless explicitly inside current authority.
+- [x] The user has chosen narrow pre-Program consent or full-Program-first control.
+- [x] Direction approval, route approval, and execution authority are represented as distinct states.
+- [x] Execution Consent is recorded prospectively for local packets only; each mutation still requires a fresh preflight whose boundary fits exactly.
+- [x] No new pre-Program Validation or Foundation mutation, canonical adoption, or expansion proceeds while the consent-policy choice is unresolved.
+- [x] External effects and irreversible actions are denied unless explicitly inside current authority.
 - [ ] The initial runtime boundary fits the rough 4–9k handwritten implementation-code scope or documents a pilot-derived reason to exceed it.
-- [ ] FirstMate and Knowless are sources or optional primitive providers only; Second Mate has no retrofit dependency on their workflow structures.
+- [x] FirstMate and Knowless are sources or optional primitive providers only; Second Mate has no retrofit dependency on their workflow structures.
 
 ## Direction and routing
 
@@ -28,7 +43,7 @@ inferred from a green fixture suite.
 - [ ] The exact approved Direction text is immutable and versioned on material change.
 - [ ] Raw Rumble material and provider transcripts remain private local state.
 - [ ] Sol Ultra synthesis and a fresh independent challenge use the same authority sources without shared private reasoning.
-- [ ] Direct versus Foundation routing records a short evidence-based reason without a score.
+- [x] Direct versus Foundation routing records a short evidence-based reason without a score.
 - [ ] Small isolated work can stay direct without Map or Foundation ceremony.
 
 ## Foundation readiness
@@ -36,28 +51,28 @@ inferred from a green fixture suite.
 - [ ] A compact interaction view is created only when shared relationships or dangerous unknowns warrant it.
 - [ ] A Validation Slice, when selected, names one decision-changing question, realistic envelope, evidence, limits, and discard boundary.
 - [ ] Disposable code cannot enter the permanent path merely because it works.
-- [ ] The Backbone states only evidenced concepts, ownership/lifecycle, invariants, compatibility, boundaries, and proof seams.
+- [x] The Backbone states only evidenced concepts, ownership/lifecycle, invariants, compatibility, boundaries, and proof seams.
 - [ ] The permanent Foundation Slice exercises a real representative journey and meets the repository's permanent quality bar.
-- [ ] The Foundation evidence review separates proved, failed/uncertain, boundary, and future-route consequences.
+- [x] The Foundation evidence review separates proved, failed/uncertain, boundary, and future-route consequences.
 
 ## Delivery Map readiness
 
 - [ ] The Map links Direction to capabilities, meaningful product milestones, evidence, and the ready frontier.
 - [ ] An independent Sol Ultra Challenger checks coverage, product meaning, Foundation fit, order, assumptions, proof, and packet breadth.
-- [ ] The human has approved the revised route and material trade-offs.
+- [x] The human has approved the revised route and material trade-offs.
 - [ ] Only the next one or two `ready` packets carry detailed contracts.
-- [ ] Route status and binding Direction coverage remain distinct.
-- [ ] The Map is not a full backlog, dependency graph, universal task schema, or Milestone Spine.
+- [x] Route status and binding Direction coverage remain distinct.
+- [x] The Map is not a full backlog, dependency graph, universal task schema, or Milestone Spine.
 
 ## Packet execution and close
 
-- [ ] Every ready packet has one outcome, a coherent boundary, and claim-fit proof.
-- [ ] Preflight resolves repository state, instructions, dependencies, baseline behavior, existing failures, authority, and irreversible-change risk.
+- [x] Every ready packet has one outcome, a coherent boundary, and claim-fit proof.
+- [x] Preflight resolves repository state, instructions, dependencies, baseline behavior, existing failures, authority, and irreversible-change risk.
 - [ ] User-facing bugs are reproduced end to end before the fix and replayed after it.
 - [ ] The working model may plan, diagnose, implement, test, and iterate freely inside the contract.
-- [ ] Clean close replays the real affected interaction at the final revision.
-- [ ] Evidence, route/coverage status, residual uncertainty, pressure classification, and handoff are written in one recoverable transition.
-- [ ] A failed packet cannot unlock or detail new frontier work.
+- [x] Clean close replays the real affected interaction at the final revision.
+- [x] Evidence, route/coverage status, residual uncertainty, pressure classification, and handoff are written in one recoverable transition.
+- [x] A failed packet cannot unlock or detail new frontier work.
 
 ## Safeguards and evidence
 
@@ -65,16 +80,16 @@ inferred from a green fixture suite.
 - [ ] Each meaningful product milestone has one human product check, without packet-by-packet approval.
 - [ ] Validation, Foundation, packets, milestones, and stabilization use evidence proportional to their claims.
 - [ ] Executable, structural, end-to-end, manual, and human evidence are combined only when the claim needs them.
-- [ ] Existing repository quality gates remain floors; no giant universal early suite is introduced.
-- [ ] Recovery chooses Packet, Map, Foundation, or Direction pressure at the smallest invalid premise.
+- [x] Existing repository quality gates remain floors; no giant universal early suite is introduced.
+- [x] Recovery chooses Packet, Map, Foundation, or Direction pressure at the smallest invalid premise.
 - [ ] Major architecture and recovery work routes to Sol Ultra; ready implementation routes to Sol xhigh; trivial low-risk work may use Sol High.
 
 ## Runtime and pilot readiness
 
 - [ ] Persistence is limited to Direction, the route reason, applicable Foundation Backbone/review, Map, evidence/status, handoff, and the clean-close transaction.
-- [ ] Credentials, leases, transcripts, and disposable provider state remain private and recoverable without becoming project authority.
-- [ ] No dashboard, mesh, numerical score, generalized control plane, RAG/code graph, giant schema, or universal template/test system is present without repeated pilot evidence.
-- [ ] Second Mate's first workflow is operated manually rather than self-orchestrated.
+- [x] Credentials, leases, transcripts, and disposable provider state remain private and recoverable without becoming project authority.
+- [x] No dashboard, mesh, numerical score, generalized control plane, RAG/code graph, giant schema, or universal template/test system is present without repeated pilot evidence.
+- [x] Second Mate's first workflow is operated manually rather than self-orchestrated.
 - [ ] The pilot target is medium-sized, baseline-known, and rich enough to exercise Foundation choice, several packets, one meaningful milestone, and honest recovery if evidence demands it.
 - [ ] Pilot observations cover Direction fidelity, decisive evidence, integration, closure, handoff, product progress, rework, missed outcomes, artifact burden, and human intervention.
 - [ ] Pilot conclusions are scoped to observed evidence and do not claim universal superiority.
