@@ -105,7 +105,7 @@ rather than editing D-01 in place.
 | ID | State | Decision needed | What it blocks | Resolution |
 |---|---|---|---|---|
 | POL-01 | **DECISION-BLOCKED** | Deliberately choose narrow pre-Program consent or full-Program-first control. | Planning-ready status, canonical adoption of existing FS-01 evidence, and any new Validation or Foundation mutation or expansion. | Narrow consent requires the dangerous question, code/data/infrastructure boundary, resource and side-effect limits, discard policy, and at most one permanent Foundation Slice; full-Program-first permits only non-mutating work until a complete Program and Execution Consent exist. |
-| T-01 | **ACCEPTED** | Python 3.12 plus ENV-01's tested Linux/filesystem, Git, locking, atomic-write/recovery, packaging, and operator assumptions. | Accepts the initial local runtime boundary and later local work that fits it. | It does not claim product acceptance for other platforms or providers. |
+| T-01 | **ACCEPTED** | Python 3.12 plus ENV-01's tested Linux/filesystem, Git, locking, atomic-write/recovery, packaging, and operator assumptions. | Establishes the accepted initial local runtime boundary for later separately authorized local work, each with its own current preflight and exactly fitting Execution Consent. | It does not claim product acceptance for other platforms or providers. |
 | PRV-01 | **DECISION-BLOCKED, LATER** | Select the first real provider/host integration and its credential, interruption, and continuation boundary. | A live AI coding run and pilot, but not the fixture-based Foundation Slice. | Evidence-based adapter decision after Foundation review; choose one provider, not an abstraction framework. |
 
 Serialization details remain locally reversible implementer choices, provided
@@ -227,8 +227,10 @@ preflight and proves that the stale basis blocks execution. Failure injection
 during close proves recovery to one truthful state.
 
 The test grant inside this journey is fixture data used to exercise B-01. It is
-not the human's bootstrap Execution Consent, which separately authorizes the
-coding agent to change the Second Mate repository.
+not evidence that a human bootstrap Execution Consent existed, and it does not
+authorize the coding agent to change the Second Mate repository. A separate
+human grant would have been required for that historical bootstrap mutation,
+but the repository cannot prove it.
 
 **Claim-fit proof.** At the exact final revision, retain:
 
