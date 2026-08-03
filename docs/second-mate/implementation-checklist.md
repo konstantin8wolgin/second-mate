@@ -1,15 +1,23 @@
 # Second Mate implementation and pilot readiness
 
-Status: canonical readiness checklist; not an implementation plan
+Status: canonical readiness checklist; FS-01 evidence exists, Program readiness remains blocked
 
 This checklist records gates and observable readiness. It does not assign tasks, define a backlog, impose ordering beyond the workflow's authority gates, or recreate a Milestone Spine.
+
+An unchecked item means the broader workflow or Program gate has not been
+proved and accepted; it does not mean no supporting code exists. The local
+FS-01 slice now supplies executable evidence for a narrow subset of the
+Foundation, packet, safeguard, and persistence items. [PROGRAM.md](PROGRAM.md)
+records that evidence and its limits. The authority choices, human product
+review, provider path, and pilot evidence remain unchecked and must not be
+inferred from a green fixture suite.
 
 ## Authority and scope
 
 - [ ] The user has chosen narrow pre-Program consent or full-Program-first control.
 - [ ] Direction approval, route approval, and execution authority are represented as distinct states.
 - [ ] Execution Consent is resolved or obtained and recorded before the first mutation; an earlier explicit grant is reused only when its boundary still fits exactly.
-- [ ] No pre-Program Validation or Foundation code can run while the consent-policy choice is unresolved.
+- [ ] No new pre-Program Validation or Foundation mutation, canonical adoption, or expansion proceeds while the consent-policy choice is unresolved.
 - [ ] External effects and irreversible actions are denied unless explicitly inside current authority.
 - [ ] The initial runtime boundary fits the rough 4–9k handwritten implementation-code scope or documents a pilot-derived reason to exceed it.
 - [ ] FirstMate and Knowless are sources or optional primitive providers only; Second Mate has no retrofit dependency on their workflow structures.

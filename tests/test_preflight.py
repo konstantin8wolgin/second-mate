@@ -5,6 +5,7 @@ import os
 import subprocess
 from pathlib import Path
 
+import pytest
 from test_draft import valid_direction, valid_packet
 
 import second_mate
@@ -60,6 +61,55 @@ def make_repository_with_ignored_instructions(tmp_path: Path) -> Path:
     return repository
 
 
+def enable_fsmonitor_fixture(repository: Path) -> None:
+    """Enable Git's v2 hook backend so fsmonitor-valid is a persistent index bit."""
+    hook = Path(run_git(repository, "rev-parse", "--git-path", "hooks/fsmonitor-test"))
+    if not hook.is_absolute():
+        hook = repository / hook
+    hook.write_text(
+        "#!/bin/sh\ntest \"$1\" = 2 || exit 1\nprintf 'fixture-token\\0'\n",
+        encoding="utf-8",
+    )
+    hook.chmod(0o755)
+    run_git(repository, "config", "core.fsmonitor", os.fspath(hook))
+    run_git(repository, "config", "core.fsmonitorHookVersion", "2")
+    run_git(repository, "update-index", "--fsmonitor")
+    run_git(repository, "update-index", "--no-fsmonitor-valid", "sentinel.txt")
+    assert run_git(repository, "ls-files", "-f", "sentinel.txt") == "H sentinel.txt"
+
+
+def index_flag_snapshot(repository: Path) -> tuple[str, str, str]:
+    return (
+        run_git(repository, "ls-files", "--stage", "sentinel.txt"),
+        run_git(repository, "ls-files", "-v", "sentinel.txt"),
+        run_git(repository, "ls-files", "-f", "sentinel.txt"),
+    )
+
+
+def enable_intent_to_add_fixture(repository: Path) -> None:
+    (repository / "intent-to-add.txt").write_bytes(b"")
+    run_git(repository, "add", "--intent-to-add", "intent-to-add.txt")
+
+
+def intent_to_add_snapshot(repository: Path) -> tuple[str, str, str, str]:
+    path = "intent-to-add.txt"
+    return (
+        run_git(repository, "ls-files", "--stage", "--", path),
+        run_git(repository, "ls-files", "-v", "--", path),
+        run_git(repository, "ls-files", "-f", "--", path),
+        run_git(
+            repository,
+            "diff",
+            "--cached",
+            "--raw",
+            "--no-renames",
+            "--ita-invisible-in-index",
+            "--",
+            path,
+        ),
+    )
+
+
 def target_snapshot(repository: Path) -> tuple[str, bytes, int, dict[str, bytes]]:
     index = repository / ".git" / "index"
     files = {
@@ -87,9 +137,12 @@ def test_preflight_records_exact_read_only_repository_basis(tmp_path: Path) -> N
     assert target_snapshot(repository) == before
     assert not (repository / ".second-mate").exists()
     assert result.record.repository_id == "fs01-fixture"
+    assert result.record.target_root == os.fspath(repository.resolve())
     assert result.record.direction_digest == draft.direction_digest
     assert result.record.packet_digest == draft.packet_digest
     assert result.record.revision.head == run_git(repository, "rev-parse", "HEAD")
+    assert result.record.revision.branch == run_git(repository, "rev-parse", "--abbrev-ref", "HEAD")
+    assert len(result.record.revision.index_sha256) == 64
     assert result.record.affected_baseline.result == "pass"
     assert result.record.affected_baseline.artifact_value == "before\n"
     assert (
@@ -106,3 +159,39 @@ def test_preflight_records_exact_read_only_repository_basis(tmp_path: Path) -> N
     assert result.record.existing_failures == ()
     assert result.record.eligible is True
     assert len(result.digest) == 64
+
+
+@pytest.mark.parametrize("proof_path", ("artifact.txt", "sentinel.txt"))
+def test_preflight_requires_proof_paths_in_the_visible_frozen_revision(
+    tmp_path: Path,
+    proof_path: str,
+) -> None:
+    repository = make_repository(tmp_path)
+    (repository / ".gitignore").write_text(f"{proof_path}\n", encoding="utf-8")
+    run_git(repository, "rm", "--cached", proof_path)
+    run_git(repository, "add", ".gitignore")
+    run_git(repository, "commit", "-q", "-m", "ignore one proof path")
+    draft = second_mate.create_draft(valid_direction(), valid_packet())
+
+    result = second_mate.preflight(draft, repository)
+
+    assert result.record.eligible is False
+    assert any("tracked or visible untracked" in item for item in result.record.existing_failures)
+
+
+@pytest.mark.parametrize("instruction_kind", ("dangling-symlink", "directory"))
+def test_preflight_refuses_nonregular_applicable_instruction_entries(
+    tmp_path: Path,
+    instruction_kind: str,
+) -> None:
+    repository = make_repository(tmp_path)
+    instruction = repository / "AGENTS.md"
+    instruction.unlink()
+    if instruction_kind == "dangling-symlink":
+        instruction.symlink_to("missing-instructions.md")
+    else:
+        instruction.mkdir()
+    draft = second_mate.create_draft(valid_direction(), valid_packet())
+
+    with pytest.raises(second_mate.ValidationError):
+        second_mate.preflight(draft, repository)

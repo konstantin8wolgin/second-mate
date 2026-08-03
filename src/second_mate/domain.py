@@ -54,8 +54,8 @@ def _text(value: object, label: str) -> str:
 
 
 def _version(value: object, label: str) -> int:
-    if value != 1:
-        raise ValidationError(f"{label} must be 1")
+    if type(value) is not int or value != 1:
+        raise ValidationError(f"{label} must be the integer 1")
     return 1
 
 
@@ -266,6 +266,8 @@ def _parse_packet(value: object) -> Packet:
         after=_text(proof_data["after"], "packet.proof.after"),
         sentinel_path=_path(proof_data["sentinel_path"], "packet.proof.sentinel_path"),
     )
+    if proof.artifact_path != "artifact.txt" or proof.sentinel_path != "sentinel.txt":
+        raise ValidationError("FS-01 proof paths must be exactly artifact.txt and sentinel.txt")
 
     if set(boundary.allowed_paths) != {STATE_PATH, proof.artifact_path}:
         raise ValidationError(

@@ -1,6 +1,6 @@
 # Second Mate bootstrap Program
 
-Status: challenged candidate Program; human decisions and execution blocked
+Status: challenged candidate Program; FS-01 technically verified; canonical continuation blocked
 
 Date: 2026-08-02
 
@@ -17,8 +17,20 @@ or use external services.
 ## 1. Authority and current readiness
 
 The user's latest explicit instructions and the canonical Second Mate package
-are the authority sources. No runtime exists, no code experiment has run, and
-no implementation evidence exists.
+are the authority sources. Repository evidence now supersedes the Program's
+original no-runtime premise: local `main` contains the merged Python FS-01
+Foundation Slice, and the fixture lifecycle has executable implementation
+evidence. The still-visible `fs01-foundation-slice` branch is historical; its
+tip is already an ancestor of merge commit `d06937d` on `main` and is not a
+second implementation to replay or merge.
+
+Code existence and technical proof do not establish that the Program's missing
+human decisions were made. No durable record approves candidate D-01, chooses
+POL-01 or T-01/ENV-01, approves this route, or grants the original bootstrap
+Execution Consent. The current local correction and verification request is
+authority for that bounded repository work; it is not a retroactive answer to
+those product-policy decisions and does not authorize a provider, pilot,
+publication, deployment, or other expansion.
 
 The Program is complete enough for challenge and human decision, but it is not
 yet a canonical complete Program or `planning-ready`. A packet cannot have
@@ -26,22 +38,26 @@ canonical route status `ready` while required authority is absent, so the one
 frontier packet below is contract-complete but remains `blocked`. Calling it
 ready now would contradict the workflow.
 
-Before any runtime mutation, the human must:
+Before the implementation can be adopted as a canonically completed Foundation
+milestone or any new runtime expansion begins, the human must:
 
 1. approve the exact Direction in section 2;
 2. choose the product consent policy in decision POL-01;
 3. choose the initial runtime/toolchain in decision T-01;
 4. approve the revised route represented by this Program; and
-5. after a fresh non-mutating preflight, grant Execution Consent for the exact
-   packet, repository revision, paths, resources, and effects.
+5. decide explicitly how to treat the already-present implementation given the
+   absent historical gate records; and
+6. after a fresh non-mutating preflight, grant Execution Consent for any new
+   mutating packet, repository revision, paths, resources, and effects.
 
 Direction approval, route approval, and Execution Consent remain distinct even
 if the human supplies them in one response.
 
-For Second Mate's own bootstrap, only inspection and planning have occurred.
-That observed non-mutation is not a consent-policy choice. POL-01 still requires
-an explicit human decision before any Validation or Foundation code is written;
-the human may choose full-Program-first specifically for this bootstrap.
+The repository cannot prove which pre-Program control governed the original
+bootstrap. POL-01 therefore still requires an explicit human decision before
+the existing slice is accepted as the canonical Foundation result or any new
+Validation, Foundation, or pilot execution is authorized. A later choice must
+be recorded prospectively; it must not rewrite the historical evidence.
 
 ## 2. Candidate Direction D-01
 
@@ -83,7 +99,7 @@ These decisions become accepted only through human route approval.
 
 | ID | State | Decision | Basis and consequence |
 |---|---|---|---|
-| FND-01 | **PROPOSED** | **New foundation.** | There is no runtime, while every later capability depends on the same authority, packet, evidence, and recovery semantics. A direct one-off implementation would cause those concepts to be reinvented. |
+| FND-01 | **PROPOSED** | **New foundation.** | At proposal time there was no runtime. The present FS-01 implementation now supplies evidence for shared authority, packet, evidence, and recovery semantics, but the Foundation route remains proposed until human route approval. |
 | VAL-01 | **PROPOSED** | **No separate Validation Slice now.** | No concrete technical unknown has yet been shown to need disposable code. The permanent lifecycle slice is the cheapest faithful test. Reopen this only if T-01 preflight exposes a decision-changing feasibility risk that the permanent slice cannot safely test. |
 | EXE-01 | **PROPOSED** | **Second Mate does not coordinate its own bootstrap.** | A human starts the approved coding run manually. Second Mate is tested against an isolated fixture repository; it is not used to plan, authorize, or execute its own implementation. |
 | EXE-02 | **PROPOSED** | **A manually launched Sol xhigh coding agent executes the Foundation Slice.** | Sol Ultra owns the architecture/route challenge and any material recovery review; it is not the default code writer. If a later Validation Slice is authorized, a separately contracted Sol xhigh coding run executes it within its discard boundary. These are bootstrap assignments, not permanent runtime roles or an agent mesh. |
@@ -94,8 +110,8 @@ These decisions become accepted only through human route approval.
 
 | ID | State | Decision needed | What it blocks | Resolution |
 |---|---|---|---|---|
-| POL-01 | **DECISION-BLOCKED** | Choose narrow pre-Program consent or full-Program-first control as Second Mate's product policy, including which choice governs this bootstrap. | Any Validation or Foundation code, including FS-01, and the medium pilot. | Human choice recorded alongside its exact authority boundary. |
-| T-01 | **DECISION-BLOCKED** | Select the initial runtime/toolchain and verify the ENV-01 OS/filesystem, Git, locking, atomic-write/recovery, packaging, and operator assumptions. The viable default candidates are TypeScript/Node and Python; decide from the intended environment, distribution path, provider SDK fit, typed transition ergonomics, and test burden. | Foundation Slice implementation. | A short Ultra recommendation grounded in the target operating environment and a read-only feasibility check, explicitly accepted by the human. Do not select from preference alone. |
+| POL-01 | **DECISION-BLOCKED** | Choose narrow pre-Program consent or full-Program-first control as Second Mate's product policy, and decide how the absent historical bootstrap record affects adoption of the existing slice. | Canonical acceptance of FS-01, any new Validation or Foundation execution, and the medium pilot. | Human choice recorded prospectively alongside its exact authority boundary; do not backdate it. |
+| T-01 | **DECISION-BLOCKED** | Accept or reject Python 3.12 as the initial runtime/toolchain and the tested ENV-01 Linux/filesystem, Git, locking, atomic-write/recovery, packaging, and operator assumptions. The repository proves local feasibility but cannot supply product acceptance. | Canonical acceptance of the Foundation Slice and later runtime work. | An explicit human decision grounded in the recorded local gates and intended distribution/provider environment. |
 | PRV-01 | **DECISION-BLOCKED, LATER** | Select the first real provider/host integration and its credential, interruption, and continuation boundary. | A live AI coding run and pilot, but not the fixture-based Foundation Slice. | Evidence-based adapter decision after Foundation review; choose one provider, not an abstraction framework. |
 
 T-01 is not safely reversible after permanent code accumulates, so this Program
@@ -244,16 +260,58 @@ state, and executor seam exercised by the fixture. It does **not** prove a live
 model run, provider security, broad workflow correctness, autonomous recovery,
 or pilot usefulness.
 
-The post-slice Foundation review must record what held, what failed or remained
-unexercised, whether any Backbone invariant changed, and the consequence for
-PRV-01 and the remaining Map. Those results cannot be written in advance.
+### FS-01 repository evidence review — 2026-08-03
+
+This review applies to the delivered working tree based on local `main` commit
+`ca6b185`. It records technical repository evidence, not missing human approval.
+
+1. **Proved.** The Python 3.12 CLI and library replay one clean fixture journey
+   through draft, read-only preflight, pre-consent refusal, exact fixture grant,
+   one dispatch, claim-fit evidence, and recoverable close. Negative and
+   failure-injection tests cover stale or ambiguous authority, revision and
+   instruction drift, duplicate ownership, restart reconciliation, unrelated
+   target mutation, filesystem aliases, malformed durable state, evidence
+   forgery, and interrupted close. Locked offline environment sync, Ruff lint
+   and format checks, strict mypy, the full pytest suite, source/wheel build,
+   the dedicated end-to-end replay, and isolated wheel install/import/CLI smoke
+   all pass in the repository-owned environment.
+2. **Failed, unexercised, or uncertain.** No current automated FS-01 check is
+   failing. The slice does not call a live model, exercise credentials or
+   provider interruption, automate Rumble/Direction or Foundation routing,
+   validate a medium pilot, prove autonomous recovery, or establish general
+   security or compatibility. The required human review of CLI/output clarity
+   and fit to candidate D-01 has not been recorded. Python/ENV-01 product
+   acceptance is also absent despite local feasibility evidence.
+3. **Backbone consequence.** The exercised B-01 concepts and invariants held;
+   no broader Backbone was earned. Verification tightened existing boundaries
+   rather than adding a platform: strict JSON/schema parsing; semantic state,
+   failed-evidence, executor-result, and close-transition validation; exact
+   physical-worktree/branch/index-stage/index-flag and evidence binding; serialized
+   evidence/close/recovery; durable first-owner persistence; and refusal of
+   reserved-path collisions or aliased proof, instruction, state, journal,
+   lock, and scratch paths. Strengthened preflight, run-state, and close-journal
+   formats are explicitly version 2 and refuse the weaker local version 1
+   forms; unsafe revision or instruction inspection is retained as failed
+   evidence rather than disappearing after repair. Owner-private, randomized,
+   content-addressed scratches backed by durable Git-private intent markers
+   retaining the intended document make an interrupted partial state or journal
+   write retryable without treating a pathname, digest, Unix owner, or private
+   mode as ownership.
+4. **Future-route consequence.** Technical FS-01 evidence narrows PRV-01 to a
+   later human decision about one real adapter, but unlocks no adapter or pilot.
+   CAP-01/MS-01 remain canonically blocked on the named human decisions and
+   product review; CAP-02 and later Map items remain candidates or blocked as
+   shown below. Direction coverage remains `still remaining`.
+
+The repository has therefore reached a truthful technical terminal state for
+the fixed FS-01 fixture route, not a completed Second Mate Program or product.
 
 ## 6. Living Delivery Map MAP-01
 
 | Capability or milestone | Direction coverage | Status now | Dependencies and proof intent |
 |---|---|---|---|
-| CAP-01: Durable authority and direct-packet lifecycle | DIR-01, DIR-02, DIR-04, DIR-05; supports DIR-03; constrained by DIR-06 | `blocked` | D-01, POL-01, T-01/ENV-01, route approval, fresh preflight, and Execution Consent. Proved only by FS-01 evidence. |
-| MS-01: Foundation Slice proven | The FS-01 subset of DIR-01, DIR-02, DIR-04, DIR-05; DIR-03 and full product use remain | `blocked` | CAP-01 plus clean-close evidence and the Foundation review. Human checks the actual operator journey once. |
+| CAP-01: Durable authority and direct-packet lifecycle | DIR-01, DIR-02, DIR-04, DIR-05; supports DIR-03; constrained by DIR-06 | `blocked` | Technical implementation and FS-01 evidence exist. Canonical acceptance still requires D-01, POL-01, T-01/ENV-01, route approval, and an explicit decision about the missing historical gate record. |
+| MS-01: Foundation Slice proven | The FS-01 subset of DIR-01, DIR-02, DIR-04, DIR-05; DIR-03 and full product use remain | `blocked` | CAP-01 plus the still-missing human check of the actual operator journey. The repository evidence review cannot replace that product judgment. |
 | CAP-02: One real provider-owned direct run | DIR-01 through DIR-05; constrained by DIR-06 | `candidate` | MS-01, PRV-01, credential/privacy boundary, interruption recovery, and a newly consented packet. Proof must include a real user-facing change and final-revision replay. |
 | MS-02: Usable manually supervised coordinator | DIR-01 through DIR-06 within one-provider direct-route scope | `candidate` | CAP-02; one real direct packet closes without authority drift or hidden remaining work. Human product check required. |
 | CAP-03: Foundation-route records and Map frontier | DIR-01 through DIR-05; constrained by DIR-06 | `candidate` | MS-01 evidence and CAP-01 concepts; implement only the minimal Backbone/evidence/Map states required by a selected pilot. |
@@ -270,9 +328,11 @@ candidates intentionally have no packet-level implementation detail.
 
 ## 7. Frontier implementation packet IP-01
 
-Status: **BLOCKED** on D-01 approval, POL-01, T-01/ENV-01, route approval,
-non-mutating preflight, and Execution Consent. It becomes `ready` only when all
-six are recorded against the same current basis.
+Canonical status: **BLOCKED** on D-01 approval, POL-01, T-01/ENV-01, route
+approval, and an explicit human decision about the absent historical bootstrap
+authority record. The implementation already exists and its technical proof has
+been replayed, so this packet is retained as the scope and evidence contract; it
+must not be treated as prospective permission to reimplement or expand FS-01.
 
 **Outcome.** Deliver and prove FS-01 as one coherent permanent vertical slice.
 
@@ -289,20 +349,18 @@ single writer for the packet. A fresh Sol Ultra reviewer may inspect the final
 diff and evidence but does not share write ownership. Second Mate itself is not
 used to dispatch or authorize either agent.
 
-**Bootstrap run order.** This packet text is the draft. After D-01, POL-01,
-T-01/ENV-01, and route approval are resolved, the coding agent performs a
-read-only preflight and returns the exact repository revision, applicable
-instructions, proposed owned paths, toolchain/environment availability,
-baseline commands/results, existing failures, dependency or network needs, and
-irreversible-change assessment. The human then grants or denies exact bootstrap
-Execution Consent. Only after that grant may the coding agent mutate the Second
-Mate repository. The run ends with claim-fit replay and one clean handoff; a
-commit is optional, local, and only after all gates pass.
+**Bootstrap run order.** The required order was D-01, POL-01, T-01/ENV-01, and
+route approval; read-only preflight; exact bootstrap Execution Consent; then
+mutation and claim-fit close. The repository does not contain the records needed
+to prove that historical order. A human may prospectively accept the current
+code and technical evidence, require a newly authorized replacement, or reject
+the route, but must not backdate a grant. Every new mutating packet still needs a
+fresh preflight and exact Execution Consent.
 
-**Proof.** Satisfy every FS-01 proof item. Preserve the commands, exit results,
-fixture observations, exact revision, and any manual review result in a compact
-evidence record. A green unit suite without the clean fixture journey is not
-completion.
+**Proof.** The automated, structural, packaging, recovery, and clean-fixture
+items are recorded in the repository evidence review above. The human
+CLI/output and D-01 product review remains outstanding. A green unit suite alone
+would not have been completion; the dedicated fixture journey was replayed.
 
 **Stop and recovery conditions.** Stop before mutation if any gate or baseline
 is unclear. Stop during execution on scope/authority drift, an unapproved
@@ -314,9 +372,9 @@ expand the packet or reopen Direction.
 **Unlock.** A proved MS-01 permits an evidence-informed decision and packet for
 exactly one live provider adapter. It does not authorize that work.
 
-No second implementation packet is detailed because IP-01 is not yet ready and
-its evidence may change the provider boundary. Detailing CAP-02 now would create
-a speculative backlog.
+No second implementation packet is detailed because the human gates remain
+open and the accepted consequence of FS-01 evidence may change the provider
+boundary. Detailing CAP-02 now would create a speculative backlog.
 
 ## 8. Traceability and readiness
 
@@ -359,21 +417,25 @@ platform.
 ## 10. Next human action
 
 Approve or revise D-01, choose POL-01 and T-01/ENV-01, and approve or revise the
-route. These may share one human touchpoint but remain separate decisions. After
-they close, request the read-only IP-01 preflight. Review its exact basis before
-granting any bootstrap Execution Consent.
+route. Then decide whether to accept the existing FS-01 implementation and
+technical evidence as the candidate Foundation baseline despite the absent
+historical gate record, require a fresh authorized replacement, or reject it.
+These choices may share one human touchpoint but remain separate decisions and
+must not be backdated. If the existing slice is accepted, perform the one
+outstanding human operator/product check before changing MS-01. Any later
+mutation starts with a fresh read-only preflight and newly scoped Execution
+Consent.
 
-## 11. Launch prompt after the human gates close
+## 11. Continuation prompt after the human gates close
 
 > Read `docs/second-mate/PROGRAM.md` and the canonical workflow specification.
-> Execute only IP-01. First perform its read-only preflight against the current
-> Second Mate revision; do not modify files, install dependencies, call a
-> provider, or create external effects. Return the applicable instructions,
-> proposed owned paths, selected toolchain/environment basis, baseline
-> commands/results, existing failures, dependencies, and irreversible-change
-> assessment. Stop for exact human Execution Consent bound to that preflight.
-> After consent, implement only B-01 as exercised by FS-01, using one writer and
-> no live provider or generalized orchestration machinery. Record the required
-> clean-fixture, refusal, duplicate-start, recovery, structural, and repository
-> quality evidence at the final revision. Stop and classify pressure if scope,
-> authority, Backbone, or proof no longer fits. Do not publish, deploy, or push.
+> Do not reimplement FS-01 merely because its historical branch remains visible;
+> it is already merged. First verify the recorded human decisions and whether
+> the existing implementation/evidence was accepted as the Foundation baseline.
+> If the human product check is still missing, operate the documented fixture
+> journey without mutation to Second Mate itself and return that observation.
+> Do not select or build a provider adapter, pilot, generalized orchestration
+> machinery, or other next packet without a newly approved route, current
+> read-only preflight, and exact Execution Consent. Stop and classify pressure
+> if authority, Direction, Backbone, or proof no longer fits. Do not publish,
+> deploy, or push.

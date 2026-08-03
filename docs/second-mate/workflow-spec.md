@@ -1,7 +1,12 @@
 # Second Mate workflow specification
 
-Status: canonical design; pre-implementation
+Status: canonical design; FS-01 subset implemented and locally verified
 Date: 2026-08-02
+
+The implementation currently exercises only one supervised, fixture-based
+direct packet. Its evidence does not resolve the pre-Program consent policy,
+approve candidate Direction or route decisions, prove a live provider path, or
+authorize the remaining workflow.
 
 ## 1. Direction basis
 
@@ -45,7 +50,10 @@ Three approvals have different meanings:
 
 ### Unresolved pre-Program consent policy
 
-No Validation Slice or Foundation Slice code may run until the user selects one of these controls:
+No new Validation or Foundation mutation, canonical adoption of existing slice
+evidence, or expansion may proceed until the user selects one of these controls.
+The presence of FS-01 code without that durable decision record is historical
+evidence to resolve, not a convenient default:
 
 1. **Narrow pre-Program consent.** A written consent names the dangerous question, code/data/infrastructure boundary, resource and side-effect limits, discard policy, and at most one permanent Foundation Slice. Material learning that changes the permanent boundary requires refreshed consent. Expansion still waits for full Execution Consent.
 2. **Full-Program-first control.** Before the complete Program and Execution Consent, only non-mutating inspection, research, modeling, and challenge are allowed. Validation and Foundation execution occur afterward.

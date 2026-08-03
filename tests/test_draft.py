@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 import second_mate
 
 
@@ -59,3 +61,35 @@ def test_draft_freezes_approved_direction_and_packet_with_stable_digests() -> No
     assert draft.packet.route.decision == "direct"
     assert draft.packet.route.direction_id == draft.direction.id
     assert draft.packet.route_status == "ready"
+
+
+@pytest.mark.parametrize("document_name", ("direction", "packet"))
+@pytest.mark.parametrize("invalid_version", (True, 1.0))
+def test_draft_requires_a_literal_integer_schema_version(
+    document_name: str, invalid_version: object
+) -> None:
+    """JSON booleans and floats must not compare equal to schema integer 1."""
+    direction = valid_direction()
+    packet = valid_packet()
+    document = direction if document_name == "direction" else packet
+    document["schema_version"] = invalid_version
+
+    with pytest.raises(second_mate.ValidationError, match="integer 1"):
+        second_mate.create_draft(direction, packet)
+
+
+@pytest.mark.parametrize(
+    ("proof_field", "unsafe_path"),
+    (("artifact_path", ".git/config"), ("sentinel_path", ".git/config")),
+)
+def test_fs01_rejects_noncanonical_or_git_private_proof_paths(
+    proof_field: str,
+    unsafe_path: str,
+) -> None:
+    packet = valid_packet()
+    packet["proof"][proof_field] = unsafe_path
+    if proof_field == "artifact_path":
+        packet["boundary"]["allowed_paths"] = [".second-mate/state.json", unsafe_path]
+
+    with pytest.raises(second_mate.ValidationError, match="proof paths must be exactly"):
+        second_mate.create_draft(valid_direction(), packet)

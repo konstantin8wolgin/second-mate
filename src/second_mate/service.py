@@ -5,8 +5,9 @@ from __future__ import annotations
 import fcntl
 import hashlib
 import os
-from collections.abc import Iterator
-from contextlib import contextmanager
+import stat
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Never, Protocol, cast
@@ -14,7 +15,6 @@ from typing import Never, Protocol, cast
 from second_mate.domain import (
     Draft,
     JsonObject,
-    JsonValue,
     ValidationError,
     digest_json,
     draft_from_json,
@@ -24,11 +24,17 @@ from second_mate.repository import (
     PreflightEnvelope,
     TargetRevision,
     git_private_path,
+    inspect_fixture_paths,
     inspect_instructions,
     inspect_revision,
+    preflight,
     preflight_from_json,
 )
-from second_mate.store import FileStateStore
+from second_mate.store import (
+    FileStateStore,
+    deterministic_document_bytes,
+    recovery_intent_paths,
+)
 
 
 class AuthorityError(RuntimeError):
@@ -45,6 +51,22 @@ class ExecutionFailure(RuntimeError):
 
 class CloseFailure(RuntimeError):
     """Clean close was interrupted with a durable recovery journal."""
+
+
+_RUN_PHASES = frozenset(
+    {"active", "failed", "awaiting_evidence", "evidence_failed", "ready_to_close", "closed"}
+)
+_ROUTE_STATUSES = frozenset({"ready", "completed"})
+_FS01_DIRECTION_COVERAGE = frozenset({"still_remaining"})
+_RECOVERY_PRESSURES = frozenset({"none", "packet"})
+_FS01_REQUIRED_RESIDUAL_UNCERTAINTY = frozenset(
+    {
+        "Human product review remains outstanding.",
+        "Live provider behavior was not exercised.",
+    }
+)
+_RUN_STATE_SCHEMA_VERSION = 2
+_INTENT_DIRECTORY_NAME = "second-mate-fs01-intents"
 
 
 class Executor(Protocol):
@@ -163,7 +185,7 @@ class RunState:
             "residual_uncertainty": list(self.residual_uncertainty),
             "route_status": self.route_status,
             "run": self.run.to_json(),
-            "schema_version": 1,
+            "schema_version": _RUN_STATE_SCHEMA_VERSION,
         }
 
 
@@ -208,8 +230,8 @@ def _parse_grant(value: object) -> AuthorityGrant:
     }
     if set(data) != expected_keys:
         raise AuthorityError("grant fields do not exactly match the authority contract")
-    if data["schema_version"] != 1:
-        raise AuthorityError("grant schema_version must be 1")
+    if type(data["schema_version"]) is not int or data["schema_version"] != 1:
+        raise AuthorityError("grant schema_version must be the integer 1")
     return AuthorityGrant(
         id=_grant_text(data["id"], "id"),
         granted_by=_grant_text(data["granted_by"], "granted_by"),
@@ -228,6 +250,8 @@ def _parse_grant(value: object) -> AuthorityGrant:
 
 
 def _validate_grant(grant: AuthorityGrant, draft: Draft, basis: PreflightEnvelope) -> None:
+    if basis.record.repository_id != draft.packet.repository_id:
+        raise AuthorityError("repository identity does not match the preflight basis")
     if basis.record.direction_digest != draft.direction_digest:
         raise AuthorityError("direction digest does not match the preflight basis")
     if basis.record.packet_digest != draft.packet_digest:
@@ -249,10 +273,58 @@ def _validate_grant(grant: AuthorityGrant, draft: Draft, basis: PreflightEnvelop
             raise AuthorityError(f"grant {field} does not match the frozen execution basis")
 
 
+def _validate_persisted_basis(draft: Draft, basis: PreflightEnvelope) -> None:
+    record = basis.record
+    baseline = record.affected_baseline
+    proof = draft.packet.proof
+    if not record.eligible:
+        raise ValidationError("durable run preflight must be eligible")
+    if baseline.result != "pass" or record.existing_failures:
+        raise ValidationError("durable run preflight baseline must pass without failures")
+    if record.irreversible_change_required:
+        raise ValidationError("durable run preflight cannot require an irreversible change")
+    if (
+        baseline.artifact_path != proof.artifact_path
+        or baseline.sentinel_path != proof.sentinel_path
+    ):
+        raise ValidationError("durable run preflight baseline does not match its proof paths")
+    if baseline.artifact_value != proof.before:
+        raise ValidationError(
+            "durable run preflight baseline does not match the proof before value"
+        )
+    if baseline.sentinel_sha256 is None:
+        raise ValidationError("durable run preflight baseline omits the sentinel hash")
+    revision_files = {item.path: item for item in record.revision.files}
+    artifact = revision_files.get(proof.artifact_path)
+    sentinel = revision_files.get(proof.sentinel_path)
+    if (
+        artifact is None
+        or artifact.kind != "file"
+        or artifact.sha256 != hashlib.sha256(proof.before.encode("utf-8")).hexdigest()
+    ):
+        raise ValidationError("durable run preflight artifact baseline contradicts its revision")
+    if sentinel is None or sentinel.kind != "file" or sentinel.sha256 != baseline.sentinel_sha256:
+        raise ValidationError("durable run preflight sentinel baseline contradicts its revision")
+
+
 def _state_text(value: object, field: str) -> str:
     if not isinstance(value, str):
         raise ValidationError(f"state {field} must be a string")
     return value
+
+
+def _state_nonempty_text(value: object, field: str) -> str:
+    result = _state_text(value, field)
+    if not result.strip():
+        raise ValidationError(f"state {field} must be non-empty")
+    return result
+
+
+def _state_choice(value: object, field: str, choices: frozenset[str]) -> str:
+    result = _state_text(value, field)
+    if result not in choices:
+        raise ValidationError(f"state {field} is invalid")
+    return result
 
 
 def _state_object(value: object, field: str) -> dict[str, object]:
@@ -267,10 +339,260 @@ def _state_list(value: object, field: str) -> list[object]:
     return cast(list[object], value)
 
 
+def _state_bool(value: object, field: str) -> bool:
+    if not isinstance(value, bool):
+        raise ValidationError(f"state {field} must be a boolean")
+    return value
+
+
+def _state_sha256(value: object, field: str) -> str:
+    result = _state_text(value, field)
+    if len(result) != 64 or any(character not in "0123456789abcdef" for character in result):
+        raise ValidationError(f"state {field} must be a lowercase SHA-256 digest")
+    return result
+
+
+def _evidence_file_fact_from_json(value: object) -> FileFact:
+    data = _state_object(value, "evidence target_revision file")
+    if set(data) != {"executable", "kind", "path", "sha256"}:
+        raise ValidationError("state evidence target_revision file fields are invalid")
+    return FileFact(
+        path=_state_nonempty_text(data["path"], "evidence target_revision file path"),
+        kind=_state_choice(
+            data["kind"],
+            "evidence target_revision file kind",
+            frozenset({"file", "symlink", "missing"}),
+        ),
+        sha256=_state_sha256(data["sha256"], "evidence target_revision file sha256"),
+        executable=_state_bool(data["executable"], "evidence target_revision file executable"),
+    )
+
+
+def _evidence_revision_from_json(value: object) -> TargetRevision:
+    data = _state_object(value, "evidence target_revision")
+    if set(data) != {"branch", "files", "fingerprint", "head", "index_sha256"}:
+        raise ValidationError("state evidence target_revision fields are invalid")
+    files = tuple(
+        _evidence_file_fact_from_json(item)
+        for item in _state_list(data["files"], "evidence target_revision files")
+    )
+    paths = tuple(item.path for item in files)
+    if paths != tuple(sorted(paths)) or len(paths) != len(set(paths)):
+        raise ValidationError("state evidence target_revision files must be unique and sorted")
+    revision = TargetRevision(
+        head=_state_nonempty_text(data["head"], "evidence target_revision head"),
+        branch=_state_nonempty_text(data["branch"], "evidence target_revision branch"),
+        index_sha256=_state_sha256(data["index_sha256"], "evidence target_revision index_sha256"),
+        fingerprint=_state_sha256(data["fingerprint"], "evidence target_revision fingerprint"),
+        files=files,
+    )
+    expected_fingerprint = digest_json(
+        {
+            "branch": revision.branch,
+            "files": [item.to_json() for item in revision.files],
+            "head": revision.head,
+            "index_sha256": revision.index_sha256,
+        }
+    )
+    if revision.fingerprint != expected_fingerprint:
+        raise ValidationError("state evidence target_revision fingerprint is invalid")
+    return revision
+
+
+def _fixture_evidence_failures(
+    *,
+    draft: Draft,
+    basis: PreflightEnvelope,
+    artifact_path_safe: bool,
+    artifact_value: str | None,
+    sentinel_path_safe: bool,
+    sentinel_sha256: str | None,
+    changed_paths: tuple[str, ...],
+    revision_inspected: bool,
+    revision_matches_authority: bool,
+    instructions_inspected: bool,
+    instructions_match_preflight: bool,
+) -> tuple[str, ...]:
+    failures: list[str] = []
+    if not artifact_path_safe:
+        failures.append(
+            "fixture artifact path must be one unaliased regular file at its declared path"
+        )
+    elif artifact_value is None:
+        failures.append("fixture artifact is unavailable as UTF-8 text")
+    elif artifact_value != draft.packet.proof.after:
+        failures.append("fixture artifact does not match the declared after state")
+    if not sentinel_path_safe:
+        failures.append(
+            "fixture sentinel path must be one unaliased regular file at its declared path"
+        )
+    elif sentinel_sha256 is None:
+        failures.append("fixture sentinel is unavailable")
+    elif sentinel_sha256 != basis.record.affected_baseline.sentinel_sha256:
+        failures.append("fixture sentinel changed outside the grant")
+    if changed_paths != (draft.packet.proof.artifact_path,):
+        failures.append("executor result does not identify exactly the granted artifact")
+    if not revision_inspected:
+        failures.append("target revision could not be safely inspected")
+    elif not revision_matches_authority:
+        failures.append(
+            "target revision is not preflight plus exactly the authorized artifact mutation"
+        )
+    if not instructions_inspected:
+        failures.append("applicable instructions could not be safely inspected")
+    elif not instructions_match_preflight:
+        failures.append("applicable instructions changed after preflight")
+    return tuple(failures)
+
+
+def _evidence_from_json(
+    value: object,
+    *,
+    draft: Draft,
+    basis: PreflightEnvelope,
+    executor_result: ExecutionResult | None,
+    index: int,
+) -> JsonObject:
+    data = _state_object(value, "evidence item")
+    if set(data) != {
+        "claim",
+        "id",
+        "instruction_fingerprint",
+        "method",
+        "observation",
+        "result",
+        "target_revision",
+    }:
+        raise ValidationError("state evidence fields do not match the expected schema")
+    if _state_text(data["claim"], "evidence claim") != draft.packet.outcome:
+        raise ValidationError("state evidence claim does not match the frozen packet")
+    expected_id = f"{draft.packet.id}-fixture-evidence-{index}"
+    if _state_nonempty_text(data["id"], "evidence id") != expected_id:
+        raise ValidationError("state evidence id does not match its durable sequence")
+    if _state_text(data["method"], "evidence method") != "fixture-probe":
+        raise ValidationError("state evidence method is invalid")
+    result = _state_choice(data["result"], "evidence result", frozenset({"pass", "fail"}))
+    instruction_fingerprint_raw = data["instruction_fingerprint"]
+    instruction_fingerprint = (
+        None
+        if instruction_fingerprint_raw is None
+        else _state_sha256(
+            instruction_fingerprint_raw,
+            "evidence instruction_fingerprint",
+        )
+    )
+    revision_raw = data["target_revision"]
+    revision = None if revision_raw is None else _evidence_revision_from_json(revision_raw)
+    observation = _state_object(data["observation"], "evidence observation")
+    if set(observation) != {
+        "artifact_path",
+        "artifact_path_safe",
+        "artifact_sha256",
+        "artifact_value",
+        "changed_paths",
+        "failures",
+        "instructions_match_preflight",
+        "sentinel_path",
+        "sentinel_path_safe",
+        "sentinel_sha256",
+        "target_revision_matches_authority",
+    }:
+        raise ValidationError("state evidence observation fields are invalid")
+    proof = draft.packet.proof
+    if _state_text(observation["artifact_path"], "evidence artifact_path") != proof.artifact_path:
+        raise ValidationError("state evidence artifact path is invalid")
+    if _state_text(observation["sentinel_path"], "evidence sentinel_path") != proof.sentinel_path:
+        raise ValidationError("state evidence sentinel path is invalid")
+    artifact_value_raw = observation["artifact_value"]
+    if artifact_value_raw is not None and not isinstance(artifact_value_raw, str):
+        raise ValidationError("state evidence artifact value must be a string or null")
+    artifact_sha_raw = observation["artifact_sha256"]
+    artifact_sha = (
+        None
+        if artifact_sha_raw is None
+        else _state_sha256(artifact_sha_raw, "evidence artifact_sha256")
+    )
+    if artifact_value_raw is None:
+        if artifact_sha is not None:
+            raise ValidationError("state evidence artifact hash requires an artifact value")
+    elif artifact_sha != hashlib.sha256(artifact_value_raw.encode("utf-8")).hexdigest():
+        raise ValidationError("state evidence artifact hash does not match its value")
+    changed_paths = tuple(
+        _state_nonempty_text(item, "evidence changed_paths item")
+        for item in _state_list(observation["changed_paths"], "evidence changed_paths")
+    )
+    if executor_result is None or changed_paths != executor_result.changed_paths:
+        raise ValidationError("state evidence changed paths contradict the durable executor result")
+    failures = tuple(
+        _state_nonempty_text(item, "evidence failures item")
+        for item in _state_list(observation["failures"], "evidence failures")
+    )
+    instructions_match = _state_bool(
+        observation["instructions_match_preflight"],
+        "evidence instructions_match_preflight",
+    )
+    revision_matches = _state_bool(
+        observation["target_revision_matches_authority"],
+        "evidence target_revision_matches_authority",
+    )
+    sentinel_sha_raw = observation["sentinel_sha256"]
+    sentinel_sha = (
+        None
+        if sentinel_sha_raw is None
+        else _state_sha256(sentinel_sha_raw, "evidence sentinel_sha256")
+    )
+    artifact_path_safe = _state_bool(
+        observation["artifact_path_safe"], "evidence artifact_path_safe"
+    )
+    sentinel_path_safe = _state_bool(
+        observation["sentinel_path_safe"], "evidence sentinel_path_safe"
+    )
+    if sentinel_path_safe != (sentinel_sha is not None):
+        raise ValidationError("state evidence sentinel path safety contradicts its recorded hash")
+    if (
+        not artifact_path_safe and (artifact_value_raw is not None or artifact_sha is not None)
+    ) or (not sentinel_path_safe and sentinel_sha is not None):
+        raise ValidationError("state unsafe evidence path must not retain read-through content")
+    instructions_inspected = instruction_fingerprint is not None
+    revision_inspected = revision is not None
+    actual_instructions_match = (
+        instruction_fingerprint == _instruction_fingerprint(basis.record.instructions)
+        if instructions_inspected
+        else False
+    )
+    actual_revision_matches = (
+        _revision_is_exact_fixture_after_basis(draft, basis, revision)
+        if revision is not None
+        else False
+    )
+    if (
+        instructions_match != actual_instructions_match
+        or revision_matches != actual_revision_matches
+    ):
+        raise ValidationError("state evidence match flags contradict their recorded facts")
+    expected_failures = _fixture_evidence_failures(
+        draft=draft,
+        basis=basis,
+        artifact_path_safe=artifact_path_safe,
+        artifact_value=artifact_value_raw,
+        sentinel_path_safe=sentinel_path_safe,
+        sentinel_sha256=sentinel_sha,
+        changed_paths=changed_paths,
+        revision_inspected=revision_inspected,
+        revision_matches_authority=revision_matches,
+        instructions_inspected=instructions_inspected,
+        instructions_match_preflight=instructions_match,
+    )
+    expected_result = "pass" if not expected_failures else "fail"
+    if failures != expected_failures or result != expected_result:
+        raise ValidationError("state evidence result or failures contradict its observation")
+    return cast(JsonObject, data)
+
+
 def _execution_result_from_json(value: object) -> ExecutionResult:
     data = _state_object(value, "run.executor_result")
     if set(data) != {"changed_paths", "executor_name", "observation"}:
-        raise ValidationError("state run.executor_result fields do not match schema version 1")
+        raise ValidationError("state run.executor_result fields do not match the expected schema")
     return ExecutionResult(
         executor_name=_state_text(data["executor_name"], "run.executor_result.executor_name"),
         changed_paths=tuple(
@@ -279,6 +601,18 @@ def _execution_result_from_json(value: object) -> ExecutionResult:
         ),
         observation=_state_text(data["observation"], "run.executor_result.observation"),
     )
+
+
+def _validate_fixture_executor_result(value: object, draft: Draft) -> ExecutionResult:
+    if not isinstance(value, ExecutionResult):
+        raise ValidationError("fixture executor result must use the execution result contract")
+    if (
+        value.executor_name != "fixture"
+        or value.changed_paths != (draft.packet.proof.artifact_path,)
+        or not value.observation.strip()
+    ):
+        raise ValidationError("fixture executor result is invalid")
+    return value
 
 
 def _run_state_from_json(value: object) -> RunState:
@@ -297,10 +631,15 @@ def _run_state_from_json(value: object) -> RunState:
         "run",
         "schema_version",
     }
-    if set(data) != expected_keys or data["schema_version"] != 1:
-        raise ValidationError("state fields do not match schema version 1")
+    if (
+        set(data) != expected_keys
+        or type(data["schema_version"]) is not int
+        or data["schema_version"] != _RUN_STATE_SCHEMA_VERSION
+    ):
+        raise ValidationError("state fields do not match schema version 2")
     draft = draft_from_json(data["draft"])
     basis = preflight_from_json(data["preflight"])
+    _validate_persisted_basis(draft, basis)
     grant = _parse_grant(data["grant"])
     _validate_grant(grant, draft, basis)
     run_data = _state_object(data["run"], "run")
@@ -311,49 +650,166 @@ def _run_state_from_json(value: object) -> RunState:
         "phase",
         "recovery_action",
     }:
-        raise ValidationError("state run fields do not match schema version 1")
+        raise ValidationError("state run fields do not match the expected schema")
     attempts = run_data["attempts"]
     if not isinstance(attempts, int) or isinstance(attempts, bool) or attempts < 1:
         raise ValidationError("state run.attempts must be a positive integer")
     result_raw = run_data["executor_result"]
     result = None if result_raw is None else _execution_result_from_json(result_raw)
-    evidence: list[JsonObject] = []
-    for item in _state_list(data["evidence"], "evidence"):
-        evidence.append(cast(JsonObject, _state_object(item, "evidence item")))
+    if result is not None:
+        _validate_fixture_executor_result(result, draft)
+    evidence = [
+        _evidence_from_json(
+            item,
+            draft=draft,
+            basis=basis,
+            executor_result=result,
+            index=index,
+        )
+        for index, item in enumerate(_state_list(data["evidence"], "evidence"), start=1)
+    ]
+    if any(item["result"] == "pass" for item in evidence[:-1]):
+        raise ValidationError("state cannot append evidence after passing evidence")
     residual_uncertainty = tuple(
-        _state_text(item, "residual_uncertainty item")
+        _state_nonempty_text(item, "residual_uncertainty item")
         for item in _state_list(data["residual_uncertainty"], "residual_uncertainty")
     )
+    if len(residual_uncertainty) != len(set(residual_uncertainty)):
+        raise ValidationError("state residual uncertainty must not contain duplicates")
     closed = data["closed"]
     if not isinstance(closed, bool):
         raise ValidationError("state closed must be a boolean")
+    phase = _state_choice(run_data["phase"], "run.phase", _RUN_PHASES)
+    route_status = _state_choice(data["route_status"], "route_status", _ROUTE_STATUSES)
+    direction_coverage = _state_choice(
+        data["direction_coverage"], "direction_coverage", _FS01_DIRECTION_COVERAGE
+    )
+    recovery_pressure = _state_choice(
+        data["recovery_pressure"], "recovery_pressure", _RECOVERY_PRESSURES
+    )
+    owner_id = _state_nonempty_text(run_data["owner_id"], "run.owner_id")
+    recovery_action = _state_nonempty_text(run_data["recovery_action"], "run.recovery_action")
+    handoff = _state_nonempty_text(data["handoff"], "handoff")
+    closed_markers_are_consistent = (
+        phase == "closed" and route_status == "completed"
+        if closed
+        else phase != "closed" and route_status != "completed"
+    )
+    if not closed_markers_are_consistent:
+        raise ValidationError(
+            "state closed status is inconsistent with its run phase and route status"
+        )
+    if bool(residual_uncertainty) != closed:
+        raise ValidationError("state residual uncertainty must be present exactly at clean close")
+    if closed and not _FS01_REQUIRED_RESIDUAL_UNCERTAINTY.issubset(residual_uncertainty):
+        raise ValidationError("state clean close omits required FS-01 limitations")
+    phase_has_result = phase in {
+        "awaiting_evidence",
+        "evidence_failed",
+        "ready_to_close",
+        "closed",
+    }
+    phase_has_evidence = phase in {"evidence_failed", "ready_to_close", "closed"}
+    expected_pressure = "packet" if phase in {"failed", "evidence_failed"} else "none"
+    if (
+        (result is not None) != phase_has_result
+        or bool(evidence) != phase_has_evidence
+        or recovery_pressure != expected_pressure
+    ):
+        raise ValidationError(
+            "state lifecycle is inconsistent across phase, result, evidence, and pressure"
+        )
+    if evidence:
+        expected_evidence_result = "fail" if phase == "evidence_failed" else "pass"
+        if evidence[-1]["result"] != expected_evidence_result:
+            raise ValidationError("state phase does not match its latest evidence result")
     return RunState(
         draft=draft,
         basis=basis,
         grant=grant,
         run=RunRecord(
-            owner_id=_state_text(run_data["owner_id"], "run.owner_id"),
-            phase=_state_text(run_data["phase"], "run.phase"),
+            owner_id=owner_id,
+            phase=phase,
             attempts=attempts,
             executor_result=result,
-            recovery_action=_state_text(run_data["recovery_action"], "run.recovery_action"),
+            recovery_action=recovery_action,
         ),
-        route_status=_state_text(data["route_status"], "route_status"),
-        direction_coverage=_state_text(data["direction_coverage"], "direction_coverage"),
+        route_status=route_status,
+        direction_coverage=direction_coverage,
         evidence=tuple(evidence),
         residual_uncertainty=residual_uncertainty,
-        recovery_pressure=_state_text(data["recovery_pressure"], "recovery_pressure"),
-        handoff=_state_text(data["handoff"], "handoff"),
+        recovery_pressure=recovery_pressure,
+        handoff=handoff,
         closed=closed,
+    )
+
+
+def _validate_state_target(state: RunState, repository: Path) -> None:
+    if state.basis.record.target_root != os.fspath(repository.resolve()):
+        raise AuthorityError("durable run state belongs to a different target worktree")
+
+
+def _validate_recovered_close(
+    base_value: object,
+    final_value: object,
+    repository: Path,
+) -> None:
+    base = _run_state_from_json(base_value)
+    final = _run_state_from_json(final_value)
+    _validate_state_target(base, repository)
+    _validate_state_target(final, repository)
+    if base.closed or base.run.phase != "ready_to_close" or not base.evidence:
+        raise ValidationError("close recovery base is not ready for clean close")
+    expected = replace(
+        base,
+        run=replace(
+            base.run,
+            phase="closed",
+            recovery_action="none; route is cleanly closed",
+        ),
+        route_status="completed",
+        direction_coverage=final.direction_coverage,
+        residual_uncertainty=final.residual_uncertainty,
+        recovery_pressure="none",
+        handoff=final.handoff,
+        closed=True,
+    )
+    if final != expected:
+        raise ValidationError("journal does not contain the sole legal clean-close transition")
+
+
+def _state_store(
+    repository: Path,
+    *,
+    recovery_validator: Callable[[object, object], None] | None = None,
+) -> FileStateStore:
+    root = repository.resolve()
+    return FileStateStore(
+        root / ".second-mate" / "state.json",
+        intent_directory=git_private_path(root, _INTENT_DIRECTORY_NAME),
+        recovery_validator=recovery_validator,
     )
 
 
 def load_state(repository: Path) -> RunState:
     """Load and validate the deterministic versioned state for a target."""
-    store = FileStateStore(repository / ".second-mate" / "state.json")
+    root = repository.resolve()
+    with _run_lock(root):
+        return _load_state_locked(root)
+
+
+def _load_state_locked(repository: Path) -> RunState:
+    root = repository.resolve()
+
+    def validate_recovery(base_value: object, final_value: object) -> None:
+        _validate_recovered_close(base_value, final_value, root)
+
+    store = _state_store(root, recovery_validator=validate_recovery)
     if not store.exists():
         raise RunConflictError("no durable run state exists for this target")
-    return _run_state_from_json(store.read_json())
+    state = _run_state_from_json(store.read_json())
+    _validate_state_target(state, root)
+    return state
 
 
 def _request_for(state: RunState, repository: Path) -> ExecutionRequest:
@@ -372,20 +828,28 @@ def _request_for(state: RunState, repository: Path) -> ExecutionRequest:
 
 
 def _revision_is_exact_fixture_after(state: RunState, current: TargetRevision) -> bool:
-    before = state.basis.record.revision
-    if current.head != before.head:
+    return _revision_is_exact_fixture_after_basis(state.draft, state.basis, current)
+
+
+def _revision_is_exact_fixture_after_basis(
+    draft: Draft, basis: PreflightEnvelope, current: TargetRevision
+) -> bool:
+    before = basis.record.revision
+    if (
+        current.head != before.head
+        or current.branch != before.branch
+        or current.index_sha256 != before.index_sha256
+    ):
         return False
     before_files = {item.path: item for item in before.files}
     current_files = {item.path: item for item in current.files}
     if set(before_files) != set(current_files):
         return False
-    artifact_path = state.draft.packet.proof.artifact_path
+    artifact_path = draft.packet.proof.artifact_path
     for path, before_fact in before_files.items():
         current_fact = current_files[path]
         if path == artifact_path:
-            expected_sha256 = hashlib.sha256(
-                state.draft.packet.proof.after.encode("utf-8")
-            ).hexdigest()
+            expected_sha256 = hashlib.sha256(draft.packet.proof.after.encode("utf-8")).hexdigest()
             if (
                 current_fact.kind != "file"
                 or current_fact.executable != before_fact.executable
@@ -430,7 +894,26 @@ def _record_dispatch_failure(
 def _run_lock(repository: Path) -> Iterator[None]:
     lock_path = git_private_path(repository, "second-mate-fs01.lock")
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(
+            lock_path,
+            os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC,
+            0o600,
+        )
+        metadata = os.fstat(descriptor)
+        entry = lock_path.lstat()
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_nlink != 1
+            or (metadata.st_dev, metadata.st_ino) != (entry.st_dev, entry.st_ino)
+        ):
+            raise OSError("unsafe run lock identity")
+    except OSError as error:
+        if descriptor is not None:
+            os.close(descriptor)
+        raise RunConflictError("the packet run lock path is unsafe") from error
+    assert descriptor is not None
     try:
         try:
             fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -446,19 +929,20 @@ def _run_lock(repository: Path) -> Iterator[None]:
 
 def restart_run(repository: Path, executor: Executor, *, owner_id: str) -> RunState:
     """Resume a failed/interrupted dispatch without transferring mutation ownership."""
-    with _run_lock(repository):
-        return _restart_run_locked(repository, executor, owner_id=owner_id)
+    root = repository.resolve()
+    with _run_lock(root):
+        return _restart_run_locked(root, executor, owner_id=owner_id)
 
 
 def _restart_run_locked(repository: Path, executor: Executor, *, owner_id: str) -> RunState:
-    state = load_state(repository)
+    state = _load_state_locked(repository)
     if state.run.owner_id != owner_id:
         raise RunConflictError("restart owner does not match the active run owner")
     if state.closed or state.run.phase not in {"active", "failed"}:
         raise RunConflictError(f"run phase {state.run.phase} cannot be restarted")
     if not _instructions_match_preflight(state, repository):
         raise AuthorityError("instruction drift blocks restart")
-    store = FileStateStore(repository / ".second-mate" / "state.json")
+    store = _state_store(repository)
     if inspect_revision(repository) != state.basis.record.revision:
         if not _is_exact_fixture_after(state, repository):
             raise AuthorityError("revision drift blocks restart")
@@ -492,7 +976,10 @@ def _restart_run_locked(repository: Path, executor: Executor, *, owner_id: str) 
     )
     store.save(active)
     try:
-        result = executor.execute(_request_for(active, repository))
+        result = _validate_fixture_executor_result(
+            executor.execute(_request_for(active, repository)),
+            active.draft,
+        )
     except Exception as error:
         _record_dispatch_failure(store, active, owner_id, error)
     finished = replace(
@@ -511,7 +998,13 @@ def _restart_run_locked(repository: Path, executor: Executor, *, owner_id: str) 
 
 def record_evidence(repository: Path) -> RunState:
     """Probe the exact after revision and persist one claim-fit fixture evidence record."""
-    state = load_state(repository)
+    root = repository.resolve()
+    with _run_lock(root):
+        return _record_evidence_locked(root)
+
+
+def _record_evidence_locked(repository: Path) -> RunState:
+    state = _load_state_locked(repository)
     if (
         state.run.phase == "ready_to_close"
         and state.evidence
@@ -521,46 +1014,59 @@ def record_evidence(repository: Path) -> RunState:
     if state.closed or state.run.phase not in {"awaiting_evidence", "evidence_failed"}:
         raise RunConflictError(f"run phase {state.run.phase} cannot record evidence")
     proof = state.draft.packet.proof
-    failures: list[JsonValue] = []
+    fixture_paths = inspect_fixture_paths(repository, state.draft)
+    artifact_path_safe = fixture_paths.artifact is not None
+    sentinel_path_safe = fixture_paths.sentinel is not None
     artifact_value: str | None = None
     sentinel_sha256: str | None = None
-    try:
-        artifact_value = (repository / proof.artifact_path).read_text(encoding="utf-8")
-    except (OSError, UnicodeError):
-        failures.append("fixture artifact is unavailable as UTF-8 text")
-    if artifact_value is not None and artifact_value != proof.after:
-        failures.append("fixture artifact does not match the declared after state")
-    try:
-        sentinel_sha256 = hashlib.sha256(
-            (repository / proof.sentinel_path).read_bytes()
-        ).hexdigest()
-    except OSError:
-        failures.append("fixture sentinel is unavailable")
-    if sentinel_sha256 != state.basis.record.affected_baseline.sentinel_sha256:
-        failures.append("fixture sentinel changed outside the grant")
+    if fixture_paths.artifact is not None:
+        with suppress(UnicodeError):
+            artifact_value = fixture_paths.artifact.decode("utf-8")
+    if fixture_paths.sentinel is not None:
+        sentinel_sha256 = hashlib.sha256(fixture_paths.sentinel).hexdigest()
     changed_paths = (
         () if state.run.executor_result is None else state.run.executor_result.changed_paths
     )
-    if changed_paths != (proof.artifact_path,):
-        failures.append("executor result does not identify exactly the granted artifact")
-    revision = inspect_revision(repository)
-    revision_matches_authority = _revision_is_exact_fixture_after(state, revision)
-    if not revision_matches_authority:
-        failures.append(
-            "target revision is not preflight plus exactly the authorized artifact mutation"
-        )
-    instructions = inspect_instructions(repository, state.draft)
-    instructions_match_preflight = instructions == state.basis.record.instructions
-    if not instructions_match_preflight:
-        failures.append("applicable instructions changed after preflight")
+    revision: TargetRevision | None
+    try:
+        revision = inspect_revision(repository)
+    except (OSError, ValidationError):
+        revision = None
+    revision_matches_authority = (
+        _revision_is_exact_fixture_after(state, revision) if revision is not None else False
+    )
+    instructions: tuple[FileFact, ...] | None
+    try:
+        instructions = inspect_instructions(repository, state.draft)
+    except (OSError, ValidationError):
+        instructions = None
+    instructions_match_preflight = (
+        instructions == state.basis.record.instructions if instructions is not None else False
+    )
+    failures = _fixture_evidence_failures(
+        draft=state.draft,
+        basis=state.basis,
+        artifact_path_safe=artifact_path_safe,
+        artifact_value=artifact_value,
+        sentinel_path_safe=sentinel_path_safe,
+        sentinel_sha256=sentinel_sha256,
+        changed_paths=changed_paths,
+        revision_inspected=revision is not None,
+        revision_matches_authority=revision_matches_authority,
+        instructions_inspected=instructions is not None,
+        instructions_match_preflight=instructions_match_preflight,
+    )
     result = "pass" if not failures else "fail"
     evidence: JsonObject = {
         "claim": state.draft.packet.outcome,
         "id": f"{state.draft.packet.id}-fixture-evidence-{len(state.evidence) + 1}",
-        "instruction_fingerprint": _instruction_fingerprint(instructions),
+        "instruction_fingerprint": (
+            None if instructions is None else _instruction_fingerprint(instructions)
+        ),
         "method": "fixture-probe",
         "observation": {
             "artifact_path": proof.artifact_path,
+            "artifact_path_safe": artifact_path_safe,
             "artifact_sha256": (
                 None
                 if artifact_value is None
@@ -568,14 +1074,15 @@ def record_evidence(repository: Path) -> RunState:
             ),
             "artifact_value": artifact_value,
             "changed_paths": list(changed_paths),
-            "failures": failures,
+            "failures": list(failures),
             "instructions_match_preflight": instructions_match_preflight,
             "sentinel_path": proof.sentinel_path,
+            "sentinel_path_safe": sentinel_path_safe,
             "sentinel_sha256": sentinel_sha256,
             "target_revision_matches_authority": revision_matches_authority,
         },
         "result": result,
-        "target_revision": revision.to_json(),
+        "target_revision": None if revision is None else revision.to_json(),
     }
     updated = replace(
         state,
@@ -596,7 +1103,7 @@ def record_evidence(repository: Path) -> RunState:
             else "Fixture evidence failed; the packet remains open for bounded recovery."
         ),
     )
-    FileStateStore(repository / ".second-mate" / "state.json").save(updated)
+    _state_store(repository).save(updated)
     return updated
 
 
@@ -614,7 +1121,26 @@ def clean_close(
     store: FileStateStore | None = None,
 ) -> RunState:
     """Atomically or recoverably close route, evidence, pressure, and handoff together."""
-    state = load_state(repository)
+    root = repository.resolve()
+    with _run_lock(root):
+        return _clean_close_locked(
+            root,
+            direction_coverage=direction_coverage,
+            residual_uncertainty=residual_uncertainty,
+            handoff=handoff,
+            store=store,
+        )
+
+
+def _clean_close_locked(
+    repository: Path,
+    *,
+    direction_coverage: str,
+    residual_uncertainty: tuple[str, ...],
+    handoff: str,
+    store: FileStateStore | None,
+) -> RunState:
+    state = _load_state_locked(repository)
     if state.closed:
         return state
     if state.run.phase != "ready_to_close" or not state.evidence:
@@ -624,10 +1150,31 @@ def clean_close(
         raise RunConflictError("failed or uncertain evidence cannot complete the route")
     if direction_coverage not in _DIRECTION_COVERAGE:
         raise ValidationError("direction coverage status is invalid")
+    if direction_coverage != "still_remaining":
+        raise ValidationError(
+            "FS-01 fixture close supports only still_remaining Direction coverage"
+        )
     if not handoff.strip():
         raise ValidationError("clean close handoff must be non-empty")
-    if any(not item.strip() for item in residual_uncertainty):
-        raise ValidationError("residual uncertainty entries must be non-empty")
+    if (
+        not residual_uncertainty
+        or any(not item.strip() for item in residual_uncertainty)
+        or len(set(residual_uncertainty)) != len(residual_uncertainty)
+        or not _FS01_REQUIRED_RESIDUAL_UNCERTAINTY.issubset(residual_uncertainty)
+    ):
+        raise ValidationError(
+            "residual uncertainty must include the required FS-01 limitations exactly once"
+        )
+    if store is not None:
+        expected_path = (repository.resolve() / ".second-mate" / "state.json").absolute()
+        if store.path != expected_path:
+            raise ValidationError("clean close store must use the target state path")
+        expected_intent_directory = git_private_path(repository, _INTENT_DIRECTORY_NAME).absolute()
+        if store.intent_directory != expected_intent_directory:
+            raise ValidationError("clean close store must use the target intent directory")
+    fixture_paths = inspect_fixture_paths(repository, state.draft)
+    if fixture_paths.failures:
+        raise AuthorityError("fixture path identity drift after evidence blocks clean close")
     revision_data = _state_object(evidence.get("target_revision"), "evidence target_revision")
     evidence_fingerprint = _state_text(
         revision_data.get("fingerprint"), "evidence target_revision fingerprint"
@@ -656,9 +1203,7 @@ def clean_close(
         handoff=handoff,
         closed=True,
     )
-    state_store = (
-        FileStateStore(repository / ".second-mate" / "state.json") if store is None else store
-    )
+    state_store = _state_store(repository) if store is None else store
     try:
         state_store.close(state, closed)
     except Exception as error:
@@ -683,12 +1228,13 @@ def start_run(
     except ValidationError as error:
         raise AuthorityError(str(error)) from error
     _validate_grant(grant, draft, basis)
-    with _run_lock(repository):
+    root = repository.resolve()
+    with _run_lock(root):
         return _start_run_locked(
             draft=draft,
             basis=basis,
             grant=grant,
-            repository=repository,
+            repository=root,
             executor=executor,
             owner_id=owner_id,
         )
@@ -703,7 +1249,7 @@ def _start_run_locked(
     executor: Executor,
     owner_id: str,
 ) -> RunState:
-    store = FileStateStore(repository / ".second-mate" / "state.json")
+    store = _state_store(repository)
     if store.exists():
         raise RunConflictError("a run state already exists for this packet")
     current_revision = inspect_revision(repository)
@@ -728,9 +1274,28 @@ def _start_run_locked(
             recovery_action="restart with the same owner if dispatch is interrupted",
         ),
     )
+    active_content = deterministic_document_bytes(active)
+    recovery_intents = recovery_intent_paths(
+        store.path,
+        active_content,
+        intent_directory=store.intent_directory,
+    )
+    current_basis = preflight(
+        draft,
+        repository,
+        _recovery_intents=frozenset(
+            recovery_intent.relative_to(repository).as_posix()
+            for recovery_intent in recovery_intents
+        ),
+    )
+    if current_basis != basis:
+        raise AuthorityError("supplied basis does not match the current read-only preflight")
     store.save(active)
     try:
-        result = executor.execute(_request_for(active, repository))
+        result = _validate_fixture_executor_result(
+            executor.execute(_request_for(active, repository)),
+            active.draft,
+        )
     except Exception as error:
         _record_dispatch_failure(store, active, owner_id, error)
     finished = replace(

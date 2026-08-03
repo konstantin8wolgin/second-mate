@@ -1,10 +1,13 @@
 # Second Mate design
 
-Status: canonical pre-implementation design
+Status: canonical design with a verified FS-01 implementation subset
 
 Second Mate is a lean coordinator for AI coding work. It preserves human-owned product Direction, gives capable models room to solve technical problems, and requires evidence that fits each completion claim. It is a clean project, not a retrofit of FirstMate, Knowless, or their backlog and worker structures.
 
-No Second Mate coordinator or runtime has been implemented. Its first workflows must be operated manually; Second Mate must not self-orchestrate before its own core capabilities have been proven.
+The repository contains a small Python 3.12 coordinator for the fixture-only
+FS-01 lifecycle. It is operated manually and does not self-orchestrate. Its
+local executable evidence is recorded in [PROGRAM.md](PROGRAM.md); that evidence
+does not prove a live provider run, the broader workflow, or product readiness.
 
 ## Authority and sources
 
@@ -33,9 +36,13 @@ Mechanisms outside the canonical workflow enter scope only after pilots show a r
 
 ## Open execution-policy gate
 
-The user must choose one policy before any pre-Program Validation Slice or Foundation Slice code is written:
+The user must choose one policy before any further pre-Program Validation Slice
+or Foundation Slice execution is treated as canonically authorized:
 
 - explicit narrow consent for a named, bounded pre-Program learning and Foundation envelope; or
 - full-Program-first control, under which pre-Program work remains non-mutating until the complete Program receives Execution Consent.
 
-This package intentionally does not choose. Direction approval and Delivery Map approval do not silently authorize code or external effects.
+This package intentionally does not choose. The existing FS-01 code and its
+technical evidence do not retroactively resolve the missing policy record.
+Direction approval and Delivery Map approval do not silently authorize code or
+external effects.
