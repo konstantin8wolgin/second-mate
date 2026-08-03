@@ -310,7 +310,7 @@ the fixed FS-01 fixture route, not a completed Second Mate Program or product.
 | MS-03: Medium Foundation-route pilot | DIR-01 through DIR-06 at the pilot envelope | `blocked` | CAP-02, CAP-03, an external target with known baseline, separately scoped pilot consent, several packets, and one meaningful milestone. |
 | CAP-04: Hardening or additional automation | Unassigned until evidence shows which Direction claim needs it | `uncertain` | Only repeated pilot failures may justify more persistence, roles, concurrency, UI, provider abstraction, or repository knowledge machinery. |
 
-Binding DIR-01 through DIR-06 coverage is currently `still remaining`. MS-01
+Binding DIR-01 through DIR-06 coverage is currently `still_remaining`. MS-01
 may prove only the foundation journey it exercises. MS-02 or MS-03 must not
 declare the whole Direction proven without evidence for the actual completion
 claim.

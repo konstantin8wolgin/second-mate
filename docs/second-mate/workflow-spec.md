@@ -235,7 +235,7 @@ Route status is one of:
 | `completed` | The stated outcome has claim-fit evidence and clean-close writeback. |
 | `invalidated` | Evidence or an authorized change disproved the item; retain its reason and successor if any. |
 
-Binding Direction coverage is tracked separately as `proven`, `explicitly deferred`, `intentionally changed`, or `still remaining`. A completed packet does not by itself prove its broader Direction item. Relevant completion is blocked while a binding item remains `still remaining`.
+Binding Direction coverage is tracked separately as `proven`, `explicitly deferred`, `intentionally changed`, or `still_remaining`. A completed packet does not by itself prove its broader Direction item. Relevant completion is blocked while a binding item remains `still_remaining`.
 
 ## 8. Packet contract and run
 
