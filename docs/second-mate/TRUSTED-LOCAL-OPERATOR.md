@@ -1,8 +1,7 @@
 # Trusted-local execution operator contract
 
-Status: canonical activation gate plus CAP-02A offline/mock reference; no live
-adapter command, real process/agent dispatch, or provider run is implemented
-or authorized
+Status: canonical activation gate plus CAP-02A offline/mock reference and one
+consumed CAP-02B manual proof; no production live adapter command is implemented
 
 This document defines Second Mate's first planned live execution mode. It is a
 manual, single-run mode for a human-selected local machine, operating-system
@@ -40,6 +39,37 @@ validates but never deletes the consumption marker.
 This is executable evidence for the coordinator-side contract only. It is not
 provider readiness, containment, process-group cancellation proof,
 exact-session resume, a target mutation, or authority to activate a real run.
+
+## Consumed CAP-02B proof run
+
+On 2026-08-04 the human separately authorized one real run under this contract.
+The frozen boundary selected local Codex CLI `0.146.0`, the existing ChatGPT
+login, normal provider and repository network access, the current public Second
+Mate branch at `94c21707ab13294b8e756049691e89cba1c91725`, ephemeral CLI session
+storage, private transcript retention through clean close, no automatic retry
+or resume, and `provider-billing-controls-only`. No API billing project,
+credential, account, or system configuration was created or changed.
+
+The run consumed activation
+`cap02b-20260804t224244z-94c21707-audit01` once. Its private manual envelope
+bound the first session, retained the raw stream through evidence close, and
+allowed only two repository paths. Independent JSONL, Git, regression,
+repository-gate, and cleanup inspection proved the target result; provider
+output was not accepted as proof. The audit's one recovery defect and minimal
+signal-exit fix are committed in `3ecf0fe`. [PROGRAM.md](PROGRAM.md) owns the
+canonical detailed evidence.
+
+After clean-close evidence was recorded, cleanup removed only the exact private
+`transcript.jsonl`, `control.tmp`, `session.json`, and empty run directory. The
+consumed activation marker remains. The deletion is not provider-side erasure,
+and the clean target evidence cannot prove that no unrelated machine or network
+effect occurred.
+
+This was a one-off manual operating envelope around the real CLI, not a new
+production control-plane implementation or reusable Second Mate command. Its
+authority is exhausted: do not resume, retry, or redispatch it. A future run
+needs a new current preflight and activation; MS-02 additionally requires the
+human product check described in the Program.
 
 ## What trusted-local means
 

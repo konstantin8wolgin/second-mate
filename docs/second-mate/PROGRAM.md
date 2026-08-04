@@ -2,8 +2,9 @@
 
 Status: candidate initial Program; POL-01 narrowly selected, FS-01 canonically
 adopted as the Foundation baseline, CAP-01 and MS-01 complete, and
-DIR-INTAKE-01 and CAP-02A implemented and locally verified; TLX-01 selects a
-trusted-local unsandboxed initial live mode without authorizing a run
+DIR-INTAKE-01 and CAP-02A implemented and locally verified; PRV-01 and CAP-02B
+are complete for one consumed trusted-local proof run, while MS-02 awaits the
+human product check
 
 Date: 2026-08-03
 
@@ -48,12 +49,16 @@ separate records even when supplied in one instruction.
 | 2026-08-04 trusted-local design preflight | Fresh read-only inspection reconfirmed tracked basis `95c7a145da8fe4dafe1147ecea787e5e9592c51b`, the existing authorized roadmap and DIR-INTAKE-01 working-tree changes, and a clean `git diff --check` before this revision. | This basis supports only the product-contract analysis and documentation packet. It is not a live-target or provider preflight. |
 | 2026-08-04 TLX-01 decision and documentation Execution Consent | The human selected an explicitly trusted-local, unsandboxed initial live mode and retained sandboxed execution as later hardening/deployment. The same request authorizes the corresponding design, Program, readiness, package-index, and operator-document revisions. | It authorizes no provider authentication or call, credential use, live-target selection or mutation, system configuration, real dispatch, CAP-02 implementation, push, or commit. Every later real run still needs its own current preflight and exact unsandboxed activation consent. |
 | 2026-08-04 CAP-02A trusted-local POC plan and Execution Consent | The human authorized the offline/mock adapter packet with broad local execution authority represented only in its activation contract, no Second Mate token-spend cap beyond unavoidable provider/billing controls, and cleanup limited to exact identity-recorded private run artifacts. | It authorizes test-first local source, test, and canonical-document mutations for CAP-02A only. It authorizes no authentication, credential creation/use, provider call, billing-project selection, system configuration, live target, real process/agent dispatch, CAP-02B, push, or commit. |
+| 2026-08-04 CAP-02B provider boundary, preflight, and Execution Consent | The human selected local Codex CLI `0.146.0` with the existing ChatGPT login/account controls, normal provider and repository network access, current public Second Mate HEAD `94c21707ab13294b8e756049691e89cba1c91725` as the baseline-known trusted target, ephemeral CLI session storage, private transcript retention through clean close, no automatic retry/resume, `provider-billing-controls-only`, and exact-private-artifact cleanup. The exact activation, packet, allowed paths, risk acknowledgments, stop conditions, and independent evidence requirements were recorded before dispatch. | It authorized exactly one unsandboxed run to audit activation, streamed JSONL, recovery, and cleanup and to fix at most one proved defect with a regression. It authorized no second dispatch, credential/account/billing/system change, unrelated path, push, PR, destructive repository cleanup, or provider-side deletion. |
+| 2026-08-04 CAP-02B clean close | Activation `cap02b-20260804t224244z-94c21707-audit01` was consumed once. Strict independent parsing proved one bound 31-event JSONL lifecycle ending in `turn.completed` with process exit zero. Independent Git and repository verification—not provider claims—proved exactly two allowed paths and one recovery defect; close evidence digest `21a5c91a5c2c4d11c85c24fcdd00c54a8570683c1e64a43f465e881ae7e8cbf6` was recorded before exact cleanup. | The run is terminal and not retryable. Only its identity-recorded transcript, control, session files, and empty run directory were removed; the consumed marker remains. No absence-of-outside-effects or provider-side-erasure claim follows. |
+| 2026-08-05 CAP-02B review and overnight continuation | Fresh independent review accepted the one-line positive-exit predicate and signal-exit regression, replayed all quality gates, and committed only those two paths locally as `3ecf0fe`. The human also authorized plan-consistent routine local continuation. | The continuation permits truthful local evidence reconciliation and other dependency-ready non-live work. It prohibits retry/resume/redispatch of CAP-02B, provider/credential/account/billing/system changes, unrelated paths, push, and PR. It cannot manufacture the MS-02 human product check. |
 
 The historical repository cannot prove which pre-Program control or Execution
 Consent governed the original bootstrap. This record does not rewrite or
-backdate that history, nor does it authorize a future local packet. Provider/host
-selection, credentials, external execution, push, publication, deployment,
-Rumble integration, and pilots remain unauthorized.
+backdate that history. The later CAP-02B record authorizes and closes only its
+one exact provider run; it is not reusable authority for another provider,
+target, session, or mutation. Credential/account changes, push, publication,
+deployment, Rumble integration, and pilots remain unauthorized.
 
 TLX-01 changes only the near-term containment requirement. It does not weaken
 or replace Direction, packet, preflight, grant, one-owner, session-binding,
@@ -131,12 +136,12 @@ rather than editing D-01 in place.
 | TLX-01 | **ACCEPTED** | **The first live execution mode is explicitly trusted-local and does not require a sandbox.** | The human accepts that the selected local account, agent, and repository code may have broad machine and network access. Second Mate continues to guarantee coordinator authority, ownership, recovery, and observed target evidence, but makes no containment or no-outside-effects claim. This decision does not activate a run. |
 | SBOX-01 | **ACCEPTED AS DEFERRED HARDENING** | **Sandboxed execution remains a separate later hardening/deployment path.** | It is not a prerequisite for the initial trusted-local adapter or supervised real run. When selected, it must prove its actual filesystem, credential, environment, network, capability, cancellation, and cleanup boundaries and must never silently downgrade. |
 
-### Runtime boundary and later open decision
+### Runtime boundary and one-run provider decision
 
 | ID | State | Decision needed | What it blocks | Resolution |
 |---|---|---|---|---|
 | T-01 | **ACCEPTED** | Python 3.12 plus ENV-01's tested Linux/filesystem, Git, locking, atomic-write/recovery, packaging, and operator assumptions. | Establishes the accepted initial local runtime boundary for later separately authorized local work, each with its own current preflight and exactly fitting Execution Consent. | It does not claim product acceptance for other platforms or providers. |
-| PRV-01 | **DECISION-BLOCKED, LATER** | Select the first real provider/host integration and resolve authentication source, billing project, permitted data, intended provider/network effect, version, interruption, exact-session continuation, transcript retention, and `unknown-running` recovery. | A live AI coding run and pilot, but not the fixture-based Foundation Slice. | Choose one concrete host, not an abstraction framework. The POC spend policy is already `provider-billing-controls-only`, with no Second Mate token cap. Sandbox qualification is not a prerequisite for trusted-local mode; its risk acknowledgment and activation gate are. |
+| PRV-01 | **ACCEPTED FOR ONE CONSUMED CAP-02B PROOF** | Local Codex CLI `0.146.0`; existing ChatGPT login/account controls with no API billing-project change; current public Second Mate data; normal provider/repository network access; ephemeral CLI storage; private transcript retention through close; exact-session binding; no automatic retry/resume; `unknown-running` on ambiguity; and the current branch as the trusted target. | Enabled exactly one CAP-02B proof run, not a reusable production integration or pilot. | Any later run, host/version change, different data/target, retention change, account/billing change, resume, or retry needs a new current boundary and exact authority. Sandbox qualification was not required for this trusted-local run. |
 
 Serialization details remain locally reversible implementer choices, provided
 they satisfy the Backbone invariants below.
@@ -333,12 +338,11 @@ technical repository evidence separately from the authority records in section
    one-time scoped acceptance completes MS-01 without a personal observation;
    the fixed FS-01 first workflow is terminal with no further user decision.
    TLX-01 now selects an unsandboxed trusted-local initial mode while SBOX-01
-   preserves sandboxing as deferred hardening. CAP-02A now completes only the
-   offline coordinator-side adapter proof. PRV-01 remains a later human
-   decision about one real adapter and its remaining provider boundary; it
-   unlocks neither a live adapter nor a pilot. CAP-02B and later Map items
-   remain candidates or blocked as shown below. Direction coverage remains
-   `still_remaining`.
+   preserves sandboxing as deferred hardening. CAP-02A completes the offline
+   coordinator-side adapter proof. PRV-01 and CAP-02B later closed exactly one
+   manually enveloped real Codex proof without adding a production live adapter
+   or unlocking a pilot. MS-02 and later Map items remain blocked as shown
+   below. Direction coverage remains `still_remaining`.
 
 The repository has therefore reached a truthful technical terminal state for
 the fixed FS-01 fixture route, not a completed Second Mate Program or product.
@@ -351,11 +355,11 @@ the fixed FS-01 fixture route, not a completed Second Mate Program or product.
 | MS-01: Foundation Slice close | The FS-01 subset of DIR-01, DIR-02, DIR-04, DIR-05; DIR-03 and full product use remain | `completed` | The 2026-08-04 one-time scoped acceptance replaces the former personal-observation gate. It records no human review, observation, CLI/output-clarity judgment, or D-01-fit proof; those remain accepted residual uncertainty. |
 | DIR-INTAKE-01: Approved-Direction intake | DIR-01, DIR-02, and DIR-04; supports DIR-03 and DIR-05; constrained by DIR-06 | `completed` | Current-HEAD behavior now proves read-only preparation, exact separate Direction approval and ledger-write authority, immutable linear versions, stale/mismatched/open/pending/racing refusal, portable clone-readable history, shared FS-01 mutation coordination, recoverable atomic writes, and output consumed by `draft`. It adds no Rumble automation or provider path. |
 | TLX-01: Trusted-local initial execution decision | Preserves coordinator-side DIR-02 and DIR-04 behavior; supports DIR-03 and DIR-05; does not prove executor containment | `completed` | The human selected an unsandboxed trusted-local initial mode, explicitly accepted its broad local-machine limitation, and retained sandboxing as a later path. This design decision authorizes no implementation or run. |
-| PRV-01: One provider/host boundary | Enables DIR-03 and DIR-05 evidence; constrained by DIR-02, DIR-04, and DIR-06 | `blocked` | A human decision must select one host plus authentication source, billing project, permitted data, intended provider/network effect, version, cancellation, unknown-running, exact-session continuation, transcript retention, and later real-target class. The spend policy is already no Second Mate token cap beyond provider/billing controls. A sandbox is not required for trusted-local mode. Any provider probe remains separately authorized. |
-| LIVE-BOUNDARY-01: Trusted-local live-direct and recovery contract | Coordinator-side DIR-02 through DIR-05; does not prove containment after dispatch | `completed offline` | CAP-02A proves exact activation binding, private session/transcript/temp identity, strict bounded event parsing, cancellation, unknown-running recovery, one-owner/no-retry behavior, provider-independent evidence requirement, and cleanup restricted to exact private artifacts. A later real run still needs PRV-01 and separate activation. |
+| PRV-01: One provider/host boundary | Enables DIR-03 and DIR-05 evidence; constrained by DIR-02, DIR-04, and DIR-06 | `completed for one proof` | CAP-02B selected local Codex CLI `0.146.0`, existing ChatGPT authentication/account controls, current public Second Mate data and target, normal provider/repository network access, ephemeral CLI storage, private-until-close transcript retention, exact-session/no-retry recovery, and `provider-billing-controls-only`. No API billing project or account setting changed. This boundary is consumed, not reusable. |
+| LIVE-BOUNDARY-01: Trusted-local live-direct and recovery contract | Coordinator-side DIR-02 through DIR-05; does not prove containment after dispatch | `completed offline; exercised once` | CAP-02A proves exact activation binding, private session/transcript/temp identity, strict bounded event parsing, cancellation, unknown-running recovery, one-owner/no-retry behavior, provider-independent evidence requirement, and cleanup restricted to exact private artifacts. CAP-02B exercised that contract once through a manual real-CLI envelope; the package still has no production live adapter. |
 | CAP-02A: Offline trusted-local adapter implementation | Coordinator-side DIR-01 through DIR-05; constrained by the trusted-local limitation and DIR-06 | `completed` | One offline-only library adapter over an injected mock local control plane proves activation/basis matching, streamed JSONL lifecycle, exact session binding, interruption/failure ambiguity, persistent private state, no provider-as-proof promotion, and non-recursive identity-bound cleanup while preserving FS-01. It supplies no sandbox, credential, provider, production process, network, live target, CAP-02B, or token-cap implementation. |
-| CAP-02B: One real trusted-local provider-owned direct run | Observed coordinator-side DIR-01 through DIR-05 only; no adversarial-containment claim | `blocked` | CAP-02A, a baseline-known trusted target/change, resolved provider/data/cost/retention choices, and a separate per-run unsandboxed activation record. Provider output is not proof of changed paths or completion; independent final-revision replay is required, and absence of outside-machine effects remains unproved. |
-| MS-02: Usable manually supervised trusted-local coordinator | One-provider direct-route scope with explicit trusted-local residual risk | `candidate` | CAP-02B; one real direct packet closes without coordinator authority drift or hidden target work, followed by the required human product check. It must not claim full DIR-02 enforcement against executor overreach or hostile repository content. |
+| CAP-02B: One real trusted-local provider-owned direct run | Observed coordinator-side DIR-01 through DIR-05 only; no adversarial-containment claim | `completed once` | One consumed activation called the exact local Codex host against frozen public Second Mate HEAD, found and fixed one recovery-classification defect within two allowed paths, ended with a strict completed JSONL lifecycle, and passed independent final-revision, test, build, and exact-cleanup proof. Provider output was not treated as completion evidence; no outside-machine-effects claim is made; retry is prohibited. |
+| MS-02: Usable manually supervised trusted-local coordinator | One-provider direct-route scope with explicit trusted-local residual risk | `blocked on human product check` | CAP-02B supplies one technically closed real packet. The human must still judge whether the manual activation, observability, evidence, recovery, cleanup, and residual-risk experience is usable and fits D-01, including whether a production live adapter is required before this milestone can close. Full DIR-02 enforcement against executor overreach or hostile repository content remains unproved. |
 | SBOX-01: Sandboxed hardening/deployment path | Strengthens DIR-02 and operational security evidence without changing the coordinator contract | `deferred` | Implement only when deployment, repository trust, data sensitivity, or pilot evidence requires containment. Qualify filesystem, environment, credential, network, optional-capability, cancellation, and cleanup behavior in the actual environment; failure must not downgrade to trusted-local automatically. |
 | PILOT-SELECT-01: Medium pilot target and request | Enables pilot-scoped DIR-01 through DIR-06 evidence | `blocked` | MS-02 plus a baseline-known external target, approved Direction/route, bounded data authority, and separate pilot consent. Select it before CAP-03 so Map/Foundation behavior is earned by the real pilot. |
 | CAP-03: Foundation-route records and Map frontier | DIR-01 through DIR-05; constrained by DIR-06 | `blocked` | PILOT-SELECT-01 and the limited FS-01 Backbone; implement only the minimal Foundation evidence and Map behavior the selected pilot requires. |
@@ -368,8 +372,8 @@ prove the unobserved qualities or the whole Direction. MS-02 or MS-03 must not
 declare the whole Direction proven without evidence for the actual completion
 claim.
 
-The remaining candidate order is PRV-01, CAP-02B, MS-02, PILOT-SELECT-01,
-CAP-03, then MS-03. SBOX-01 is a separate deferred
+The remaining candidate order is MS-02, PILOT-SELECT-01, CAP-03, then MS-03.
+SBOX-01 is a separate deferred
 hardening/deployment path and may be pulled forward only by an explicit trust,
 data, deployment, or pilot need. The Map changes only from evidence or an
 authorized Direction change. Distant candidates intentionally have no
@@ -469,10 +473,10 @@ completion creates no commit or push.
 intake. It does not prove automated or high-quality Rumble, route/Map execution,
 a provider run, or pilot usefulness. TLX-01 separately selects the initial
 trusted-local containment posture but authorizes no implementation or run.
-PRV-01 remains the next provider decision/evidence packet; no provider probe or
-CAP-02 implementation is authorized by either completion. The separate
-CAP-02A record in section 1 authorized only the offline packet now completed
-below.
+At this packet's close, PRV-01 was the next provider decision/evidence packet;
+no provider probe or CAP-02 implementation was authorized by either completion.
+The separate CAP-02A and CAP-02B records in section 1 govern their later,
+narrower work.
 
 ### Completed frontier — CAP-02A trusted-local offline adapter
 
@@ -521,7 +525,8 @@ out-of-order events; completed, failed, cancelled, and ambiguous exits; private
 state reload; cleanup success with unrelated sentinels preserved; cleanup
 refusal on replacement or unexpected files; the full existing suite, lint,
 format, type, build, package, and isolated-install gates. Completion changes
-only CAP-02A/LIVE-BOUNDARY-01 evidence. CAP-02B remains blocked.
+only CAP-02A/LIVE-BOUNDARY-01 evidence. At this packet's close, CAP-02B remained
+blocked and needed separate authority.
 
 **Result.** The production package adds one `trusted_local` module and public
 library exports, with no CLI route or production control-plane implementation.
@@ -541,12 +546,64 @@ guide inclusion, and an isolated wheel import/CLI smoke all pass. Source is
 pressure range. No credential, provider, network, real process/agent, live
 target, system configuration, CAP-02B, commit, or push was used.
 
-**Next gate.** CAP-02B remains blocked. The human must still choose the exact
-provider/host and version, authentication source, billing project, permitted
-data and intended network effect, provider/billing controls, retention,
-cancellation/continuation policy, and a baseline-known trusted target. A later
-real run then needs its own current preflight and exact unsandboxed activation
-consent; CAP-02A supplies neither.
+**Historical next gate.** CAP-02A supplied neither a provider decision nor run
+authority. PRV-01 and CAP-02B were later resolved only for the separate consumed
+proof below.
+
+### Completed frontier — CAP-02B one-run trusted-local proof
+
+**Outcome.** Use one exact real local Codex host to audit CAP-02A's activation,
+streamed JSONL lifecycle, recovery classification, and exact private-artifact
+cleanup against the current public Second Mate branch. Fix at most one proved
+defect with a regression; otherwise change nothing.
+
+**Boundary.** The frozen target was public branch
+`gnhf/bring-the-first-inte-1c3fd1` at
+`94c21707ab13294b8e756049691e89cba1c91725`. The selected host was local Codex
+CLI `0.146.0` using the already authenticated ChatGPT account, normal provider
+and repository network access, ignored user configuration, ephemeral CLI
+session storage, and no Second Mate spend cap beyond existing account/provider
+controls. Permitted repository writes were only
+`src/second_mate/trusted_local.py` and `tests/test_trusted_local.py`. One-shot
+activation `cap02b-20260804t224244z-94c21707-audit01` allowed exactly one
+dispatch and prohibited resume, retry, another provider call, credential or
+account/billing change, system configuration, unrelated paths, push, and PR.
+
+**Lifecycle and independent proof.** The private envelope durably recorded the
+current revision and fingerprint, Direction/packet/preflight/provider digests,
+allowed paths, risk acknowledgments, cleanup policy, and one owner before
+dispatch. The first valid thread event bound the session. Independent strict
+parsing proved 31 complete JSONL events, exactly one thread and turn start, a
+final `turn.completed`, process exit zero, and no error or contradictory
+terminal. Provider output was treated only as a claim. Independent Git
+inspection proved HEAD unchanged during the run and exactly the two authorized
+paths modified; focused, adapter, repository, fixture, lint, format, type,
+frozen-environment, build, package-content, and isolated-install checks proved
+the final target.
+
+**Defect and close.** The run reproduced one recovery defect before mutation:
+a valid `turn.failed` followed by a signal-style negative process return code
+was persisted as definitive `failed`, although signal termination cannot prove
+an orderly terminal. A regression failed with observed `failed` versus required
+`unknown-running`; the minimal fix accepts only a strictly positive return code
+as corroboration. Fresh review replayed the green regression, 42 adapter tests,
+261 repository tests, and all repository proof gates, then committed only those
+two paths locally as `3ecf0fe`. No push occurred.
+
+Clean-close evidence digest
+`21a5c91a5c2c4d11c85c24fcdd00c54a8570683c1e64a43f465e881ae7e8cbf6`
+was durably recorded before deletion. Cleanup identity-checked and removed only
+the exact private transcript, control, session files, and empty run directory;
+the consumed activation marker remains. The run did not resume or retry, and
+its activation cannot be reused. No provider-side deletion or absence of
+unrelated-machine effects is claimed.
+
+**Limit.** CAP-02B proves one manually enveloped provider-owned direct run and
+one honest recovery correction. It does not add a production subprocess
+implementation or trusted-local CLI route, prove sandbox containment, establish
+reusable provider authority, close broader Direction coverage, or prove product
+usability. MS-02 now blocks on its required human product check; technical
+evidence cannot manufacture that judgment.
 
 ## 8. Traceability and readiness
 
@@ -563,24 +620,27 @@ consent; CAP-02A supplies neither.
 
 - **Planning-ready:** POL-01 is selected, the FS-01 adoption/CAP-01 record is
   complete, DIR-INTAKE-01 is locally complete, and TLX-01 explicitly selects
-  the initial trusted-local mode. PRV-01 may now be resolved as a separate
-  human decision/evidence packet. This authorizes no provider probe or call,
-  credential access, target mutation, pilot, or CAP-02 work.
-- **Trusted-local activation-ready:** CAP-02A is independently proved offline;
-  one provider/host and exact version, authentication source, data and intended
-  network effect, spend boundary, retention, cancellation, and continuation
-  policy are resolved; the target is baseline-known, trusted, and recoverable;
-  and the human supplies the exact per-run unsandboxed acknowledgment and
-  Execution Consent defined in `TRUSTED-LOCAL-OPERATOR.md`.
+  the initial trusted-local mode. PRV-01 and CAP-02B are technically complete
+  for one consumed proof. The next planning boundary is the MS-02 human product
+  check; it authorizes no second provider run, credential/account change,
+  target mutation, or pilot.
+- **Trusted-local activation-ready:** CAP-02A is independently proved offline,
+  and CAP-02B satisfied this gate once for its exact provider, target, policies,
+  and activation. That activation is consumed. Every future run must re-resolve
+  the current host/version, authentication/account boundary, data and intended
+  network effect, spend boundary, retention, cancellation, continuation,
+  target, risk acknowledgment, and Execution Consent defined in
+  `TRUSTED-LOCAL-OPERATOR.md`.
 - **Foundation-execution-ready:** the historical FS-01 implementation is not
   replayed as a new packet. The narrow envelope adopted FS-01 only; any new
   Validation or Foundation mutation or expansion needs its own current
   non-mutating preflight and exactly fitting Execution Consent.
 - **Pilot-ready:** MS-01 is complete only under its documented limited scoped
-  acceptance and CAP-02 has its own claim-fit proof; POL-01 is chosen; the
-  target pilot has a known baseline, bounded data/provider authority, approved
-  Direction and route, the applicable trusted-local activation or separately
-  proved sandbox boundary, and claim-fit milestone proof.
+  acceptance and CAP-02B has one narrow claim-fit proof. MS-02 and
+  PILOT-SELECT-01 remain open; a pilot still needs a known baseline, bounded
+  data/provider authority, approved Direction and route, the applicable new
+  trusted-local activation or separately proved sandbox boundary, and
+  claim-fit milestone proof.
 - **Release/expansion-ready:** binding completion coverage is proven or
   explicitly and humanly changed/deferred; project-wide quality and relevant
   security, compatibility, migration/rollback, and failure-path evidence pass;
@@ -601,17 +661,25 @@ platform.
 
 ## 10. Next human action
 
-No further FS-01 or DIR-INTAKE-01 decision is requested. The fixed first
-workflow is terminal under the 2026-08-04 one-time scoped acceptance, and the
-approved Direction-intake packet is locally complete. TLX-01 has already
-selected the unsandboxed trusted-local initial mode; SBOX-01 preserves the
-original sandboxed path as deferred hardening. The next decision is whether to
-finish PRV-01 by selecting one provider/host boundary covering authentication
-source, permitted data, intended provider/network effect, spending controls,
-cancellation, unknown-running recovery, exact-session continuation, transcript
-retention, version, and a later trusted target class. No provider probe or call,
-credential access, CAP-02 implementation, live-target activation, pilot, push,
-publication, deployment, or other external work is authorized.
+No further FS-01, DIR-INTAKE-01, PRV-01 proof-run, or CAP-02B run decision is
+requested. The CAP-02B activation is consumed and must not be retried, resumed,
+or redispatched. The next decision is the MS-02 human product check: whether the
+observed one-run manual activation, evidence visibility, recovery behavior,
+exact cleanup, and explicit trusted-local residual risk are usable and still
+fit D-01, and whether the absence of a production live adapter prevents MS-02
+from closing. Technical evidence cannot answer that product judgment.
+
+The review should record one bounded outcome: either accept MS-02 only for the
+observed manual-envelope scope, or keep it open and name the concrete usability
+gap. If the missing production adapter is that gap, the next local packet may
+prepare and prove the adapter without another provider dispatch; the Program
+must not infer that choice from silence.
+
+Until that check is recorded, PILOT-SELECT-01, CAP-03, and pilot work remain
+blocked. A later live run needs a new current provider/target boundary,
+preflight, and one-shot activation. No provider retry/call, credential or
+account/billing change, live-target activation, pilot, push, publication,
+deployment, or other external work is authorized by this close.
 
 ## 11. Continuation prompt while human gates are open
 
@@ -627,12 +695,16 @@ publication, deployment, or other external work is authorized.
 > complete; use `DIRECTION-OPERATOR.md` and treat the preserved branch only as
 > historical evidence, not as code to merge or a source that elevates its
 > placeholder prompt. TLX-01 selects trusted-local unsandboxed execution only
-> as a future mode; read `TRUSTED-LOCAL-OPERATOR.md`, preserve its limitations,
-> and never treat the design decision as activation consent. SBOX-01 preserves
-> sandboxing as deferred hardening and must never silently downgrade if later
-> requested. PRV-01 is the next decision/evidence packet. Do not probe or call
-> a provider, inspect credentials, select a live target, build CAP-02, start a
-> pilot, or add generalized orchestration without its own decisions, current
-> preflight, and exactly fitting authority. Stop and classify pressure if
+> through an exact per-run activation; read `TRUSTED-LOCAL-OPERATOR.md` and
+> preserve its limitations. CAP-02A is the offline product adapter, while
+> PRV-01 and CAP-02B are complete only for one consumed manually enveloped run.
+> Do not resume, retry, or redispatch that run or mistake it for a production
+> live adapter. SBOX-01 preserves sandboxing as deferred hardening and must
+> never silently downgrade if later requested. MS-02 is blocked on a real human
+> product check; do not manufacture it. Prepare only non-live prerequisites. Do
+> not probe or call a provider, inspect credentials, select or mutate a live
+> target, start a pilot, or add generalized orchestration without its own
+> decisions, current preflight, and exactly fitting authority. Stop and
+> classify pressure if
 > Direction, Backbone, authority, or proof no longer fits. Do not publish,
 > deploy, or push.
