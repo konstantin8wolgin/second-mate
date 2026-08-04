@@ -3,8 +3,9 @@
 Status: candidate initial Program; POL-01 narrowly selected, FS-01 canonically
 adopted as the Foundation baseline, CAP-01 and MS-01 complete, and
 DIR-INTAKE-01 and CAP-02A implemented and locally verified; PRV-01 and CAP-02B
-are complete for one consumed trusted-local proof run, while MS-02 awaits the
-human product check
+are complete for one consumed trusted-local proof run; CAP-02C is authorized as
+a provider-free dormant-adapter packet, while MS-02 awaits the human product
+check
 
 Date: 2026-08-03
 
@@ -52,6 +53,7 @@ separate records even when supplied in one instruction.
 | 2026-08-04 CAP-02B provider boundary, preflight, and Execution Consent | The human selected local Codex CLI `0.146.0` with the existing ChatGPT login/account controls, normal provider and repository network access, current public Second Mate HEAD `94c21707ab13294b8e756049691e89cba1c91725` as the baseline-known trusted target, ephemeral CLI session storage, private transcript retention through clean close, no automatic retry/resume, `provider-billing-controls-only`, and exact-private-artifact cleanup. The exact activation, packet, allowed paths, risk acknowledgments, stop conditions, and independent evidence requirements were recorded before dispatch. | It authorized exactly one unsandboxed run to audit activation, streamed JSONL, recovery, and cleanup and to fix at most one proved defect with a regression. It authorized no second dispatch, credential/account/billing/system change, unrelated path, push, PR, destructive repository cleanup, or provider-side deletion. |
 | 2026-08-04 CAP-02B clean close | Activation `cap02b-20260804t224244z-94c21707-audit01` was consumed once. Strict independent parsing proved one bound 31-event JSONL lifecycle ending in `turn.completed` with process exit zero. Independent Git and repository verification—not provider claims—proved exactly two allowed paths and one recovery defect; close evidence digest `21a5c91a5c2c4d11c85c24fcdd00c54a8570683c1e64a43f465e881ae7e8cbf6` was recorded before exact cleanup. | The run is terminal and not retryable. Only its identity-recorded transcript, control, session files, and empty run directory were removed; the consumed marker remains. No absence-of-outside-effects or provider-side-erasure claim follows. |
 | 2026-08-05 CAP-02B review and overnight continuation | Fresh independent review accepted the one-line positive-exit predicate and signal-exit regression, replayed all quality gates, and committed only those two paths locally as `3ecf0fe`. The human also authorized plan-consistent routine local continuation. | The continuation permits truthful local evidence reconciliation and other dependency-ready non-live work. It prohibits retry/resume/redispatch of CAP-02B, provider/credential/account/billing/system changes, unrelated paths, push, and PR. It cannot manufacture the MS-02 human product check. |
+| 2026-08-05 CAP-02C provider-free adapter preflight and Execution Consent | Fresh inspection at `2a698d056d3e50e2662313f2549ab8d08e5ead5f` and visible fingerprint `37f548dc40adb27edb9d6d1597606391ed4ed8c13e322ff741f7297e5a097cce` found a clean checkout, the retained CAP-02B consumed marker unchanged, a green 261-test baseline, and local Codex CLI `0.146.0` help that supports JSONL, ephemeral storage, ignored user configuration, stdin prompts, fixed working directory, and explicit unsandboxed execution. The human expressly authorized autonomous plan-consistent local work, including reusable live-adapter preparation when it can be proved without a provider call. | This authorizes CAP-02C source, tests, canonical documentation, routine repairs, and local commits only. It prohibits invoking `codex exec` or another provider, authentication or credential access, retry/resume/redispatch of CAP-02B, real activation, live-target work, system configuration, `firstmate/`, push, and PR. CAP-02C must use only a temporary fake executable and must expose no CLI dispatch route. |
 
 The historical repository cannot prove which pre-Program control or Execution
 Consent governed the original bootstrap. This record does not rewrite or
@@ -359,6 +361,7 @@ the fixed FS-01 fixture route, not a completed Second Mate Program or product.
 | LIVE-BOUNDARY-01: Trusted-local live-direct and recovery contract | Coordinator-side DIR-02 through DIR-05; does not prove containment after dispatch | `completed offline; exercised once` | CAP-02A proves exact activation binding, private session/transcript/temp identity, strict bounded event parsing, cancellation, unknown-running recovery, one-owner/no-retry behavior, provider-independent evidence requirement, and cleanup restricted to exact private artifacts. CAP-02B exercised that contract once through a manual real-CLI envelope; the package still has no production live adapter. |
 | CAP-02A: Offline trusted-local adapter implementation | Coordinator-side DIR-01 through DIR-05; constrained by the trusted-local limitation and DIR-06 | `completed` | One offline-only library adapter over an injected mock local control plane proves activation/basis matching, streamed JSONL lifecycle, exact session binding, interruption/failure ambiguity, persistent private state, no provider-as-proof promotion, and non-recursive identity-bound cleanup while preserving FS-01. It supplies no sandbox, credential, provider, production process, network, live target, CAP-02B, or token-cap implementation. |
 | CAP-02B: One real trusted-local provider-owned direct run | Observed coordinator-side DIR-01 through DIR-05 only; no adversarial-containment claim | `completed once` | One consumed activation called the exact local Codex host against frozen public Second Mate HEAD, found and fixed one recovery-classification defect within two allowed paths, ended with a strict completed JSONL lifecycle, and passed independent final-revision, test, build, and exact-cleanup proof. Provider output was not treated as completion evidence; no outside-machine-effects claim is made; retry is prohibited. |
+| CAP-02C: Dormant Codex CLI process adapter | Coordinator-side DIR-02 through DIR-05; no provider, target, usability, or containment claim | `ready locally` | Add a library-only real-process boundary with exact binary/version/help/prompt/environment/argv binding, strict activation reuse, streamed JSONL and private stderr capture, owned process-group cancellation, and no-retry recovery. Prove it only against a temporary fake executable; expose no CLI route and make no real provider call. |
 | MS-02: Usable manually supervised trusted-local coordinator | One-provider direct-route scope with explicit trusted-local residual risk | `blocked on human product check` | CAP-02B supplies one technically closed real packet. The human must still judge whether the manual activation, observability, evidence, recovery, cleanup, and residual-risk experience is usable and fits D-01, including whether a production live adapter is required before this milestone can close. Full DIR-02 enforcement against executor overreach or hostile repository content remains unproved. |
 | SBOX-01: Sandboxed hardening/deployment path | Strengthens DIR-02 and operational security evidence without changing the coordinator contract | `deferred` | Implement only when deployment, repository trust, data sensitivity, or pilot evidence requires containment. Qualify filesystem, environment, credential, network, optional-capability, cancellation, and cleanup behavior in the actual environment; failure must not downgrade to trusted-local automatically. |
 | PILOT-SELECT-01: Medium pilot target and request | Enables pilot-scoped DIR-01 through DIR-06 evidence | `blocked` | MS-02 plus a baseline-known external target, approved Direction/route, bounded data authority, and separate pilot consent. Select it before CAP-03 so Map/Foundation behavior is earned by the real pilot. |
@@ -372,8 +375,9 @@ prove the unobserved qualities or the whole Direction. MS-02 or MS-03 must not
 declare the whole Direction proven without evidence for the actual completion
 claim.
 
-The remaining candidate order is MS-02, PILOT-SELECT-01, CAP-03, then MS-03.
-SBOX-01 is a separate deferred
+CAP-02C is the only authorized local frontier while the independent MS-02
+product check remains open. After CAP-02C, the remaining candidate order is
+MS-02, PILOT-SELECT-01, CAP-03, then MS-03. SBOX-01 is a separate deferred
 hardening/deployment path and may be pulled forward only by an explicit trust,
 data, deployment, or pilot need. The Map changes only from evidence or an
 authorized Direction change. Distant candidates intentionally have no
@@ -604,6 +608,69 @@ implementation or trusted-local CLI route, prove sandbox containment, establish
 reusable provider authority, close broader Direction coverage, or prove product
 usability. MS-02 now blocks on its required human product check; technical
 evidence cannot manufacture that judgment.
+
+### Ready frontier — CAP-02C dormant Codex CLI process adapter
+
+**Outcome.** Prepare the smallest reusable trusted-local process path without
+calling a provider: from one exact CAP-02A activation and a matching immutable
+Codex CLI boundary, launch one local process, stream its stdout through the
+existing JSONL lifecycle, retain stderr privately, bind the process identity,
+and preserve conservative cancellation and restart behavior.
+
+**Chosen shape and rejected alternatives.** A command builder alone would not
+prove streaming, descriptor ownership, process identity, or process-group
+cancellation. A user-facing command would create an avoidable real-dispatch
+surface before another activation exists. CAP-02C therefore adds a dormant
+library adapter whose complete process behavior is exercised against a
+temporary fake executable. The public entry remains the activation-validating
+adapter; the subprocess control plane stays private, one-shot, and unavailable
+as a standalone dispatch API.
+
+**Frozen boundary.** Bind an absolute unaliased executable and its SHA-256,
+exact `--version` text and `exec --help` digest, explicit model, raw-prompt
+digest, exact environment names plus value digests, fixed capability-reduction
+arguments, and bounded interrupt/terminate timings into the provider-boundary
+digest. Runtime environment values and the raw prompt remain memory-only.
+Qualification runs only the selected executable's local `--version` and
+`exec --help` probes, refuses target-local `.codex/config.toml`, and completes
+before activation consumption or private run state. Launch uses stdin for the
+prompt, JSONL stdout, the exact identity-recorded `control.tmp` for stderr,
+ephemeral session storage, ignored user configuration, no MCP configuration,
+explicitly disabled optional app/browser/computer/hook/plugin/subagent/web
+features, fixed repository working directory, and unsandboxed trusted-local
+mode. These switches minimize capability; they do not create containment.
+
+**Lifecycle and recovery.** Reuse CAP-02A authority, marker, session, transcript,
+strict JSONL, independent-evidence, load, and exact-cleanup behavior. Add the
+control path and physical identity to the internal launch request. The process
+must start in its own session/process group and record a Linux boot/start-time
+token before it can become `running`. Cancellation verifies that identity and
+uses bounded `SIGINT`, `SIGTERM`, then `SIGKILL`; the durable result remains
+`unknown-running` because a cancellation request is not completion proof.
+Launch, prompt-write, stream, wait, signal, identity, or exit ambiguity never
+retries and never becomes successful evidence.
+
+**Test-first proof.** First add failing tests that name the important breaks:
+boundary mismatch, binary or probe drift, prompt/environment drift, forbidden
+target config, and a second launch all refuse without dispatch; a real temporary
+fake executable receives the hand-derived exact argv/prompt/environment,
+streams split JSONL, writes stderr only to the private control artifact, and
+finishes through the existing adapter; an uncooperative fake process is stopped
+through its owned group while the run stays `unknown-running`; reload cannot
+reattach or retry; exact cleanup preserves unrelated sentinels. No test or
+qualification may execute the installed Codex binary beyond the already
+recorded read-only help/version inventory, contact a provider, inspect auth, or
+use a real target. Preserve FS-01 and all existing trusted-local regressions,
+then run the complete lint, format, type, test, frozen-environment, build,
+package-content, and isolated-install gates.
+
+**Stop.** Completion may update only the adapter source/exports, focused tests,
+and fitting Program/checklist/workflow/operator/package documentation, then
+commit locally. It does not add a CLI route, activate the adapter, reuse
+CAP-02B, establish current provider authority, close MS-02, select a pilot,
+contact a provider, push, or open a PR. A future real adapter run still requires
+a new exact model/host/auth/data/target boundary, current preflight, and
+one-shot human activation.
 
 ## 8. Traceability and readiness
 
