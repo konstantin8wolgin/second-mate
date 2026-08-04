@@ -692,6 +692,25 @@ def test_turn_failure_with_zero_exit_is_unknown_running(tmp_path: Path) -> None:
     assert run.phase == "unknown-running"
 
 
+def test_turn_failure_with_signal_exit_is_unknown_running(tmp_path: Path) -> None:
+    transcript = b"".join(
+        (
+            _event_line(
+                {
+                    "type": "thread.started",
+                    "thread_id": "019fcdda-2c17-7f51-9e81-a56f5b9585dc",
+                }
+            ),
+            _event_line({"type": "turn.started"}),
+            _event_line({"type": "turn.failed", "error": {"message": "mock failure"}}),
+        )
+    )
+
+    run = _finish_transcript(tmp_path, transcript, exit_code=-15)
+
+    assert run.phase == "unknown-running"
+
+
 @pytest.mark.parametrize("failure", ["read", "wait"])
 def test_control_plane_io_failure_is_unknown_running_and_retains_private_state(
     tmp_path: Path, failure: str

@@ -906,7 +906,7 @@ class OfflineTrustedLocalAdapter:
             and not lifecycle.invalid
             and lifecycle.terminal == "failed"
             and type(exit_code) is int
-            and exit_code != 0
+            and exit_code > 0
         ):
             phase = "failed"
         else:
