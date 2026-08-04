@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ctypes
 import hashlib
 import json
 import os
@@ -17,6 +18,8 @@ from second_mate.domain import JsonObject
 
 _CLOSE_JOURNAL_SCHEMA_VERSION = 2
 _INTENT_TOKEN_HEX_LENGTH = 32
+_AT_FDCWD = -100
+_RENAME_EXCHANGE = 2
 
 
 class JsonDocument(Protocol):
@@ -538,10 +541,49 @@ def prepare_atomic_write_intent(
     return desired
 
 
+def pending_atomic_exchange(
+    path: Path,
+    *,
+    intent_directory: Path,
+) -> tuple[bytes, bytes] | None:
+    """Return the exact displaced and installed sides of one interrupted exchange."""
+    path = path.absolute()
+    intent_directory = intent_directory.absolute()
+    try:
+        path.lstat()
+    except FileNotFoundError:
+        return None
+    except OSError as error:
+        raise StateRecoveryError(f"cannot inspect exchanged atomic target: {error}") from error
+    installed = _read_unaliased_file(path, "exchanged atomic target")
+    matching: list[AtomicWriteIntent] = []
+    for intent in _read_atomic_intents(path, intent_directory):
+        try:
+            intent.scratch.lstat()
+        except FileNotFoundError:
+            continue
+        except OSError as error:
+            raise StateRecoveryError(f"cannot inspect exchanged prior target: {error}") from error
+        if intent.content == installed:
+            matching.append(intent)
+    if not matching:
+        return None
+    if len(matching) != 1:
+        raise StateRecoveryError("multiple atomic intents claim the installed exchange")
+    displaced = _read_unaliased_file(matching[0].scratch, "exchanged prior target")
+    return displaced, installed
+
+
 class PosixAtomicWriter:
     """Durably marked same-directory replacement for the verified FS-01 environment."""
 
-    def write(self, path: Path, content: bytes, *, intent_directory: Path) -> None:
+    @staticmethod
+    def _write_scratch(
+        path: Path,
+        content: bytes,
+        *,
+        intent_directory: Path,
+    ) -> tuple[AtomicWriteIntent, os.stat_result]:
         intent = prepare_atomic_write_intent(
             path,
             content,
@@ -607,6 +649,200 @@ class PosixAtomicWriter:
             raise StateRecoveryError("atomic scratch identity changed before replacement")
         if _read_intent_marker(intent.marker) != content:
             raise StateRecoveryError("atomic intent marker changed before replacement")
+        return intent, metadata
+
+    @staticmethod
+    def _retire_scratch(
+        intent: AtomicWriteIntent,
+        metadata: os.stat_result,
+        content: bytes,
+    ) -> None:
+        try:
+            entry = intent.scratch.lstat()
+        except OSError as error:
+            raise StateRecoveryError(f"cannot retire atomic scratch file: {error}") from error
+        if (
+            not stat.S_ISREG(entry.st_mode)
+            or entry.st_uid != os.geteuid()
+            or stat.S_IMODE(entry.st_mode) != 0o600
+            or entry.st_nlink not in {1, 2}
+            or (metadata.st_dev, metadata.st_ino) != (entry.st_dev, entry.st_ino)
+            or _read_intent_marker(intent.marker) != content
+        ):
+            raise StateRecoveryError("atomic scratch identity changed before retirement")
+        if entry.st_nlink == 1 and _read_private_scratch(intent.scratch) != content:
+            raise StateRecoveryError("atomic scratch content changed before retirement")
+        try:
+            intent.scratch.unlink()
+        except OSError as error:
+            raise StateRecoveryError(f"cannot retire atomic scratch file: {error}") from error
+        _fsync_directory(intent.scratch.parent)
+        _delete_atomic_intent(intent)
+
+    def create(self, path: Path, content: bytes, *, intent_directory: Path) -> None:
+        """Atomically install new content without replacing any existing entry."""
+        intent, metadata = self._write_scratch(
+            path,
+            content,
+            intent_directory=intent_directory,
+        )
+        try:
+            os.link(intent.scratch, path, follow_symlinks=False)
+        except FileExistsError as error:
+            try:
+                final_entry = path.lstat()
+                scratch_entry = intent.scratch.lstat()
+            except OSError as inspect_error:
+                raise StateRecoveryError(
+                    f"cannot inspect colliding atomic target: {inspect_error}"
+                ) from inspect_error
+            same_installed_inode = stat.S_ISREG(final_entry.st_mode) and (
+                final_entry.st_dev,
+                final_entry.st_ino,
+            ) == (scratch_entry.st_dev, scratch_entry.st_ino) == (metadata.st_dev, metadata.st_ino)
+            if not same_installed_inode:
+                self._retire_scratch(intent, metadata, content)
+                raise StateRecoveryError("atomic target already exists") from error
+        except OSError as error:
+            raise StateRecoveryError(f"cannot install new atomic target: {error}") from error
+        _fsync_directory(path.parent)
+        self._retire_scratch(intent, metadata, content)
+
+    @staticmethod
+    def _exchange_paths(left: Path, right: Path) -> None:
+        library = ctypes.CDLL(None, use_errno=True)
+        try:
+            renameat2 = library.renameat2
+        except AttributeError as error:
+            raise StateRecoveryError(
+                "atomic compare-and-exchange is unavailable on this platform"
+            ) from error
+        renameat2.argtypes = (
+            ctypes.c_int,
+            ctypes.c_char_p,
+            ctypes.c_int,
+            ctypes.c_char_p,
+            ctypes.c_uint,
+        )
+        renameat2.restype = ctypes.c_int
+        if (
+            renameat2(
+                _AT_FDCWD,
+                os.fsencode(left),
+                _AT_FDCWD,
+                os.fsencode(right),
+                _RENAME_EXCHANGE,
+            )
+            != 0
+        ):
+            error_number = ctypes.get_errno()
+            raise OSError(error_number, os.strerror(error_number))
+
+    @staticmethod
+    def _recover_completed_exchange(
+        path: Path,
+        expected: bytes,
+        content: bytes,
+        *,
+        intent_directory: Path,
+    ) -> bool:
+        matching = tuple(
+            intent
+            for intent in _read_atomic_intents(path.absolute(), intent_directory.absolute())
+            if intent.content_sha256 == _digest(content) and intent.content == content
+        )
+        if not matching:
+            return False
+        if len(matching) != 1:
+            raise StateRecoveryError("multiple atomic intents claim the exchanged target")
+        intent = matching[0]
+        try:
+            path.lstat()
+            intent.scratch.lstat()
+        except FileNotFoundError:
+            return False
+        except OSError as error:
+            raise StateRecoveryError(f"cannot inspect exchanged atomic target: {error}") from error
+        displaced = _read_unaliased_file(intent.scratch, "exchanged prior target")
+        installed = _read_unaliased_file(path, "exchanged atomic target")
+        if displaced != expected or installed != content:
+            raise StateRecoveryError("interrupted atomic exchange does not match either exact side")
+        try:
+            intent.scratch.unlink()
+        except OSError as error:
+            raise StateRecoveryError(f"cannot retire exchanged prior target: {error}") from error
+        _fsync_directory(path.parent)
+        _delete_atomic_intent(intent)
+        return True
+
+    def exchange(
+        self,
+        path: Path,
+        expected: bytes,
+        content: bytes,
+        *,
+        intent_directory: Path,
+    ) -> None:
+        """Atomically replace only the exact expected content, restoring any race winner."""
+        path = path.absolute()
+        intent_directory = intent_directory.absolute()
+        if self._recover_completed_exchange(
+            path,
+            expected,
+            content,
+            intent_directory=intent_directory,
+        ):
+            return
+        intent, metadata = self._write_scratch(
+            path,
+            content,
+            intent_directory=intent_directory,
+        )
+        try:
+            self._exchange_paths(intent.scratch, path)
+        except OSError as error:
+            self._retire_scratch(intent, metadata, content)
+            raise StateRecoveryError(f"cannot exchange atomic target: {error}") from error
+        _fsync_directory(path.parent)
+        try:
+            displaced = _read_unaliased_file(intent.scratch, "exchanged prior target")
+            installed = _read_unaliased_file(path, "exchanged atomic target")
+        except StateRecoveryError as error:
+            try:
+                self._exchange_paths(intent.scratch, path)
+                _fsync_directory(path.parent)
+            except OSError as rollback_error:
+                raise StateRecoveryError(
+                    "atomic exchange inspection failed and prior target could not be restored"
+                ) from rollback_error
+            self._retire_scratch(intent, metadata, content)
+            raise error
+        if displaced != expected or installed != content:
+            try:
+                self._exchange_paths(intent.scratch, path)
+                _fsync_directory(path.parent)
+            except OSError as error:
+                raise StateRecoveryError(
+                    "atomic target changed and could not be restored after exchange"
+                ) from error
+            if _read_unaliased_file(path, "restored atomic target") != displaced:
+                raise StateRecoveryError("atomic target restoration produced different content")
+            self._retire_scratch(intent, metadata, content)
+            raise StateRecoveryError("atomic target changed before compare-and-exchange")
+        try:
+            intent.scratch.unlink()
+        except OSError as error:
+            raise StateRecoveryError(f"cannot retire exchanged prior target: {error}") from error
+        _fsync_directory(path.parent)
+        _delete_atomic_intent(intent)
+
+    def write(self, path: Path, content: bytes, *, intent_directory: Path) -> None:
+        intent, _ = self._write_scratch(
+            path,
+            content,
+            intent_directory=intent_directory,
+        )
+        temporary = intent.scratch
         os.replace(temporary, path)
         _fsync_directory(path.parent)
         _delete_atomic_intent(intent)

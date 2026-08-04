@@ -1183,7 +1183,7 @@ def test_load_state_serializes_close_journal_recovery_with_the_run_lock(
     pending_path = state_path.with_name("state.json.pending")
     state_before = state_path.read_bytes()
     pending_before = pending_path.read_bytes()
-    git_lock = Path(run_git(repository, "rev-parse", "--git-path", "second-mate-fs01.lock"))
+    git_lock = Path(run_git(repository, "rev-parse", "--git-path", "second-mate-mutation.lock"))
     if not git_lock.is_absolute():
         git_lock = repository / git_lock
     descriptor = os.open(git_lock, os.O_RDWR | os.O_CREAT, 0o600)

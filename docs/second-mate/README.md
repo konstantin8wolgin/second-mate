@@ -1,16 +1,22 @@
 # Second Mate design
 
 Status: canonical design; POL-01 narrowly selected, the verified FS-01
-Foundation baseline canonically adopted, CAP-01 complete, and MS-01 completed
-under the 2026-08-04 one-time scoped acceptance; the fixed FS-01 first workflow
-is terminal and binding Direction coverage remains `still_remaining`
+Foundation baseline canonically adopted, CAP-01 and MS-01 complete, and
+DIR-INTAKE-01 and CAP-02A implemented and locally verified; TLX-01 selects a
+trusted-local unsandboxed initial live mode, but no live execution is authorized
 
 Second Mate is a lean coordinator for AI coding work. It preserves human-owned product Direction, gives capable models room to solve technical problems, and requires evidence that fits each completion claim. It is a clean project, not a retrofit of FirstMate, Knowless, or their backlog and worker structures.
 
-The repository contains a small Python 3.12 coordinator for the fixture-only
-FS-01 lifecycle. It is operated manually and does not self-orchestrate. Its
-local executable evidence is recorded in [PROGRAM.md](PROGRAM.md); that evidence
-does not prove a live provider run, the broader workflow, or product readiness.
+The repository contains a Python 3.12 coordinator for approved Direction
+intake, the fixture-only FS-01 lifecycle, and the CAP-02A offline adapter proof.
+It is operated manually and does not self-orchestrate. The
+[Direction operator guide](DIRECTION-OPERATOR.md),
+[FS-01 operator guide](FS-01-OPERATOR.md), and
+[trusted-local operator contract](TRUSTED-LOCAL-OPERATOR.md) describe those
+boundaries. CAP-02A is a library path over an injected mock control plane, not
+a live command or provider integration. Executable evidence is recorded in
+[PROGRAM.md](PROGRAM.md); that evidence does not prove automated Rumble, a live
+provider run, the broader workflow, or product readiness.
 
 ## Authority and sources
 
@@ -90,3 +96,56 @@ review rule, turn technical evidence into broader product evidence, or change
 binding Direction coverage from `still_remaining`. Provider or host selection,
 credentials, CAP-02 onward, pilot work, Rumble, push, publication, deployment,
 and all external work remain separate future unauthorized scope.
+
+## Recorded approved-Direction intake — 2026-08-04
+
+After a fresh preflight, the human approved the exact test-first
+DIR-INTAKE-01 plan and granted separately scoped Execution Consent for its
+local shared-lock, immutable Direction-history, CLI, documentation, and proof
+mutations. The implemented [operator flow](DIRECTION-OPERATOR.md) preserves
+external/manual Rumble, separate exact Direction approval and ledger-write
+authority, portable D-01/D-02 history, and safe handoff into `draft`.
+
+This packet supplies no provider or host decision, model call, credential or
+network access, live target, route/Map automation, push, commit, publication,
+deployment, or pilot authority. Its completion unlocks only the separate
+PRV-01 human decision/evidence packet described in [PROGRAM.md](PROGRAM.md).
+
+## Recorded trusted-local execution decision — 2026-08-04
+
+The human selected TLX-01: Second Mate's first planned live execution mode is
+explicitly trusted-local and does not require a sandbox. It assumes a
+human-selected machine, unprivileged operating-system account, repository, and
+worktree are trusted enough for a coding agent and repository-controlled code
+to use the account's broader permissions. That may include unrelated files,
+credentials, local services, and arbitrary network destinations.
+
+This choice narrows the near-term product claim instead of silently weakening
+it. Second Mate still requires exact Direction, a frozen packet, read-only
+preflight, separate Execution Consent, one durable owner, private exact-session
+binding, `unknown-running` recovery, independent target evidence, and
+recoverable clean close. It does not claim that the unsandboxed executor is
+contained, that hostile repository content is safe, or that target evidence
+proves the absence of effects elsewhere on the machine or network. Full DIR-02
+coverage against executor overreach remains unproved.
+
+Sandboxed execution is preserved as SBOX-01, a separate deferred hardening or
+deployment path. It is not a prerequisite for the first trusted-local adapter
+or supervised run, and a future sandbox failure must not silently downgrade to
+trusted-local mode.
+
+TLX-01 is a design decision, not run consent. No provider authentication or
+call, credential use, target selection or mutation, system configuration,
+CAP-02 implementation, dispatch, push, or commit is authorized by this packet.
+Each later real run needs the exact unsandboxed activation acknowledgment and
+fields in [TRUSTED-LOCAL-OPERATOR.md](TRUSTED-LOCAL-OPERATOR.md).
+
+The later CAP-02A request separately authorized only a test-first offline/mock
+adapter packet. That packet is now locally complete: exact activation/basis
+binding, offline-only launch, private identity-recorded artifacts, strict
+bounded JSONL lifecycle, cancellation and `unknown-running`, restart recovery,
+independent-evidence posture, and narrow explicit cleanup are executable. It
+selects `provider-billing-controls-only` with no Second Mate token-spend cap.
+It did not select a billing project or authorize credentials, authentication,
+provider calls, a real process/agent, system configuration, a live target,
+CAP-02B, push, or commit; none occurred.

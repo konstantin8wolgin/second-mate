@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import os
-import stat
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass, replace
@@ -21,12 +19,14 @@ from second_mate.domain import (
 )
 from second_mate.repository import (
     FileFact,
+    MutationLockBusyError,
     PreflightEnvelope,
     TargetRevision,
     git_private_path,
     inspect_fixture_paths,
     inspect_instructions,
     inspect_revision,
+    mutation_lock,
     preflight,
     preflight_from_json,
 )
@@ -892,39 +892,11 @@ def _record_dispatch_failure(
 
 @contextmanager
 def _run_lock(repository: Path) -> Iterator[None]:
-    lock_path = git_private_path(repository, "second-mate-fs01.lock")
-    lock_path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor: int | None = None
     try:
-        descriptor = os.open(
-            lock_path,
-            os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC,
-            0o600,
-        )
-        metadata = os.fstat(descriptor)
-        entry = lock_path.lstat()
-        if (
-            not stat.S_ISREG(metadata.st_mode)
-            or metadata.st_nlink != 1
-            or (metadata.st_dev, metadata.st_ino) != (entry.st_dev, entry.st_ino)
-        ):
-            raise OSError("unsafe run lock identity")
-    except OSError as error:
-        if descriptor is not None:
-            os.close(descriptor)
-        raise RunConflictError("the packet run lock path is unsafe") from error
-    assert descriptor is not None
-    try:
-        try:
-            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError as error:
-            raise RunConflictError("the packet run lock is held by another active owner") from error
-        yield
-    finally:
-        try:
-            fcntl.flock(descriptor, fcntl.LOCK_UN)
-        finally:
-            os.close(descriptor)
+        with mutation_lock(repository):
+            yield
+    except MutationLockBusyError as error:
+        raise RunConflictError(str(error)) from error
 
 
 def restart_run(repository: Path, executor: Executor, *, owner_id: str) -> RunState:

@@ -1,8 +1,9 @@
 # Second Mate bootstrap Program
 
 Status: candidate initial Program; POL-01 narrowly selected, FS-01 canonically
-adopted as the Foundation baseline, and CAP-01 and MS-01 complete; MS-01 closes
-only under the 2026-08-04 one-time scoped acceptance
+adopted as the Foundation baseline, CAP-01 and MS-01 complete, and
+DIR-INTAKE-01 and CAP-02A implemented and locally verified; TLX-01 selects a
+trusted-local unsandboxed initial live mode without authorizing a run
 
 Date: 2026-08-03
 
@@ -12,9 +13,9 @@ the canonical [workflow specification](workflow-spec.md) and
 The [Foundation-First reference](../placeholder/foundation-first/foundation-first-delivery-design.md)
 is context only, as described by the [canonical package index](README.md).
 
-The Program deliberately stops at one permanent Foundation Slice and one
-detailed frontier packet. It is not permission to implement, publish, deploy,
-or use external services.
+The Program retains one completed permanent Foundation Slice and keeps only the
+next candidate frontier compactly detailed. It is not permission to implement,
+publish, deploy, or use external services.
 
 ## 1. Authority and current readiness
 
@@ -40,12 +41,27 @@ separate records even when supplied in one instruction.
 | 2026-08-03 Execution Consent | That docs-only packet had separately scoped Execution Consent bound to its recorded preflight and exact pre-mutation basis | It permitted only the four authorized canonical-document mutations. No broad or future Execution Consent was recorded. |
 | 2026-08-04 read-only preflight | The current read-only preflight covers exact repository basis `e46c6dc82df54e16ecd39d6ab826c6146d401739` for this status reconciliation | It is evidence only for this local close and does not substitute for a later packet's current read-only preflight. |
 | 2026-08-04 Execution Consent | The latest request supplies scoped Execution Consent only for local status-document edits to `README.md`, `workflow-spec.md`, this Program, and `implementation-checklist.md` | It authorizes no runtime mutation, later packet, provider, credential, external target, push, publication, deployment, or external effect. Every later bounded mutating packet needs its own current read-only preflight and exactly fitting Execution Consent. |
+| 2026-08-04 roadmap-reconciliation preflight | Fresh inspection reconfirmed tracked basis `95c7a145da8fe4dafe1147ecea787e5e9592c51b`; the only outer-checkout dirt was the unrelated nested `firstmate/` repository, which made the root Ruff gate fail and made Second Mate revision inspection reject an unsupported directory entry. | The nested repository remains separate user-owned content. A local `.git/info/exclude` entry now removes it from outer Git discovery without editing, tracking, or configuring FirstMate; this checkout-local boundary is not portable product state. |
+| 2026-08-04 roadmap-reconciliation Execution Consent | The delegated request authorizes only that local workspace-boundary correction and edits to this Program and `implementation-checklist.md`, after revalidation. | It authorizes no DIR-INTAKE implementation, provider selection or call, credential use, external target, push, publication, deployment, or other runtime mutation. |
+| 2026-08-04 DIR-INTAKE-01 preflight | Fresh inspection reconfirmed tracked basis `95c7a145da8fe4dafe1147ecea787e5e9592c51b`, visible revision fingerprint `c2768892aa7e7b9b799e64bbf3c368000af6aac616496ea45ab195a0dc7ccbcd`, the two authorized roadmap edits, no visible `firstmate/` content, and a green 193-test baseline. | The preflight covered this local packet only. It carried forward no provider, credential, network, target, push, commit, publication, deployment, or external authority. |
+| 2026-08-04 DIR-INTAKE-01 plan and Execution Consent | The human approved the exact test-first Direction-intake plan and authorized shared mutation coordination, immutable approved Direction history, separate preparation/approval/promotion authority, CLI prepare/promote/show, operator documentation, and end-to-end draft integration. | It authorizes this bounded local packet only. It explicitly excludes provider work, live execution, external effects, pushes, and commits. |
+| 2026-08-04 trusted-local design preflight | Fresh read-only inspection reconfirmed tracked basis `95c7a145da8fe4dafe1147ecea787e5e9592c51b`, the existing authorized roadmap and DIR-INTAKE-01 working-tree changes, and a clean `git diff --check` before this revision. | This basis supports only the product-contract analysis and documentation packet. It is not a live-target or provider preflight. |
+| 2026-08-04 TLX-01 decision and documentation Execution Consent | The human selected an explicitly trusted-local, unsandboxed initial live mode and retained sandboxed execution as later hardening/deployment. The same request authorizes the corresponding design, Program, readiness, package-index, and operator-document revisions. | It authorizes no provider authentication or call, credential use, live-target selection or mutation, system configuration, real dispatch, CAP-02 implementation, push, or commit. Every later real run still needs its own current preflight and exact unsandboxed activation consent. |
+| 2026-08-04 CAP-02A trusted-local POC plan and Execution Consent | The human authorized the offline/mock adapter packet with broad local execution authority represented only in its activation contract, no Second Mate token-spend cap beyond unavoidable provider/billing controls, and cleanup limited to exact identity-recorded private run artifacts. | It authorizes test-first local source, test, and canonical-document mutations for CAP-02A only. It authorizes no authentication, credential creation/use, provider call, billing-project selection, system configuration, live target, real process/agent dispatch, CAP-02B, push, or commit. |
 
 The historical repository cannot prove which pre-Program control or Execution
 Consent governed the original bootstrap. This record does not rewrite or
 backdate that history, nor does it authorize a future local packet. Provider/host
 selection, credentials, external execution, push, publication, deployment,
 Rumble integration, and pilots remain unauthorized.
+
+TLX-01 changes only the near-term containment requirement. It does not weaken
+or replace Direction, packet, preflight, grant, one-owner, session-binding,
+unknown-running, independent-evidence, or recoverable-close requirements. It
+also does not claim that an unsandboxed executor can be prevented from acting
+outside its grant. That limitation is explicit in the workflow and operator
+contract and remains unproved DIR-02 coverage rather than being laundered into
+a guarantee.
 
 POL-01 selection removes the prior policy block: verified FS-01 is canonically
 adopted and CAP-01 is complete. On 2026-08-04, the human accepted
@@ -60,6 +76,13 @@ terminal with no further user decision. Binding Direction coverage remains
 approval, toolchain/environment acceptance, current preflight, and each
 packet's scoped Execution Consent. The general milestone human-product-review
 rule remains unchanged.
+
+The 2026-08-04 roadmap reconciliation establishes a truthful candidate route
+from the terminal FS-01 baseline. It does not approve that route as Execution
+Consent. In particular, the preserved `rumble-direction-handoff` branch is
+useful behavior and test evidence, but it diverged before current schema-v2
+authority, evidence, locking, and recovery hardening and must not be merged or
+ported wholesale.
 
 ## 2. Approved Direction D-01
 
@@ -105,13 +128,15 @@ rather than editing D-01 in place.
 | EXE-02 | **ACCEPTED** | **A manually launched Sol xhigh coding agent executes the Foundation Slice.** | Sol Ultra owns architecture/route challenge and material recovery review; this is not a permanent agent mesh. |
 | ENV-01 | **ACCEPTED** | **The first compatibility target is one trusted local operator, this repository's Git worktree model, and the operating-system/filesystem family verified by T-01 preflight.** | This does not claim multi-user, every-VCS, remote-workspace, or cross-platform support. |
 | ADP-01 | **ACCEPTED** | **The first permanent slice has no live provider adapter.** | FS-01 proves only the deterministic executor seam; one real provider adapter remains a later candidate, not an abstraction framework. |
+| TLX-01 | **ACCEPTED** | **The first live execution mode is explicitly trusted-local and does not require a sandbox.** | The human accepts that the selected local account, agent, and repository code may have broad machine and network access. Second Mate continues to guarantee coordinator authority, ownership, recovery, and observed target evidence, but makes no containment or no-outside-effects claim. This decision does not activate a run. |
+| SBOX-01 | **ACCEPTED AS DEFERRED HARDENING** | **Sandboxed execution remains a separate later hardening/deployment path.** | It is not a prerequisite for the initial trusted-local adapter or supervised real run. When selected, it must prove its actual filesystem, credential, environment, network, capability, cancellation, and cleanup boundaries and must never silently downgrade. |
 
 ### Runtime boundary and later open decision
 
 | ID | State | Decision needed | What it blocks | Resolution |
 |---|---|---|---|---|
 | T-01 | **ACCEPTED** | Python 3.12 plus ENV-01's tested Linux/filesystem, Git, locking, atomic-write/recovery, packaging, and operator assumptions. | Establishes the accepted initial local runtime boundary for later separately authorized local work, each with its own current preflight and exactly fitting Execution Consent. | It does not claim product acceptance for other platforms or providers. |
-| PRV-01 | **DECISION-BLOCKED, LATER** | Select the first real provider/host integration and its credential, interruption, and continuation boundary. | A live AI coding run and pilot, but not the fixture-based Foundation Slice. | Evidence-based adapter decision after Foundation review; choose one provider, not an abstraction framework. |
+| PRV-01 | **DECISION-BLOCKED, LATER** | Select the first real provider/host integration and resolve authentication source, billing project, permitted data, intended provider/network effect, version, interruption, exact-session continuation, transcript retention, and `unknown-running` recovery. | A live AI coding run and pilot, but not the fixture-based Foundation Slice. | Choose one concrete host, not an abstraction framework. The POC spend policy is already `provider-billing-controls-only`, with no Second Mate token cap. Sandbox qualification is not a prerequisite for trusted-local mode; its risk acknowledgment and activation gate are. |
 
 Serialization details remain locally reversible implementer choices, provided
 they satisfy the Backbone invariants below.
@@ -307,9 +332,13 @@ technical repository evidence separately from the authority records in section
    verified FS-01 Foundation baseline and completes CAP-01. The 2026-08-04
    one-time scoped acceptance completes MS-01 without a personal observation;
    the fixed FS-01 first workflow is terminal with no further user decision.
-   PRV-01 remains a later human decision about one real adapter; it unlocks
-   neither an adapter nor a pilot. CAP-02 and later Map items remain candidates
-   or blocked as shown below. Direction coverage remains `still_remaining`.
+   TLX-01 now selects an unsandboxed trusted-local initial mode while SBOX-01
+   preserves sandboxing as deferred hardening. CAP-02A now completes only the
+   offline coordinator-side adapter proof. PRV-01 remains a later human
+   decision about one real adapter and its remaining provider boundary; it
+   unlocks neither a live adapter nor a pilot. CAP-02B and later Map items
+   remain candidates or blocked as shown below. Direction coverage remains
+   `still_remaining`.
 
 The repository has therefore reached a truthful technical terminal state for
 the fixed FS-01 fixture route, not a completed Second Mate Program or product.
@@ -320,10 +349,17 @@ the fixed FS-01 fixture route, not a completed Second Mate Program or product.
 |---|---|---|---|
 | CAP-01: Durable authority and direct-packet lifecycle | DIR-01, DIR-02, DIR-04, DIR-05; supports DIR-03; constrained by DIR-06 | `completed` | The human selected the narrow FS-01 envelope, canonically adopted verified FS-01 as the Foundation baseline, and approved this capability complete. Its evidence remains limited to the local fixture lifecycle. |
 | MS-01: Foundation Slice close | The FS-01 subset of DIR-01, DIR-02, DIR-04, DIR-05; DIR-03 and full product use remain | `completed` | The 2026-08-04 one-time scoped acceptance replaces the former personal-observation gate. It records no human review, observation, CLI/output-clarity judgment, or D-01-fit proof; those remain accepted residual uncertainty. |
-| CAP-02: One real provider-owned direct run | DIR-01 through DIR-05; constrained by DIR-06 | `candidate` | PRV-01, credential/privacy boundary, interruption recovery, and a newly consented packet. Proof must include a real user-facing change and final-revision replay. |
-| MS-02: Usable manually supervised coordinator | DIR-01 through DIR-06 within one-provider direct-route scope | `candidate` | CAP-02; one real direct packet closes without authority drift or hidden remaining work. Human product check required. |
-| CAP-03: Foundation-route records and Map frontier | DIR-01 through DIR-05; constrained by DIR-06 | `candidate` | The limited FS-01 close and CAP-01 concepts; implement only the minimal Backbone/evidence/Map states required by a selected pilot. |
-| MS-03: Medium Foundation-route pilot | DIR-01 through DIR-06 at the pilot envelope | `blocked` | CAP-02, CAP-03, an external target with known baseline, separately scoped pilot consent, several packets, and one meaningful milestone. |
+| DIR-INTAKE-01: Approved-Direction intake | DIR-01, DIR-02, and DIR-04; supports DIR-03 and DIR-05; constrained by DIR-06 | `completed` | Current-HEAD behavior now proves read-only preparation, exact separate Direction approval and ledger-write authority, immutable linear versions, stale/mismatched/open/pending/racing refusal, portable clone-readable history, shared FS-01 mutation coordination, recoverable atomic writes, and output consumed by `draft`. It adds no Rumble automation or provider path. |
+| TLX-01: Trusted-local initial execution decision | Preserves coordinator-side DIR-02 and DIR-04 behavior; supports DIR-03 and DIR-05; does not prove executor containment | `completed` | The human selected an unsandboxed trusted-local initial mode, explicitly accepted its broad local-machine limitation, and retained sandboxing as a later path. This design decision authorizes no implementation or run. |
+| PRV-01: One provider/host boundary | Enables DIR-03 and DIR-05 evidence; constrained by DIR-02, DIR-04, and DIR-06 | `blocked` | A human decision must select one host plus authentication source, billing project, permitted data, intended provider/network effect, version, cancellation, unknown-running, exact-session continuation, transcript retention, and later real-target class. The spend policy is already no Second Mate token cap beyond provider/billing controls. A sandbox is not required for trusted-local mode. Any provider probe remains separately authorized. |
+| LIVE-BOUNDARY-01: Trusted-local live-direct and recovery contract | Coordinator-side DIR-02 through DIR-05; does not prove containment after dispatch | `completed offline` | CAP-02A proves exact activation binding, private session/transcript/temp identity, strict bounded event parsing, cancellation, unknown-running recovery, one-owner/no-retry behavior, provider-independent evidence requirement, and cleanup restricted to exact private artifacts. A later real run still needs PRV-01 and separate activation. |
+| CAP-02A: Offline trusted-local adapter implementation | Coordinator-side DIR-01 through DIR-05; constrained by the trusted-local limitation and DIR-06 | `completed` | One offline-only library adapter over an injected mock local control plane proves activation/basis matching, streamed JSONL lifecycle, exact session binding, interruption/failure ambiguity, persistent private state, no provider-as-proof promotion, and non-recursive identity-bound cleanup while preserving FS-01. It supplies no sandbox, credential, provider, production process, network, live target, CAP-02B, or token-cap implementation. |
+| CAP-02B: One real trusted-local provider-owned direct run | Observed coordinator-side DIR-01 through DIR-05 only; no adversarial-containment claim | `blocked` | CAP-02A, a baseline-known trusted target/change, resolved provider/data/cost/retention choices, and a separate per-run unsandboxed activation record. Provider output is not proof of changed paths or completion; independent final-revision replay is required, and absence of outside-machine effects remains unproved. |
+| MS-02: Usable manually supervised trusted-local coordinator | One-provider direct-route scope with explicit trusted-local residual risk | `candidate` | CAP-02B; one real direct packet closes without coordinator authority drift or hidden target work, followed by the required human product check. It must not claim full DIR-02 enforcement against executor overreach or hostile repository content. |
+| SBOX-01: Sandboxed hardening/deployment path | Strengthens DIR-02 and operational security evidence without changing the coordinator contract | `deferred` | Implement only when deployment, repository trust, data sensitivity, or pilot evidence requires containment. Qualify filesystem, environment, credential, network, optional-capability, cancellation, and cleanup behavior in the actual environment; failure must not downgrade to trusted-local automatically. |
+| PILOT-SELECT-01: Medium pilot target and request | Enables pilot-scoped DIR-01 through DIR-06 evidence | `blocked` | MS-02 plus a baseline-known external target, approved Direction/route, bounded data authority, and separate pilot consent. Select it before CAP-03 so Map/Foundation behavior is earned by the real pilot. |
+| CAP-03: Foundation-route records and Map frontier | DIR-01 through DIR-05; constrained by DIR-06 | `blocked` | PILOT-SELECT-01 and the limited FS-01 Backbone; implement only the minimal Foundation evidence and Map behavior the selected pilot requires. |
+| MS-03: Medium Foundation-route pilot | DIR-01 through DIR-06 at the pilot envelope | `blocked` | CAP-02B, CAP-03, the selected external target, several one-or-two-at-a-time packets, one meaningful milestone, recovery evidence, stabilization, and separately scoped pilot authority. |
 | CAP-04: Hardening or additional automation | Unassigned until evidence shows which Direction claim needs it | `uncertain` | Only repeated pilot failures may justify more persistence, roles, concurrency, UI, provider abstraction, or repository knowledge machinery. |
 
 Binding DIR-01 through DIR-06 coverage is currently `still_remaining`. The
@@ -332,8 +368,12 @@ prove the unobserved qualities or the whole Direction. MS-02 or MS-03 must not
 declare the whole Direction proven without evidence for the actual completion
 claim.
 
-The Map changes only from evidence or an authorized Direction change. Distant
-candidates intentionally have no packet-level implementation detail.
+The remaining candidate order is PRV-01, CAP-02B, MS-02, PILOT-SELECT-01,
+CAP-03, then MS-03. SBOX-01 is a separate deferred
+hardening/deployment path and may be pulled forward only by an explicit trust,
+data, deployment, or pilot need. The Map changes only from evidence or an
+authorized Direction change. Distant candidates intentionally have no
+packet-level implementation detail, and CAP-04 remains unassigned.
 
 ## 7. Frontier implementation packet IP-01
 
@@ -387,10 +427,126 @@ provider-adapter decision or packet remains separate unauthorized scope and
 needs a new decision, current read-only preflight, and exactly fitting
 Execution Consent.
 
-No second implementation packet is detailed. The former FS-01
-personal-observation gate is closed only by the scoped acceptance and does not
-justify a new runtime packet; detailing CAP-02 before PRV-01 would create a
-speculative backlog.
+### Completed frontier — DIR-INTAKE-01
+
+**Outcome.** An operator can prepare exact Direction text without target
+mutation, record exact human Direction approval separately from ledger-write
+authority, append an immutable approved version, and emit the existing
+Direction schema consumed by `draft`.
+
+**Boundary.** Port behavior, not commits, from the preserved
+`rumble-direction-handoff` branch onto current HEAD. Preserve external/manual
+Rumble and keep raw transcript, prompt source, provider metadata, credentials,
+and private reasoning outside repository authority. Durable Direction history
+must remain portable and must not retain an absolute checkout path. Do not add
+model calls, automated Rumble, provider execution, route/Map logic, voice
+integration, transcript persistence, or a generic workflow/schema framework.
+
+**Proof.** Use test-first D-01 and D-02 end-to-end journeys; prove no-write
+preparation, separate approval and promotion authority, immutable linear
+history, stale/mismatched/racing/open-run refusal, current schema-v2 recovery
+compatibility, clone-readable durable Direction, integration with `draft`, all
+existing FS-01 evidence, full repository gates, build/wheel smoke, and an
+independent authority review.
+
+**Result.** The exact test-first plan, fresh preflight, and separately fitting
+Execution Consent were supplied. The current implementation adds one
+repository-wide mutation lock, portable immutable Direction history, separate
+candidate/approval/promotion records, `direction prepare/promote/show`, and the
+[operator flow](DIRECTION-OPERATOR.md). Focused Direction tests cover D-01 and
+D-02, missing/mismatched authority, stale revisions, ignored or missing
+history, open and closed FS-01 state, competing promotions, atomic install and
+append races, marked partial-write recovery, post-exchange exact retry, clone
+reconstruction, and existing-`draft` consumption. The integrated suite passes
+219 tests. Full
+close verification also passes Ruff lint and formatting for 33 files, strict
+mypy for nine source files, 26 dedicated Direction-plus-FS-01 end-to-end tests,
+source and wheel builds, source-package inclusion of the Direction guide, and
+an isolated wheel install/import plus all Direction CLI help paths. This local
+completion creates no commit or push.
+
+**Unlock and limit.** DIR-INTAKE-01 completes only manual approved-Direction
+intake. It does not prove automated or high-quality Rumble, route/Map execution,
+a provider run, or pilot usefulness. TLX-01 separately selects the initial
+trusted-local containment posture but authorizes no implementation or run.
+PRV-01 remains the next provider decision/evidence packet; no provider probe or
+CAP-02 implementation is authorized by either completion. The separate
+CAP-02A record in section 1 authorized only the offline packet now completed
+below.
+
+### Completed frontier — CAP-02A trusted-local offline adapter
+
+**Outcome.** From an exact coordinator basis and matching unsandboxed
+activation record, an offline adapter drives one injected mock local control
+process, binds the first valid Codex JSONL session identifier, records a
+truthful terminal or `unknown-running` lifecycle, and leaves provider output
+explicitly insufficient for target evidence.
+
+**Boundary.** Add one focused trusted-local module and focused tests. The
+activation contract represents broad local execution authority, the exact
+machine-risk acknowledgments, `provider-billing-controls-only` spend policy,
+and `exact-private-run-artifacts-only` cleanup. The control plane is injected
+and has no production subprocess/provider implementation or CLI route in this
+packet. Do not authenticate, create or use credentials, select a billing
+project, call a provider, configure the system, dispatch an agent or real
+process, touch a live target, add a sandbox, begin CAP-02B, push, or commit.
+Preserve all FS-01 schemas, behavior, and tests.
+
+**Lifecycle and evidence.** Validate the activation independently against the
+coordinator basis before creating run state or invoking the control plane.
+Persist one owner and mock process identity in an owner-private run directory.
+Claim a separate owner-private one-shot activation marker before that directory
+is created and retain it after cleanup so deletion cannot make authority
+reusable.
+Parse bounded UTF-8 JSONL with duplicate-field rejection; the first exact
+`thread.started` UUID binds continuation, and a duplicate or changed session,
+malformed/truncated event, ambiguous exit, read/wait failure, or cancellation
+becomes `unknown-running`. Only a matching `turn.completed` plus successful
+process exit is adapter-complete; a validated `turn.failed` is failed. Neither
+state closes target evidence: final revision, changed paths, and claim-fit tests
+remain independently required.
+
+**Cleanup.** Create only `session.json`, `transcript.jsonl`, and `control.tmp`
+inside one dedicated owner-private run directory, record their physical
+identities, and expose only explicit cleanup. Cleanup validates the root,
+directory, exact names, types, identities, and absence of unexpected entries
+before unlinking anything. It never recurses, accepts provider-supplied paths,
+touches repository/system files, reverts work, calls provider deletion, or
+claims provider-side erasure. Cleanup attests but retains the one-shot
+activation marker.
+
+**Proof.** Use red-green tests for exact authority binding and no-launch
+refusal; valid and split JSONL; duplicate, malformed, oversized, truncated, and
+out-of-order events; completed, failed, cancelled, and ambiguous exits; private
+state reload; cleanup success with unrelated sentinels preserved; cleanup
+refusal on replacement or unexpected files; the full existing suite, lint,
+format, type, build, package, and isolated-install gates. Completion changes
+only CAP-02A/LIVE-BOUNDARY-01 evidence. CAP-02B remains blocked.
+
+**Result.** The production package adds one `trusted_local` module and public
+library exports, with no CLI route or production control-plane implementation.
+Forty-one focused tests cover all eight authority bindings, exact activation
+policies, offline-only and disjoint-private-root refusal, single ownership,
+split and adversarial JSONL, uncapped transcript retention with bounded parser
+state, exact session binding, successful and failed terminals, ambiguous
+launch/read/wait/exit, cancellation, no implicit retry, durable restart,
+identity drift, unexpected entries, session-record drift, and sentinel-safe
+cleanup. Hard-link safety, contradictory failure/exit state, and durable
+post-cleanup activation consumption are explicit regressions. The complete
+260-test repository suite passes unchanged FS-01 and
+Direction behavior. Ruff lint and formatting for 36 files, strict mypy for ten
+source files, offline frozen environment checks, source/wheel builds, source
+guide inclusion, and an isolated wheel import/CLI smoke all pass. Source is
+5,726 handwritten Python lines excluding tests, within the Program's scope
+pressure range. No credential, provider, network, real process/agent, live
+target, system configuration, CAP-02B, commit, or push was used.
+
+**Next gate.** CAP-02B remains blocked. The human must still choose the exact
+provider/host and version, authentication source, billing project, permitted
+data and intended network effect, provider/billing controls, retention,
+cancellation/continuation policy, and a baseline-known trusted target. A later
+real run then needs its own current preflight and exact unsandboxed activation
+consent; CAP-02A supplies neither.
 
 ## 8. Traceability and readiness
 
@@ -398,14 +554,24 @@ speculative backlog.
 |---|---|---|---|---|---|
 | Human meaning survives implementation | Immutable Direction and separate coverage | Direction drift or silent deferral | Direction Version, exact approval, separate coverage status | Human approves; coordinator preserves | Approval record plus mapped evidence at close |
 | No mutation is laundered through planning | Draft, preflight, consent, mutation order | Stale or inferred authority | Bound digests/fingerprints and executor guard | Human grants; coordinator validates | Negative no-call/no-change tests and grant record |
+| Trusted-local risk is not laundered into containment | Explicit mode and per-run activation acknowledgment | Broad account access or outside effects are mistaken for bounded execution | Separate trusted-local contract, narrow evidence claim, and deferred SBOX-01 | Human accepts the exact environment; coordinator records and limits its claim | Activation record, target proof, residual-uncertainty record, and no containment claim |
 | Completion is truthful and recoverable | Claim-fit proof and all-or-recoverable close | Plausible output or partial writeback | Evidence Record and Clean Close | Working agent produces; coordinator validates/persists | Clean replay, failure injection, exact revision |
 | Product remains lean | One local run and earned mechanisms only | Recreating First Mate/control-plane scope | FS-01 exclusions and evidence-gated Map | Planner and human at route gate | Diff inspection, dependency review, pilot observations |
 | A fresh agent can continue | Durable compact handoff | Private reasoning or stale backlog becomes authority | Repository-local state and only one detailed frontier packet | Coordinator writes; next agent verifies | Clean-checkout reconstruction and handoff review |
 
 ### Readiness gates
 
-- **Planning-ready:** POL-01 is selected and the FS-01 adoption/CAP-01 record
-  is complete. This authorizes no new packet, provider, pilot, or runtime work.
+- **Planning-ready:** POL-01 is selected, the FS-01 adoption/CAP-01 record is
+  complete, DIR-INTAKE-01 is locally complete, and TLX-01 explicitly selects
+  the initial trusted-local mode. PRV-01 may now be resolved as a separate
+  human decision/evidence packet. This authorizes no provider probe or call,
+  credential access, target mutation, pilot, or CAP-02 work.
+- **Trusted-local activation-ready:** CAP-02A is independently proved offline;
+  one provider/host and exact version, authentication source, data and intended
+  network effect, spend boundary, retention, cancellation, and continuation
+  policy are resolved; the target is baseline-known, trusted, and recoverable;
+  and the human supplies the exact per-run unsandboxed acknowledgment and
+  Execution Consent defined in `TRUSTED-LOCAL-OPERATOR.md`.
 - **Foundation-execution-ready:** the historical FS-01 implementation is not
   replayed as a new packet. The narrow envelope adopted FS-01 only; any new
   Validation or Foundation mutation or expansion needs its own current
@@ -413,7 +579,8 @@ speculative backlog.
 - **Pilot-ready:** MS-01 is complete only under its documented limited scoped
   acceptance and CAP-02 has its own claim-fit proof; POL-01 is chosen; the
   target pilot has a known baseline, bounded data/provider authority, approved
-  Direction and route, and claim-fit milestone proof.
+  Direction and route, the applicable trusted-local activation or separately
+  proved sandbox boundary, and claim-fit milestone proof.
 - **Release/expansion-ready:** binding completion coverage is proven or
   explicitly and humanly changed/deferred; project-wide quality and relevant
   security, compatibility, migration/rollback, and failure-path evidence pass;
@@ -434,12 +601,17 @@ platform.
 
 ## 10. Next human action
 
-No further FS-01 decision is requested: the fixed first workflow is terminal
-under the 2026-08-04 one-time scoped acceptance. The absent personal
-CLI/output observation, clarity judgment, and D-01-fit proof remain accepted
-residual uncertainty. Do not select a provider/host or continue into a runtime
-packet; those and CAP-02 onward, pilots, Rumble, push, publication, deployment,
-and external work remain separate future unauthorized scope.
+No further FS-01 or DIR-INTAKE-01 decision is requested. The fixed first
+workflow is terminal under the 2026-08-04 one-time scoped acceptance, and the
+approved Direction-intake packet is locally complete. TLX-01 has already
+selected the unsandboxed trusted-local initial mode; SBOX-01 preserves the
+original sandboxed path as deferred hardening. The next decision is whether to
+finish PRV-01 by selecting one provider/host boundary covering authentication
+source, permitted data, intended provider/network effect, spending controls,
+cancellation, unknown-running recovery, exact-session continuation, transcript
+retention, version, and a later trusted target class. No provider probe or call,
+credential access, CAP-02 implementation, live-target activation, pilot, push,
+publication, deployment, or other external work is authorized.
 
 ## 11. Continuation prompt while human gates are open
 
@@ -451,8 +623,16 @@ and external work remain separate future unauthorized scope.
 > implementation and evidence as limited to the fixture lifecycle, not as proof
 > of a broader product or a future grant. The fixed FS-01 first workflow is
 > terminal; do not request another FS-01 decision or manufacture a human
-> observation, clarity judgment, or D-01-fit proof. Do not select or build a
-> provider adapter, pilot, generalized orchestration machinery, or other next
-> packet without the chosen POL-01 control, current read-only preflight, and
-> exactly fitting Execution Consent. Stop and classify pressure if authority,
-> Direction, Backbone, or proof no longer fits. Do not publish, deploy, or push.
+> observation, clarity judgment, or D-01-fit proof. DIR-INTAKE-01 is locally
+> complete; use `DIRECTION-OPERATOR.md` and treat the preserved branch only as
+> historical evidence, not as code to merge or a source that elevates its
+> placeholder prompt. TLX-01 selects trusted-local unsandboxed execution only
+> as a future mode; read `TRUSTED-LOCAL-OPERATOR.md`, preserve its limitations,
+> and never treat the design decision as activation consent. SBOX-01 preserves
+> sandboxing as deferred hardening and must never silently downgrade if later
+> requested. PRV-01 is the next decision/evidence packet. Do not probe or call
+> a provider, inspect credentials, select a live target, build CAP-02, start a
+> pilot, or add generalized orchestration without its own decisions, current
+> preflight, and exactly fitting authority. Stop and classify pressure if
+> Direction, Backbone, authority, or proof no longer fits. Do not publish,
+> deploy, or push.

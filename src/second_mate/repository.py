@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import os
 import stat
 import subprocess
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import cast
@@ -39,9 +42,17 @@ _PREFLIGHT_SCHEMA_VERSION = 2
 _RECOVERABLE_FIXTURE_REASON = "FS-01 changes one recoverable fixture file and local state only"
 
 
+class MutationLockBusyError(RuntimeError):
+    """Another Second Mate operation owns the repository mutation boundary."""
+
+
 def _is_managed_path(path: str) -> bool:
     return path in _MANAGED_PATHS or path.startswith(
-        (f"{STATE_PATH}.next.", f"{STATE_PATH}.pending.next.")
+        (
+            ".second-mate/directions.json.next.",
+            f"{STATE_PATH}.next.",
+            f"{STATE_PATH}.pending.next.",
+        )
     )
 
 
@@ -177,6 +188,63 @@ def _repository_root(repository: Path) -> Path:
     return root
 
 
+def repository_path_is_ignored(repository: Path, relative_path: str) -> bool:
+    """Return whether Git excludes one safe repository-relative path."""
+    path = PurePosixPath(relative_path)
+    if path.is_absolute() or ".." in path.parts or relative_path in {"", "."}:
+        raise ValidationError("ignored-path inspection requires a safe relative path")
+    root = _repository_root(repository)
+    environment = {**os.environ, "GIT_OPTIONAL_LOCKS": "0"}
+    try:
+        completed = subprocess.run(
+            [
+                "git",
+                "--no-optional-locks",
+                "-C",
+                os.fspath(root),
+                "check-ignore",
+                "--quiet",
+                "--no-index",
+                "--",
+                relative_path,
+            ],
+            check=False,
+            capture_output=True,
+            env=environment,
+        )
+    except OSError as error:
+        raise ValidationError(f"cannot inspect Git ignore rules: {error}") from error
+    if completed.returncode not in {0, 1}:
+        raise ValidationError("cannot inspect Git ignore rules")
+    return completed.returncode == 0
+
+
+def repository_path_is_recorded(repository: Path, relative_path: str) -> bool:
+    """Return whether the index or current HEAD records one exact safe path."""
+    path = PurePosixPath(relative_path)
+    if path.is_absolute() or ".." in path.parts or relative_path in {"", "."}:
+        raise ValidationError("recorded-path inspection requires a safe relative path")
+    root = _repository_root(repository)
+    encoded = os.fsencode(relative_path)
+    index_paths = tuple(
+        item for item in _git(root, "ls-files", "-z", "--", relative_path).split(b"\0") if item
+    )
+    head_paths = tuple(
+        item
+        for item in _git(
+            root,
+            "ls-tree",
+            "-rz",
+            "--name-only",
+            "HEAD",
+            "--",
+            relative_path,
+        ).split(b"\0")
+        if item
+    )
+    return encoded in index_paths or encoded in head_paths
+
+
 def _repository_paths(repository: Path) -> tuple[str, ...]:
     output = _git(
         repository,
@@ -253,6 +321,46 @@ def git_private_path(repository: Path, name: str) -> Path:
     root = _repository_root(repository)
     raw = Path(os.fsdecode(_git(root, "rev-parse", "--git-path", name)).strip())
     return raw if raw.is_absolute() else root / raw
+
+
+@contextmanager
+def mutation_lock(repository: Path) -> Iterator[None]:
+    """Hold the one repository-wide lock shared by every mutating operation."""
+    lock_path = git_private_path(repository, "second-mate-mutation.lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(
+            lock_path,
+            os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC,
+            0o600,
+        )
+        metadata = os.fstat(descriptor)
+        entry = lock_path.lstat()
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_nlink != 1
+            or (metadata.st_dev, metadata.st_ino) != (entry.st_dev, entry.st_ino)
+        ):
+            raise OSError("unsafe mutation lock identity")
+    except OSError as error:
+        if descriptor is not None:
+            os.close(descriptor)
+        raise MutationLockBusyError("the repository mutation lock path is unsafe") from error
+    assert descriptor is not None
+    try:
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as error:
+            raise MutationLockBusyError(
+                "the repository mutation lock is held by another operation"
+            ) from error
+        yield
+    finally:
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+        finally:
+            os.close(descriptor)
 
 
 def inspect_instructions(repository: Path, draft: Draft) -> tuple[FileFact, ...]:

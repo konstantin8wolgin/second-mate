@@ -916,7 +916,7 @@ def test_concurrent_run_lock_refuses_a_second_executor_owner(tmp_path: Path) -> 
     basis = second_mate.preflight(draft, repository)
     grant = exact_grant(draft, basis)
     executor = CountingFixtureExecutor()
-    git_lock = Path(run_git(repository, "rev-parse", "--git-path", "second-mate-fs01.lock"))
+    git_lock = Path(run_git(repository, "rev-parse", "--git-path", "second-mate-mutation.lock"))
     if not git_lock.is_absolute():
         git_lock = repository / git_lock
     git_lock.parent.mkdir(parents=True, exist_ok=True)
@@ -949,7 +949,7 @@ def test_run_lock_refuses_filesystem_aliases_before_dispatch(
     repository = make_repository(tmp_path)
     draft = second_mate.create_draft(valid_direction(), valid_packet())
     basis = second_mate.preflight(draft, repository)
-    lock_path = Path(run_git(repository, "rev-parse", "--git-path", "second-mate-fs01.lock"))
+    lock_path = Path(run_git(repository, "rev-parse", "--git-path", "second-mate-mutation.lock"))
     if not lock_path.is_absolute():
         lock_path = repository / lock_path
     external = tmp_path / "external-lock"
@@ -996,7 +996,7 @@ def test_run_lock_serializes_every_durable_lifecycle_mutation(
         second_mate.record_evidence(repository)
     state_path = repository / ".second-mate" / "state.json"
     before = state_path.read_bytes()
-    git_lock = Path(run_git(repository, "rev-parse", "--git-path", "second-mate-fs01.lock"))
+    git_lock = Path(run_git(repository, "rev-parse", "--git-path", "second-mate-mutation.lock"))
     if not git_lock.is_absolute():
         git_lock = repository / git_lock
     git_lock.parent.mkdir(parents=True, exist_ok=True)

@@ -9,6 +9,12 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from second_mate.direction import (
+    DirectionConflictError,
+    load_direction,
+    prepare_direction,
+    promote_direction,
+)
 from second_mate.domain import ValidationError, create_draft, draft_from_json
 from second_mate.fixture import FixtureExecutor
 from second_mate.repository import preflight, preflight_from_json
@@ -38,6 +44,13 @@ def _read_json(path: str) -> object:
         raise ValidationError(f"cannot read JSON document {path}: {error}") from error
 
 
+def _read_text(path: str) -> str:
+    try:
+        return Path(path).read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as error:
+        raise ValidationError(f"cannot read UTF-8 text document {path}: {error}") from error
+
+
 def _emit(value: object) -> None:
     if not hasattr(value, "to_json"):
         raise TypeError("operator result is not a JSON document")
@@ -48,13 +61,37 @@ def _emit(value: object) -> None:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="second-mate",
-        description="Operate one authority-bound deterministic Foundation Slice run.",
+        description="Operate approved Direction intake and one authority-bound Foundation run.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     draft = subparsers.add_parser("draft", help="validate and freeze Direction plus packet")
     draft.add_argument("--direction", required=True)
     draft.add_argument("--packet", required=True)
+
+    direction = subparsers.add_parser(
+        "direction", help="prepare, explicitly promote, or show Direction versions"
+    )
+    direction_commands = direction.add_subparsers(dest="direction_command", required=True)
+    direction_prepare = direction_commands.add_parser(
+        "prepare", help="freeze an editable summary without changing the target"
+    )
+    direction_prepare.add_argument("--target", required=True)
+    direction_prepare.add_argument("--summary", required=True)
+    direction_prepare.add_argument("--id", required=True)
+    direction_prepare.add_argument("--change-note")
+    direction_promote = direction_commands.add_parser(
+        "promote", help="validate exact human approval and append durable Direction"
+    )
+    direction_promote.add_argument("--target", required=True)
+    direction_promote.add_argument("--candidate", required=True)
+    direction_promote.add_argument("--approval", required=True)
+    direction_promote.add_argument("--grant", required=True)
+    direction_show = direction_commands.add_parser(
+        "show", help="show a validated approved Direction for downstream use"
+    )
+    direction_show.add_argument("--target", required=True)
+    direction_show.add_argument("--id")
 
     preflight_parser = subparsers.add_parser(
         "preflight", help="read the target basis without changing it"
@@ -95,6 +132,25 @@ def _parser() -> argparse.ArgumentParser:
 
 def _run(args: argparse.Namespace) -> object:
     command = args.command
+    if command == "direction":
+        direction_command = args.direction_command
+        if direction_command == "prepare":
+            return prepare_direction(
+                Path(args.target),
+                _read_text(args.summary),
+                direction_id=args.id,
+                change_note=args.change_note,
+            )
+        if direction_command == "promote":
+            return promote_direction(
+                Path(args.target),
+                _read_json(args.candidate),
+                _read_json(args.approval),
+                _read_json(args.grant),
+            )
+        if direction_command == "show":
+            return load_direction(Path(args.target), args.id)
+        raise AssertionError(f"unhandled Direction command: {direction_command}")
     if command == "draft":
         return create_draft(_read_json(args.direction), _read_json(args.packet))
     if command == "preflight":
@@ -137,6 +193,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except (
         AuthorityError,
         CloseFailure,
+        DirectionConflictError,
         ExecutionFailure,
         RunConflictError,
         StateRecoveryError,

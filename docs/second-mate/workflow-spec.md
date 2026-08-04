@@ -1,17 +1,19 @@
 # Second Mate workflow specification
 
 Status: canonical design; POL-01 narrowly selected and FS-01 canonically
-adopted as the Foundation baseline; CAP-01 and MS-01 are complete, with MS-01
-closed only under the 2026-08-04 one-time scoped acceptance
+adopted as the Foundation baseline; CAP-01, MS-01, and DIR-INTAKE-01 are
+complete, with MS-01 closed only under the 2026-08-04 one-time scoped
+acceptance
 Date: 2026-08-03
 
-The implementation currently exercises only one supervised, fixture-based
-direct packet. Its evidence does not prove a live provider path or the broader
-workflow. The human separately approved D-01, the documented Foundation route,
-Python 3.12 and ENV-01, selected narrow pre-Program POL-01, and canonically
-adopted the verified FS-01 baseline. This resolves no broad or future Execution
-Consent; the exact narrow envelope and remaining limits are in
-[PROGRAM.md](PROGRAM.md).
+The implementation currently exercises manual approved-Direction intake and
+one supervised, fixture-based direct packet. Its evidence does not prove
+automated Rumble, a live provider path, or the broader workflow. The human
+separately approved D-01, the documented Foundation route, Python 3.12 and
+ENV-01, selected narrow pre-Program POL-01, canonically adopted the verified
+FS-01 baseline, and later approved and authorized the bounded DIR-INTAKE-01
+packet. This resolves no broad or future Execution Consent; the exact narrow
+envelopes and remaining limits are in [PROGRAM.md](PROGRAM.md).
 
 ## 1. Direction basis
 
@@ -108,6 +110,24 @@ general milestone human-product-review rule below, widen technical evidence,
 or change binding Direction coverage from `still_remaining`; all later provider,
 credentials, CAP-02 onward, pilot, Rumble, push, publication, deployment, and
 external work remain separately unauthorized future scope.
+
+The later 2026-08-04 DIR-INTAKE-01 request separately approved its exact
+test-first plan and authorized only local shared mutation coordination,
+portable immutable Direction history, separate preparation/approval/promotion
+authority, CLI prepare/promote/show, operator documentation, and end-to-end
+handoff into `draft`. It authorized no provider work, live execution, external
+effect, push, or commit. The resulting implementation is described in
+[DIRECTION-OPERATOR.md](DIRECTION-OPERATOR.md); its completion unlocks only the
+separate PRV-01 decision/evidence gate.
+
+The later 2026-08-04 trusted-local decision changes the near-term live-runtime
+boundary without rewriting those earlier records. The initial local execution
+mode does not require a sandbox. It is permitted only as an explicitly
+activated **trusted-local** mode on a human-selected machine, operating-system
+account, repository, and worktree. Sandboxed execution remains a distinct
+later hardening or deployment path. This decision is design authority for the
+mode and for this documentation revision; it is not authority to authenticate,
+use a provider, select or mutate a live target, or dispatch an agent.
 
 ## 3. Scaled Rumble and Direction
 
@@ -355,6 +375,93 @@ The first implementation supports only the state required to survive a clean han
 - one atomic or recoverable clean-close transition that updates evidence, status, and handoff together.
 
 Accepted product meaning and shareable delivery state live in the target repository. Credentials, raw Rumble material, provider transcripts, leases, and disposable runtime state stay local and private. Provider-native continuation is an accelerator, not authority.
+
+### Initial trusted-local execution mode
+
+The first live execution mode is **trusted-local**. It deliberately makes no
+technical-containment claim. The coding-agent process and any repository code
+it invokes may read, modify, delete, or transmit anything available to the
+selected operating-system account, including unrelated files, credentials,
+local services, and network destinations. Environment filtering, disabled
+optional capabilities, a clean worktree, and operator supervision reduce
+ordinary exposure but do not turn this mode into a sandbox. It is unsuitable
+for hostile or materially untrusted repository content.
+
+The guarantees that survive in this mode are coordinator guarantees:
+
+- exact approved Direction, packet, read-only preflight, and separately scoped
+  Execution Consent remain prerequisites to dispatch;
+- one durable owner and one exact provider session identity prevent automatic
+  duplicate execution;
+- interruption, lost output, ambiguous exit, or uncertain provider state
+  becomes `unknown-running`, never an inferred failure or automatic retry;
+- provider transcripts, credentials, session state, and private reasoning stay
+  outside repository authority;
+- changed paths, final revision, tests, and claim-fit evidence are verified
+  independently of the provider's report; and
+- clean close remains atomic or recoverable and never widens evidence beyond
+  what was observed.
+
+Those guarantees do **not** prove that the executor stayed inside the grant.
+Target-repository inspection cannot prove the absence of writes elsewhere on
+the machine, credential access, network egress, remote effects, or destructive
+commands that leave no target diff. Trusted-local evidence therefore proves
+only coordinator ordering, recorded authority, observed target state, and
+recovery behavior. It cannot by itself prove adversarial containment, complete
+DIR-02 enforcement after dispatch, provider security, or absence of outside
+effects. Binding Direction coverage remains `still_remaining` until evidence
+fits the stronger claim or the human versions Direction explicitly.
+
+The following controls remain non-negotiable even though containment is not:
+
+1. A human must designate the machine/account and repository as trusted for the
+   exact run, confirm a recoverable target baseline, and acknowledge that the
+   agent may reach the account's broader files, credentials, services, and
+   network.
+2. The run must not execute as root or with an intentionally exposed privilege
+   escalation path. Secrets and optional execution surfaces are minimized:
+   do not deliberately forward credentials to model-generated commands, and
+   keep hooks, MCP servers, plugins, apps, browser/computer control, and
+   subagents disabled unless separately named in the grant.
+3. Authentication source, billing project, permitted repository data, intended
+   network/provider effect, spend policy, transcript retention, exact CLI
+   version, target revision, allowed target changes, stop conditions,
+   cancellation, and `unknown-running` recovery must be resolved before
+   activation. The initial proof-of-concept spend policy is
+   `provider-billing-controls-only`: Second Mate adds no token-spend cap of its
+   own and cannot bypass or promise away provider or billing controls.
+4. Authority or revision mismatch fails closed. Cancellation never transfers
+   ownership, and recovery never resumes or redispatches without an exact
+   session identity plus an explicit human recovery decision.
+5. A real run requires a separate activation record that explicitly says it is
+   unsandboxed trusted-local execution. Approval of this design, a provider
+   choice, Direction, a Map, or a packet alone is not activation consent.
+6. Recovery cleanup is limited to exact private session, transcript, and
+   temporary control artifacts that the run created and identity-recorded in
+   its dedicated private directory. It must refuse unexpected or replaced
+   entries and must never recursively delete, follow provider-supplied paths,
+   alter repository work, remove arbitrary system files, or claim to delete
+   provider-side data.
+
+The activation record is defined operationally in
+[TRUSTED-LOCAL-OPERATOR.md](TRUSTED-LOCAL-OPERATOR.md).
+
+CAP-02A now exercises these coordinator-side activation, session, event,
+ambiguity, evidence, and cleanup rules entirely offline over an injected mock
+control plane. The package contains no production subprocess/provider
+implementation or CLI dispatch route for trusted-local execution. This proof
+does not satisfy any provider, live-process, target, or per-run activation gate.
+
+### Deferred sandboxed execution path
+
+Sandboxed execution remains a later hardening or deployment capability, not a
+prerequisite for the first trusted-local adapter or real supervised run. It
+must preserve the coordinator guarantees above and additionally prove its
+effective filesystem, credential, environment, network, optional-capability,
+cancellation, and cleanup boundaries in the actual operator environment. A
+sandbox startup failure must fail closed and must never silently downgrade to
+trusted-local mode. Selecting that later path creates a new bounded packet and
+claim; it does not retroactively make trusted-local evidence containment proof.
 
 The initial coordinator should be roughly 4,000–9,000 lines of handwritten implementation code, excluding tests, generated files, and design/reference documents. This is a scope-pressure heuristic, not a quality target or estimate; exceeding it requires a concrete pilot-derived need.
 

@@ -29,7 +29,9 @@ packages = ["src/second_mate"]
 include = [
   "/.gitignore",
   "/README.md",
+  "/docs/second-mate/DIRECTION-OPERATOR.md",
   "/docs/second-mate/FS-01-OPERATOR.md",
+  "/docs/second-mate/TRUSTED-LOCAL-OPERATOR.md",
   "/pyproject.toml",
   "/src/second_mate",
   "/tests",
