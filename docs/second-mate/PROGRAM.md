@@ -55,6 +55,7 @@ separate records even when supplied in one instruction.
 | 2026-08-05 CAP-02C provider-free adapter preflight and Execution Consent | Fresh inspection at `2a698d056d3e50e2662313f2549ab8d08e5ead5f` and visible fingerprint `37f548dc40adb27edb9d6d1597606391ed4ed8c13e322ff741f7297e5a097cce` found a clean checkout, the retained CAP-02B consumed marker unchanged, a green 261-test baseline, and local Codex CLI `0.146.0` help that supports JSONL, ephemeral storage, ignored user configuration, stdin prompts, fixed working directory, and explicit unsandboxed execution. The human expressly authorized autonomous plan-consistent local work, including reusable live-adapter preparation when it can be proved without a provider call. | This authorizes CAP-02C source, tests, canonical documentation, routine repairs, and local commits only. It prohibits invoking `codex exec` or another provider, authentication or credential access, retry/resume/redispatch of CAP-02B, real activation, live-target work, system configuration, `firstmate/`, push, and PR. CAP-02C must use only a temporary fake executable and must expose no CLI dispatch route. |
 | 2026-08-05 EVA-01 evidence audit preflight and Execution Consent | Fresh inspection at clean `34dc2aef1efab136e82ccd45b245dbc49e0d1fa3` reconfirmed the retained CAP-02B marker at mode `0600` and SHA-256 `0567cd80dddba22b159932ce828648d1e5d1068513a3823bb0991824998dd344`, 273 collected tests, the dormant library-only adapter, and no tracked `firstmate/` content. The latest overnight instructions require every remaining claim, prerequisite, and completion label to receive proportionate independent evidence, truthful unproved/deferred wording, or a bounded provider-free proof path. | This authorizes systematic local evidence reconciliation, provider-free tests and repairs, canonical documentation, and local commits. It prohibits provider/live dispatch, CAP-02B replay, credential/authentication access, push/PR, system configuration, user-data deletion, and `firstmate/` changes. Human product judgment remains outside this authority. |
 | 2026-08-05 EVA-01 provider-free close | Plan commit `47804bd` froze the evidence model and bounded repairs; implementation/evidence commit `eda5d19` records phase/disposition/process-ownership cleanup gates, `skill_search` minimization, `py.typed`, red-green regressions, and canonical claim reconciliation. Fresh close replay passed 57 trusted-local and 277 total tests, Ruff lint/format, configured and explicit strict mypy for 11 modules, locked-offline sync, source/wheel build and contents, and isolated wheel import/CLI/type-marker smoke. | The retained CAP-02B marker remained mode `0600` with SHA-256 `0567cd80dddba22b159932ce828648d1e5d1068513a3823bb0991824998dd344`; `firstmate/` remained ignored and untouched. No installed Codex execution, provider, credential/authentication state, live target, system change, push, PR, or user-data deletion occurred. EVA-01 closes locally and leaves MS-02 as the irreducible human gate. |
+| 2026-08-05 EVA-02 remaining-plan and target-binding preflight and Execution Consent | Fresh inspection at clean `196dbbcd9a838529b4640098e3110677aa3e0770`, visible fingerprint `42a20b984fff2b7632a97a1d2e2706602b4e10ef747bed628600f637e6cbf533`, and a green 278-test baseline found that commit `196dbbc` conservatively handles cancellation-drain setup failure but is not yet reflected in the canonical close. Whole-plan tracing also found two provider-free contradictions: CAP-02C does not independently recompute the actual target head/fingerprint or bind its resolved root before probes and activation consumption, and its latest durable `unknown-running` state cannot cancel a process the same adapter still owns. | The latest delegation authorizes plan-consistent local code, tests, claim reconciliation, and local commits needed to close those provider-free gaps and classify every remaining checklist item by its actual dependency. It prohibits provider/auth/credential use, CAP-02B replay/resume/redispatch, live dispatch, push/PR, system changes, user-data deletion, `firstmate/` changes, or a fabricated MS-02 judgment. |
 
 The historical repository cannot prove which pre-Program control or Execution
 Consent governed the original bootstrap. This record does not rewrite or
@@ -401,6 +402,7 @@ the fixed FS-01 fixture route, not a completed Second Mate Program or product.
 | CAP-02B: One real trusted-local provider-owned direct run | Observed coordinator-side DIR-01 through DIR-05 only; no adversarial-containment claim | `historically closed once; retained evidence partial` | The retained marker proves one exact activation is consumed, and Git proves the two-path recovery fix. The contemporaneous close records a completed real lifecycle and exact cleanup, but those private artifacts were intentionally deleted and cannot be independently replayed now. No outside-machine-effects claim is made; retry is prohibited. |
 | CAP-02C: Dormant Codex CLI process adapter | Coordinator-side DIR-02 through DIR-05; no provider, target, usability, or containment claim | `completed provider-free` | A library-only real-process boundary now binds executable/version/help/model/prompt/environment/argv, reuses exact activation, streams JSONL and private stderr, resists executable replacement, owns bounded process-group cancellation, retains the cancellation transcript tail, and preserves no-retry recovery. EVA-01 additionally gates cleanup by lifecycle/disposition and disables `skill_search`. Temporary fake executables supply all process evidence; no CLI route or real provider call exists. |
 | EVA-01: Evidence-claim and lifecycle hardening | Truthful evidence classification plus coordinator-side DIR-02 and DIR-04 | `completed provider-free` | Every current status and checked readiness claim is classified as reproducible, retained, human-authority, structural, non-replayable, or open. Red-green repairs now preserve active/ambiguous forensics, minimize `skill_search`, and make configured package typing plus wheel metadata executable. |
+| EVA-02: Remaining-plan and target/recovery hardening | Truthful dependency closure plus coordinator-side DIR-02 and DIR-04 | `active provider-free` | Bind the dormant adapter to one resolved target root, independently recompute the Git head/fingerprint before local probes or activation consumption, make exact owned-process cancellation available from the latest durable `unknown-running` state, and classify every still-open readiness item without advancing an external gate. |
 | MS-02: Usable manually supervised trusted-local coordinator | One-provider direct-route scope with explicit trusted-local residual risk | `blocked on human product check` | CAP-02B supplies one historically closed real packet with partial retained evidence, and CAP-02C supplies the dormant process adapter. The human must still judge whether that record plus this unactivated adapter boundary make observability, evidence, recovery, cleanup, and residual risk usable and fitting D-01, or whether one newly authorized adapter exercise is required. Full DIR-02 enforcement against executor overreach or hostile repository content remains unproved. |
 | SBOX-01: Sandboxed hardening/deployment path | Strengthens DIR-02 and operational security evidence without changing the coordinator contract | `deferred` | Implement only when deployment, repository trust, data sensitivity, or pilot evidence requires containment. Qualify filesystem, environment, credential, network, optional-capability, cancellation, and cleanup behavior in the actual environment; failure must not downgrade to trusted-local automatically. |
 | PILOT-SELECT-01: Medium pilot target and request | Enables pilot-scoped DIR-01 through DIR-06 evidence | `blocked` | MS-02 plus a baseline-known external target, approved Direction/route, bounded data authority, and separate pilot consent. Select it before CAP-03 so Map/Foundation behavior is earned by the real pilot. |
@@ -788,6 +790,50 @@ Commits `47804bd` and `eda5d19` record the frozen packet and implementation.
 and canonical/operator wording required by the audit. Preserve the consumed
 CAP-02B marker and all repository/user data. Do not close MS-02, prepare a pilot,
 touch `firstmate/`, push, or open a PR.
+
+### Active frontier — EVA-02 remaining-plan and target/recovery hardening
+
+**Outcome.** Exhaust the remaining provider-free plan work without promoting a
+documentation assertion into proof. Correct two current CAP-02C boundary gaps,
+reconcile the unrecorded `196dbbc` cancellation-drain repair, and leave every
+other open item attached to its exact human, provider, sandbox, target, or pilot
+dependency.
+
+**Target binding.** Extend the immutable CAP-02C provider boundary to bind one
+absolute resolved target root. Before the executable version/help probes or
+activation consumption, inspect the actual Git worktree through the existing
+read-only revision inspector and require its root, HEAD, and visible fingerprint
+to match the provider boundary and frozen trusted-local basis. An identical
+clone is a different target and target drift fails before a fake process can be
+launched.
+
+**Unknown-running recovery.** Preserve `unknown-running` as the durable result
+of stream or cancellation ambiguity, but allow an explicit cancellation call
+on that latest state when this adapter still owns the exact recorded process.
+The owned Linux process group must receive the same bounded cancellation,
+available transcript tail must be retained when safe, and cleanup must remain
+blocked until ownership is released or recovery reloads without reattachment.
+
+**Test-first proof.** First add focused failures showing that current target
+drift and an identical clone reach probes/launch, and that a real fake-process
+group remains alive when `finish` returns `unknown-running` before cancellation.
+Make the minimum implementation pass, then retain existing mismatch,
+replacement, JSONL, private-stderr, process-group, one-shot, recovery, cleanup,
+FS-01, Direction, package, type, lint, build, and isolated-install evidence.
+Use only temporary Git repositories and fake local executables.
+
+**Remaining-plan audit.** For each unchecked readiness item, record whether a
+current narrow subset is reproducible, the item is deliberately contingent and
+therefore not selected, or completion needs a human product decision, a model
+run, sandbox qualification, an external target, pilot authority, or pilot
+observations. Do not implement a generic Map, Rumble, model router, sandbox, or
+pilot merely to turn a policy sentence into a checked box.
+
+**Stop.** This packet may update the CAP-02C boundary and focused tests plus the
+canonical/operator documentation needed for truthful close, then commit
+locally. It adds no CLI dispatch route, contacts no provider, reuses no CAP-02B
+authority, closes no MS-02 or pilot gate, changes no system configuration or
+user data, does not touch `firstmate/`, and does not push or open a PR.
 
 ## 8. Traceability and readiness
 
