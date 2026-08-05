@@ -4,8 +4,9 @@ Status: canonical readiness checklist; POL-01 is narrowly selected, the
 verified FS-01 baseline is canonically adopted, CAP-01 and MS-01 are complete,
 DIR-INTAKE-01 and CAP-02A are implemented and locally verified, PRV-01 plus
 CAP-02B are historically closed for one consumed run with only partial
-independent evidence retained, and CAP-02C plus EVA-01/EVA-02 are reproducible
-without a provider; MS-02 remains blocked on the human product check
+independent evidence retained, CAP-02C plus EVA-01/EVA-02 are reproducible
+without a provider, and EVA-03 is active provider-free; MS-02 remains blocked
+on the human product check
 
 This checklist records gates and observable readiness. It does not assign tasks, define a backlog, impose ordering beyond the workflow's authority gates, or recreate a Milestone Spine.
 
@@ -32,7 +33,7 @@ backdate the historical bootstrap.
 |---|---|---|
 | D-01, route, and T-01/ENV-01 | **H; current technical subset R** | Separate human decisions are recorded. Current Python/Linux/Git behavior is reproducible; the decisions themselves are authority, not executable proof. |
 | POL-01 selection, canonical FS-01 adoption, CAP-01, and recorded documentation consents | **H; FS-01 technical subset R** | The human decisions remain accepted within their exact scope. Current fixture behavior is independently reproducible; prose does not prove consent or broader readiness. |
-| All future Execution Consent | **EVA-02 completed locally; blocked afterward** | The latest delegation authorized only bounded provider-free EVA-02 audit, target/recovery repairs, documentation, and local commits. Every later mutation, real activation, provider call, pilot, target effect, or external effect needs a new current preflight and fitting consent. |
+| All future Execution Consent | **EVA-03 active locally; blocked afterward** | The latest delegation authorizes only bounded provider-free interrupted-cleanup recovery, adversarial tests, documentation, and local commits. Every later mutation, real activation, provider call, pilot, target effect, or external effect needs a new current preflight and fitting consent. |
 | FS-01 deterministic local lifecycle and its stated invariants | **R** | The implementation, fixture journey, refusal/recovery tests, and repository gates are executable; their claim remains fixture-only. |
 | MS-01: Foundation Slice close | **H: completed under one-time scoped acceptance** | The human accepted plan-conformant FS-01 completion without personally observing the fixture CLI/output journey and declined further FS-01 decision requests. This is not a human review, observation, clarity judgment, or D-01-fit proof; those remain accepted residual uncertainty. |
 | Approved-Direction intake | **R for the local manual boundary** | Current implementation and tests prove no-write preparation, separate exact approval/promotion authority, immutable D-01/D-02 history, shared mutation locking, drift/open-state/race refusal, marked-write recovery, clone-readable persistence, CLI inspection, and `draft` consumption. The [operator guidance](DIRECTION-OPERATOR.md) describes this evidence; it is not itself proof. Automated Rumble and provider work remain unproved. |
@@ -99,6 +100,7 @@ provider-free implementation without first receiving its named trigger.
 - [x] **H + R** — CAP-02C's provider-free grant is recorded and its fake-executable behavior is reproducible without `codex exec` or a live target.
 - [x] **H** — EVA-01 is authorized from clean `34dc2ae` for this evidence audit, bounded local repairs, documentation, verification, and local commits only; all live/provider/system/push boundaries remain closed.
 - [x] **H + R** — EVA-02 is authorized from clean `196dbbc`; its target/recovery repairs and remaining-plan audit are reproducible provider-free, with all live/provider/system/push boundaries still closed.
+- [x] **H** — EVA-03 is authorized from clean `ee32d05` for test-first interrupted exact-cleanup recovery, bounded documentation, verification, and local commits only; all live/provider/system/push and broader-deletion boundaries remain closed.
 
 ## Direction and routing
 
