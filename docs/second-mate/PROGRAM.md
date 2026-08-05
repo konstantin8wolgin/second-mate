@@ -53,6 +53,7 @@ separate records even when supplied in one instruction.
 | 2026-08-04 CAP-02B clean close | Activation `cap02b-20260804t224244z-94c21707-audit01` was consumed once. Strict independent parsing proved one bound 31-event JSONL lifecycle ending in `turn.completed` with process exit zero. Independent Git and repository verification—not provider claims—proved exactly two allowed paths and one recovery defect; close evidence digest `21a5c91a5c2c4d11c85c24fcdd00c54a8570683c1e64a43f465e881ae7e8cbf6` was recorded before exact cleanup. | The run is terminal and not retryable. Only its identity-recorded transcript, control, session files, and empty run directory were removed; the consumed marker remains. No absence-of-outside-effects or provider-side-erasure claim follows. |
 | 2026-08-05 CAP-02B review and overnight continuation | Fresh independent review accepted the one-line positive-exit predicate and signal-exit regression, replayed all quality gates, and committed only those two paths locally as `3ecf0fe`. The human also authorized plan-consistent routine local continuation. | The continuation permits truthful local evidence reconciliation and other dependency-ready non-live work. It prohibits retry/resume/redispatch of CAP-02B, provider/credential/account/billing/system changes, unrelated paths, push, and PR. It cannot manufacture the MS-02 human product check. |
 | 2026-08-05 CAP-02C provider-free adapter preflight and Execution Consent | Fresh inspection at `2a698d056d3e50e2662313f2549ab8d08e5ead5f` and visible fingerprint `37f548dc40adb27edb9d6d1597606391ed4ed8c13e322ff741f7297e5a097cce` found a clean checkout, the retained CAP-02B consumed marker unchanged, a green 261-test baseline, and local Codex CLI `0.146.0` help that supports JSONL, ephemeral storage, ignored user configuration, stdin prompts, fixed working directory, and explicit unsandboxed execution. The human expressly authorized autonomous plan-consistent local work, including reusable live-adapter preparation when it can be proved without a provider call. | This authorizes CAP-02C source, tests, canonical documentation, routine repairs, and local commits only. It prohibits invoking `codex exec` or another provider, authentication or credential access, retry/resume/redispatch of CAP-02B, real activation, live-target work, system configuration, `firstmate/`, push, and PR. CAP-02C must use only a temporary fake executable and must expose no CLI dispatch route. |
+| 2026-08-05 EVA-01 evidence audit preflight and Execution Consent | Fresh inspection at clean `34dc2aef1efab136e82ccd45b245dbc49e0d1fa3` reconfirmed the retained CAP-02B marker at mode `0600` and SHA-256 `0567cd80dddba22b159932ce828648d1e5d1068513a3823bb0991824998dd344`, 273 collected tests, the dormant library-only adapter, and no tracked `firstmate/` content. The latest overnight instructions require every remaining claim, prerequisite, and completion label to receive proportionate independent evidence, truthful unproved/deferred wording, or a bounded provider-free proof path. | This authorizes systematic local evidence reconciliation, provider-free tests and repairs, canonical documentation, and local commits. It prohibits provider/live dispatch, CAP-02B replay, credential/authentication access, push/PR, system configuration, user-data deletion, and `firstmate/` changes. Human product judgment remains outside this authority. |
 
 The historical repository cannot prove which pre-Program control or Execution
 Consent governed the original bootstrap. This record does not rewrite or
@@ -362,6 +363,7 @@ the fixed FS-01 fixture route, not a completed Second Mate Program or product.
 | CAP-02A: Offline trusted-local adapter implementation | Coordinator-side DIR-01 through DIR-05; constrained by the trusted-local limitation and DIR-06 | `completed` | One offline-only library adapter over an injected mock local control plane proves activation/basis matching, streamed JSONL lifecycle, exact session binding, interruption/failure ambiguity, persistent private state, no provider-as-proof promotion, and non-recursive identity-bound cleanup while preserving FS-01. It supplies no sandbox, credential, provider, production process, network, live target, CAP-02B, or token-cap implementation. |
 | CAP-02B: One real trusted-local provider-owned direct run | Observed coordinator-side DIR-01 through DIR-05 only; no adversarial-containment claim | `completed once` | One consumed activation called the exact local Codex host against frozen public Second Mate HEAD, found and fixed one recovery-classification defect within two allowed paths, ended with a strict completed JSONL lifecycle, and passed independent final-revision, test, build, and exact-cleanup proof. Provider output was not treated as completion evidence; no outside-machine-effects claim is made; retry is prohibited. |
 | CAP-02C: Dormant Codex CLI process adapter | Coordinator-side DIR-02 through DIR-05; no provider, target, usability, or containment claim | `completed provider-free` | A library-only real-process boundary now binds executable/version/help/model/prompt/environment/argv, reuses exact activation, streams JSONL and private stderr, resists executable replacement, owns bounded process-group cancellation, retains the cancellation transcript tail, and preserves no-retry recovery. Temporary fake executables supply all process evidence; no CLI route or real provider call exists. |
+| EVA-01: Evidence-claim and lifecycle hardening | Truthful evidence classification plus coordinator-side DIR-02 and DIR-04 | `ready; provider-free` | Audit every current status and checked readiness claim at `34dc2ae`; distinguish reproducible evidence, retained independent artifacts, human decisions, and non-replayable historical records. Correct unsupported wording and use test-first local repairs only for proved contradictions in cleanup lifecycle, capability minimization, and configured package/type verification. |
 | MS-02: Usable manually supervised trusted-local coordinator | One-provider direct-route scope with explicit trusted-local residual risk | `blocked on human product check` | CAP-02B supplies one technically closed real packet and CAP-02C supplies the formerly missing dormant process adapter. The human must still judge whether the manual proof plus this unactivated adapter boundary make observability, evidence, recovery, cleanup, and residual risk usable and fitting D-01, or whether one newly authorized adapter exercise is required. Full DIR-02 enforcement against executor overreach or hostile repository content remains unproved. |
 | SBOX-01: Sandboxed hardening/deployment path | Strengthens DIR-02 and operational security evidence without changing the coordinator contract | `deferred` | Implement only when deployment, repository trust, data sensitivity, or pilot evidence requires containment. Qualify filesystem, environment, credential, network, optional-capability, cancellation, and cleanup behavior in the actual environment; failure must not downgrade to trusted-local automatically. |
 | PILOT-SELECT-01: Medium pilot target and request | Enables pilot-scoped DIR-01 through DIR-06 evidence | `blocked` | MS-02 plus a baseline-known external target, approved Direction/route, bounded data authority, and separate pilot consent. Select it before CAP-03 so Map/Foundation behavior is earned by the real pilot. |
@@ -375,7 +377,8 @@ prove the unobserved qualities or the whole Direction. MS-02 or MS-03 must not
 declare the whole Direction proven without evidence for the actual completion
 claim.
 
-CAP-02C is complete. The remaining candidate order is MS-02,
+CAP-02C is complete. The authorized provider-free EVA-01 audit precedes MS-02;
+the remaining product candidate order is MS-02,
 PILOT-SELECT-01, CAP-03, then MS-03. SBOX-01 is a separate deferred
 hardening/deployment path and may be pulled forward only by an explicit trust,
 data, deployment, or pilot need. The Map changes only from evidence or an
@@ -687,6 +690,43 @@ CAP-02B, establish current provider authority, close MS-02, select a pilot,
 contact a provider, push, or open a PR. A future real adapter run still requires
 a new exact model/host/auth/data/target boundary, current preflight, and
 one-shot human activation.
+
+### Ready frontier — EVA-01 evidence-claim and lifecycle hardening
+
+**Outcome.** Make the canonical status reconstructible without treating its own
+prose as proof, and repair only provider-free defects that directly contradict
+an existing completion or safety claim.
+
+**Evidence model.** Classify each Program status and checked readiness item as
+one of four things: currently reproducible executable/structural evidence;
+retained independent historical evidence; an exact human decision or authority
+record; or a historical close assertion whose underlying private artifact was
+intentionally deleted. A decision may remain accepted, but a deleted transcript
+or close document must not be described as independently replayable from the
+checkout. Open human, provider, target, sandbox, and pilot gates remain open.
+
+**Bounded repairs.** First reproduce each technical contradiction. Cleanup must
+refuse an active run and require an explicit recovery disposition before an
+`unknown-running` envelope can lose its forensic artifacts. The fixed Codex argv
+must disable the already inventoried `skill_search` optional surface in addition
+to the existing effect surfaces. The configured no-argument strict-mypy package
+gate must work and the wheel must carry the standard typed-package marker. Do
+not redesign launch/resume, add a command, activate an adapter, or infer
+containment.
+
+**Test-first proof.** Add one failing behavioral regression per repair and name
+the production change that makes it pass: an active cleanup refusal plus an
+explicit unknown-running recovery gate; an argv assertion independent of the
+production disabled-feature tuple; and an importable packaged `py.typed`
+marker. Observe each red failure before the minimal implementation. Then replay
+the complete trusted-local, fixture, Direction, lint, format, configured strict
+mypy, locked-offline environment, build, package-content, and isolated-wheel
+smoke gates. No installed Codex executable or provider is used.
+
+**Stop.** Update only the trusted-local adapter, focused tests, packaging marker,
+and canonical/operator wording required by the audit. Preserve the consumed
+CAP-02B marker and all repository/user data. Do not close MS-02, prepare a pilot,
+touch `firstmate/`, push, or open a PR.
 
 ## 8. Traceability and readiness
 
