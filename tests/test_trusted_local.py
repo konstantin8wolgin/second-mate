@@ -387,7 +387,28 @@ def test_cleanup_removes_only_the_exact_identified_run_artifacts(tmp_path: Path)
     private_root = _private_root(tmp_path / "private")
     sibling = private_root / "another-run.keep"
     sibling.write_text("preserve sibling\n", encoding="utf-8")
-    adapter, run, _ = _start_mock_run(repository, private_root)
+    transcript = b"".join(
+        (
+            _event_line(
+                {
+                    "type": "thread.started",
+                    "thread_id": "019fcdda-2c17-7f51-9e81-a56f5b9585dc",
+                }
+            ),
+            _event_line({"type": "turn.started"}),
+            _event_line({"type": "turn.completed"}),
+        )
+    )
+    adapter = OfflineTrustedLocalAdapter(
+        LaunchingControlPlane(ScriptedOfflineProcess([transcript], exit_code=0))
+    )
+    started = adapter.start(
+        basis=_basis(),
+        activation_data=_activation(),
+        repository=repository,
+        private_root=private_root,
+    )
+    run = adapter.finish(started)
 
     adapter.cleanup(run)
 
@@ -396,16 +417,87 @@ def test_cleanup_removes_only_the_exact_identified_run_artifacts(tmp_path: Path)
     assert sibling.read_text(encoding="utf-8") == "preserve sibling\n"
 
 
+def test_cleanup_refuses_an_active_run_and_preserves_every_recovery_artifact(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    private_root = _private_root(tmp_path / "private")
+    adapter, run, _ = _start_mock_run(repository, private_root)
+
+    with pytest.raises(TrustedLocalBoundaryError, match="active trusted-local run"):
+        adapter.cleanup(run)
+
+    assert {path.name for path in run.run_directory.iterdir()} == {
+        "session.json",
+        "transcript.jsonl",
+        "control.tmp",
+    }
+
+
+def test_unknown_running_cleanup_requires_an_explicit_abandonment_disposition(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    private_root = _private_root(tmp_path / "private")
+    adapter, started, _ = _start_mock_run(repository, private_root)
+    unknown = adapter.cancel(started)
+
+    with pytest.raises(TrustedLocalBoundaryError, match="explicit abandoned disposition"):
+        adapter.cleanup(unknown)
+
+    assert unknown.run_directory.is_dir()
+
+    adapter.cleanup(unknown, recovery_disposition="abandoned")
+
+    assert not unknown.run_directory.exists()
+
+
+def test_unknown_running_cleanup_refuses_while_this_adapter_still_owns_the_process(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    private_root = _private_root(tmp_path / "private")
+    process = FailingOfflineProcess("read")
+    adapter = OfflineTrustedLocalAdapter(LaunchingControlPlane(process))
+    started = adapter.start(
+        basis=_basis(),
+        activation_data=_activation(),
+        repository=repository,
+        private_root=private_root,
+    )
+    unknown = adapter.finish(started)
+
+    with pytest.raises(TrustedLocalBoundaryError, match="still owns the process"):
+        adapter.cleanup(unknown, recovery_disposition="abandoned")
+
+    assert unknown.run_directory.is_dir()
+
+    recovery_adapter = OfflineTrustedLocalAdapter(LaunchingControlPlane())
+    recovered = recovery_adapter.load(
+        basis=_basis(),
+        activation_id=unknown.activation_id,
+        repository=repository,
+        private_root=private_root,
+    )
+    recovery_adapter.cleanup(recovered, recovery_disposition="abandoned")
+
+    assert not recovered.run_directory.exists()
+
+
 def test_cleanup_refuses_unexpected_entry_before_deleting_anything(tmp_path: Path) -> None:
     repository = tmp_path / "repository"
     repository.mkdir()
     private_root = _private_root(tmp_path / "private")
     adapter, run, _ = _start_mock_run(repository, private_root)
+    run = adapter.cancel(run)
     unexpected = run.run_directory / "unrecorded.txt"
     unexpected.write_text("do not guess\n", encoding="utf-8")
 
     with pytest.raises(TrustedLocalBoundaryError, match="exactly the recorded artifacts"):
-        adapter.cleanup(run)
+        adapter.cleanup(run, recovery_disposition="abandoned")
 
     assert {path.name for path in run.run_directory.iterdir()} == {
         "session.json",
@@ -422,12 +514,13 @@ def test_cleanup_refuses_replaced_artifact_before_deleting_anything(tmp_path: Pa
     repository_sentinel.write_text("preserve repository work\n", encoding="utf-8")
     private_root = _private_root(tmp_path / "private")
     adapter, run, _ = _start_mock_run(repository, private_root)
+    run = adapter.cancel(run)
     transcript = run.run_directory / "transcript.jsonl"
     transcript.unlink()
     transcript.symlink_to(repository_sentinel)
 
     with pytest.raises(TrustedLocalBoundaryError, match="identity"):
-        adapter.cleanup(run)
+        adapter.cleanup(run, recovery_disposition="abandoned")
 
     assert (run.run_directory / "session.json").exists()
     assert (run.run_directory / "control.tmp").exists()
@@ -442,6 +535,7 @@ def test_cleanup_refuses_session_record_drift_before_deleting_anything(
     repository.mkdir()
     private_root = _private_root(tmp_path / "private")
     adapter, run, _ = _start_mock_run(repository, private_root)
+    run = adapter.cancel(run)
     session_path = run.run_directory / "session.json"
     session = json.loads(session_path.read_bytes())
     session["repository"] = "/tmp/not-the-recorded-repository"
@@ -449,7 +543,7 @@ def test_cleanup_refuses_session_record_drift_before_deleting_anything(
     os.chmod(session_path, 0o600)
 
     with pytest.raises(TrustedLocalBoundaryError, match="session record"):
-        adapter.cleanup(run)
+        adapter.cleanup(run, recovery_disposition="abandoned")
 
     assert {path.name for path in run.run_directory.iterdir()} == {
         "session.json",
@@ -799,7 +893,7 @@ def test_cleanup_cannot_make_a_cancelled_activation_reusable(tmp_path: Path) -> 
         private_root=private_root,
     )
     cancelled = first_adapter.cancel(started)
-    first_adapter.cleanup(cancelled)
+    first_adapter.cleanup(cancelled, recovery_disposition="abandoned")
     competing_control_plane = LaunchingControlPlane()
 
     with pytest.raises(TrustedLocalBoundaryError, match="already consumed"):

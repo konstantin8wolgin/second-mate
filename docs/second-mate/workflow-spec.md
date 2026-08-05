@@ -421,8 +421,8 @@ The following controls remain non-negotiable even though containment is not:
 2. The run must not execute as root or with an intentionally exposed privilege
    escalation path. Secrets and optional execution surfaces are minimized:
    do not deliberately forward credentials to model-generated commands, and
-   keep hooks, MCP servers, plugins, apps, browser/computer control, and
-   subagents disabled unless separately named in the grant.
+   keep hooks, MCP servers, plugins, apps, skill search, browser/computer
+   control, and subagents disabled unless separately named in the grant.
 3. Authentication source, billing project, permitted repository data, intended
    network/provider effect, spend policy, transcript retention, exact CLI
    version, target revision, allowed target changes, stop conditions,
@@ -438,7 +438,10 @@ The following controls remain non-negotiable even though containment is not:
    choice, Direction, a Map, or a packet alone is not activation consent.
 6. Recovery cleanup is limited to exact private session, transcript, and
    temporary control artifacts that the run created and identity-recorded in
-   its dedicated private directory. It must refuse unexpected or replaced
+   its dedicated private directory. It must refuse active runs; cleanup of an
+   `unknown-running` envelope additionally requires an explicit human
+   abandonment decision and matching recovery disposition, and refuses while
+   the adapter still owns the process. It must refuse unexpected or replaced
    entries and must never recursively delete, follow provider-supplied paths,
    alter repository work, remove arbitrary system files, or claim to delete
    provider-side data.

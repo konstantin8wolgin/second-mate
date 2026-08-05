@@ -9,7 +9,7 @@ import uuid
 from contextlib import suppress
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Protocol, cast
+from typing import Literal, Protocol, cast
 
 from second_mate.domain import JsonObject
 from second_mate.store import deterministic_json_bytes, strict_json_loads
@@ -945,9 +945,32 @@ class OfflineTrustedLocalAdapter:
         self._persist(unknown)
         return unknown
 
-    def cleanup(self, run: TrustedLocalRun) -> None:
+    def cleanup(
+        self,
+        run: TrustedLocalRun,
+        *,
+        recovery_disposition: Literal["abandoned"] | None = None,
+    ) -> None:
         """Delete only the exact, still-identical local artifacts recorded for one run."""
 
+        if run.phase in {"launching", "running"}:
+            raise TrustedLocalBoundaryError("cannot clean up an active trusted-local run")
+        if run.phase == "unknown-running":
+            if recovery_disposition != "abandoned":
+                raise TrustedLocalBoundaryError(
+                    "unknown-running cleanup requires an explicit abandoned disposition"
+                )
+            if run.activation_id in self._processes:
+                raise TrustedLocalBoundaryError(
+                    "cannot clean up while this adapter still owns the process"
+                )
+        elif run.phase in {"completed", "failed"}:
+            if recovery_disposition is not None:
+                raise TrustedLocalBoundaryError(
+                    "terminal trusted-local cleanup does not accept a recovery disposition"
+                )
+        else:
+            raise TrustedLocalBoundaryError("trusted-local cleanup phase is invalid")
         _validate_activation_id(run.activation_id)
         if set(run.artifact_identities) != set(_PRIVATE_ARTIFACT_NAMES):
             raise TrustedLocalBoundaryError(

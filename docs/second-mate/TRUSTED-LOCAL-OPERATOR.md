@@ -1,8 +1,9 @@
 # Trusted-local execution operator contract
 
 Status: canonical activation gate plus CAP-02A offline/mock reference,
-CAP-02C dormant process adapter, and one consumed CAP-02B manual proof; no
-trusted-local CLI dispatch command is implemented
+CAP-02C dormant process adapter, and one historically closed CAP-02B run with
+partial independent evidence retained; no trusted-local CLI dispatch command is
+implemented
 
 This document defines Second Mate's first planned live execution mode. It is a
 manual, single-run mode for a human-selected local machine, operating-system
@@ -12,10 +13,11 @@ sandbox. It does not describe a live command that can be run today.
 ## Implemented offline proof boundary
 
 CAP-02A implements `OfflineTrustedLocalAdapter` as a library-only reference
-over an injected `OfflineControlPlane`. The production package supplies no
-subprocess or provider implementation and exposes no CLI route for this path.
-Tests inject deterministic process doubles; they do not launch Codex or another
-agent.
+over an injected `OfflineControlPlane`. CAP-02A itself supplies no subprocess or
+provider implementation. CAP-02C later added the private subprocess boundary
+described below, but the package still exposes no CLI route for either path.
+CAP-02A tests inject deterministic process doubles; they do not launch Codex or
+another agent.
 
 The reference validates the exact activation mode, all frozen basis bindings,
 the three risk acknowledgments, `provider-billing-controls-only`, and
@@ -32,16 +34,20 @@ The first canonical `thread.started` UUID binds the session. Strict JSON,
 ordering, terminal event, and mock exit checks distinguish `completed`,
 `failed`, and `unknown-running`; provider-reported changes never become target
 evidence. Cancellation and ambiguous launch, read, wait, or restart state stay
-`unknown-running` with no automatic retry or cleanup. Explicit cleanup first
-attests the durable session, exact directory contents, and every recorded
-identity, then unlinks only the three known files and the empty directory. It
-validates but never deletes the consumption marker.
+`unknown-running` with no automatic retry or cleanup. Explicit cleanup refuses
+`launching` and `running`. An `unknown-running` envelope remains forensic state
+unless the operator first makes the required recovery decision and supplies the
+exact `abandoned` disposition. Cleanup also refuses while that adapter still
+owns the process; recovery/reload never reattaches. Completed and failed runs
+need no recovery disposition. Cleanup then attests the durable session, exact directory contents,
+and every recorded identity before unlinking only the three known files and the
+empty directory. It validates but never deletes the consumption marker.
 
 This is executable evidence for the coordinator-side contract only. It is not
 provider readiness, containment, process-group cancellation proof,
 exact-session resume, a target mutation, or authority to activate a real run.
 
-## Consumed CAP-02B proof run
+## Consumed CAP-02B historical run
 
 On 2026-08-04 the human separately authorized one real run under this contract.
 The frozen boundary selected local Codex CLI `0.146.0`, the existing ChatGPT
@@ -51,20 +57,22 @@ storage, private transcript retention through clean close, no automatic retry
 or resume, and `provider-billing-controls-only`. No API billing project,
 credential, account, or system configuration was created or changed.
 
-The run consumed activation
+The contemporaneous close records that the run consumed activation
 `cap02b-20260804t224244z-94c21707-audit01` once. Its private manual envelope
 bound the first session, retained the raw stream through evidence close, and
-allowed only two repository paths. Independent JSONL, Git, regression,
-repository-gate, and cleanup inspection proved the target result; provider
-output was not accepted as proof. The audit's one recovery defect and minimal
-signal-exit fix are committed in `3ecf0fe`. [PROGRAM.md](PROGRAM.md) owns the
-canonical detailed evidence.
+allowed only two repository paths. Its raw transcript/session/control/close
+artifacts were intentionally deleted, so their JSONL lifecycle and exact cleanup
+are not independently replayable from this checkout. The retained marker proves
+the activation and exact bindings are consumed; Git and current tests prove the
+two-path signal-exit fix in `3ecf0fe`. [PROGRAM.md](PROGRAM.md) owns the detailed
+evidence classification. Provider output is not accepted as current proof.
 
-After clean-close evidence was recorded, cleanup removed only the exact private
-`transcript.jsonl`, `control.tmp`, `session.json`, and empty run directory. The
-consumed activation marker remains. The deletion is not provider-side erasure,
-and the clean target evidence cannot prove that no unrelated machine or network
-effect occurred.
+The contemporaneous close states that cleanup removed only the exact private
+`transcript.jsonl`, `control.tmp`, `session.json`, and empty run directory after
+recording close evidence. Those identities and the close document are not
+retained for replay. The consumed activation marker does remain. The deletion is
+not provider-side erasure, and target evidence cannot prove that no unrelated
+machine or network effect occurred.
 
 This was a one-off manual operating envelope around the real CLI, not a new
 production control-plane implementation or reusable Second Mate command. Its
@@ -94,8 +102,9 @@ than dispatching a different path.
 The fixed command requests strict config, JSONL, ephemeral CLI session storage,
 ignored user config and exec-policy rules, empty MCP configuration, no color,
 an exact model and working directory, stdin prompt input, explicit unsandboxed
-execution, and disabled app/browser/computer/hook/plugin/subagent/web-related
-features. These switches are capability minimization, not containment: the
+execution, and disabled app/browser/computer/hook/plugin/subagent/skill-search
+and web-related features. These switches are capability minimization, not
+containment: the
 agent, shell commands, trusted repository instructions, provider, and network
 still have the broad trusted-local exposure described below. A future real
 boundary should name the installed native Codex binary itself, not a package-
@@ -107,8 +116,8 @@ lifecycle; stderr appends only to the identity-recorded private `control.tmp`.
 Cancellation verifies the process identity, sends bounded `SIGINT`, `SIGTERM`,
 then `SIGKILL`, non-blockingly retains the available transcript tail, and still
 persists `unknown-running`. Reload never reattaches or retries. Exact cleanup
-remains the CAP-02A identity-bound three-file cleanup and retains the consumed
-activation marker.
+inherits the CAP-02A phase and explicit-abandonment gate, identity-bound
+three-file deletion, and retained consumption marker.
 
 All CAP-02C process-execution evidence used temporary local fake executables. Tests
 proved binary/probe/runtime drift refusal, target-config refusal, replacement
@@ -191,7 +200,7 @@ must be resolved and recorded:
   the selected spend policy is `provider-billing-controls-only`: Second Mate
   imposes no token-spend cap of its own and does not represent unavoidable
   provider or billing limits as coordinator guarantees.
-- **Capability minimization:** hooks, MCP servers, plugins, apps,
+- **Capability minimization:** hooks, MCP servers, plugins, apps, skill search,
   browser/computer control, subagents, and other optional effect surfaces are
   disabled unless the same grant names and justifies them. Model-generated
   commands do not deliberately receive provider or unrelated credentials.
@@ -203,7 +212,10 @@ must be resolved and recorded:
 - **Narrow cleanup:** cleanup authority is limited to the exact private
   session, transcript, and temporary control artifacts created and durably
   identified by that run inside its dedicated private run directory. Cleanup
-  must refuse identity drift or unexpected entries and must never recursively
+  must refuse active runs, require an explicit `abandoned` disposition for an
+  `unknown-running` envelope after the human recovery decision, refuse while
+  the adapter still owns the process, refuse identity
+  drift or unexpected entries, and must never recursively
   delete, follow a path supplied by provider output, touch repository work or
   arbitrary system files, or claim to delete provider-side data.
 
@@ -254,10 +266,15 @@ Because the mode is unsandboxed, target inspection cannot establish the state
 of unrelated files or external systems. Any suspected outside effect is
 recorded as residual uncertainty and may require independent operator recovery.
 
-Recovery cleanup is a separate explicit local action. It may remove only the
-exact private files created and identity-recorded for the run plus the now-empty
-dedicated run directory. It does not revert repository changes, delete other
-local files, invoke provider session deletion, or erase provider-side data.
+Recovery cleanup is a separate explicit local action. It refuses `launching` or
+`running`; `unknown-running` cleanup requires that the human first choose
+abandonment and that the caller supply the exact `abandoned` disposition. The
+adapter also refuses cleanup while it still owns the process. After
+recovery/reload without reattachment, it may
+then remove only the exact private files created and identity-recorded for the
+run plus the now-empty dedicated run directory. It does not revert repository
+changes, delete other local files, invoke provider session deletion, or erase
+provider-side data.
 Repository or external recovery always requires its own evidence and authority.
 The one-shot activation-consumption marker is authority history, not disposable
 session/transcript/temp state, and remains so cleanup cannot make the grant

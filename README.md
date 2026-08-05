@@ -3,8 +3,9 @@
 Second Mate is a lean AI coding-workflow coordinator. The repository now
 contains a Python 3.12 implementation of approved Direction intake, FS-01, and
 the CAP-02A offline trusted-local proof plus the dormant CAP-02C Codex CLI
-process adapter, alongside evidence from one consumed CAP-02B trusted-local
-proof run. FS-01 carries one supervised, local direct
+process adapter, alongside a retained consumed marker and recovery commit from
+one historically closed CAP-02B run. Its deleted private event/close artifacts
+are not replayable from this checkout. FS-01 carries one supervised, local direct
 packet against a deterministic fixture through explicit consent, claim-fit
 evidence, durable continuation, and recoverable clean close. CAP-02A adds an
 injected mock control-plane path. CAP-02C adds an activation-gated real-process

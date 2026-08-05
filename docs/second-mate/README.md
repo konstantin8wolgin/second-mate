@@ -2,16 +2,17 @@
 
 Status: canonical design; POL-01 narrowly selected, the verified FS-01
 Foundation baseline canonically adopted, CAP-01 and MS-01 complete, and
-DIR-INTAKE-01 and CAP-02A implemented and locally verified; PRV-01 and CAP-02B
-are complete for one consumed trusted-local proof run; CAP-02C is implemented
-and proved without a provider, while MS-02 still needs the human product check
+DIR-INTAKE-01, CAP-02A, and EVA-01 implemented and locally verified; PRV-01 and CAP-02B
+historically closed for one consumed run with partial independent evidence
+retained; CAP-02C is reproducible without a provider, while MS-02 still needs
+the human product check
 
 Second Mate is a lean coordinator for AI coding work. It preserves human-owned product Direction, gives capable models room to solve technical problems, and requires evidence that fits each completion claim. It is a clean project, not a retrofit of FirstMate, Knowless, or their backlog and worker structures.
 
 The repository contains a Python 3.12 coordinator for approved Direction
 intake, the fixture-only FS-01 lifecycle, the CAP-02A offline adapter proof, and
-the dormant CAP-02C Codex CLI process adapter, plus the durable evidence record
-for one manually enveloped CAP-02B run. It is
+the dormant CAP-02C Codex CLI process adapter, plus partial retained evidence
+for one historically closed, manually enveloped CAP-02B run. It is
 operated manually and does not self-orchestrate. The
 [Direction operator guide](DIRECTION-OPERATOR.md),
 [FS-01 operator guide](FS-01-OPERATOR.md), and
@@ -23,6 +24,12 @@ local Codex CLI host through a private manual envelope whose activation is now
 consumed. Executable evidence is recorded in [PROGRAM.md](PROGRAM.md); that
 evidence does not prove current provider readiness, a second live dispatch,
 automated Rumble, the broader workflow, or product readiness.
+
+EVA-01 classifies every current readiness label by reproducible, retained,
+human-authority, structural, non-replayable, or open evidence. It also refuses
+cleanup of active runs, requires explicit abandonment before cleanup of
+`unknown-running`, disables the inventoried `skill_search` surface, and ships a
+typed-package marker. These are provider-free coordinator hardening only.
 
 ## Authority and sources
 
@@ -156,23 +163,29 @@ It did not select a billing project or authorize credentials, authentication,
 provider calls, a real process/agent, system configuration, a live target,
 CAP-02B, push, or commit; none occurred within CAP-02A.
 
-## Recorded one-run trusted-local proof — 2026-08-04
+## Recorded one-run trusted-local close — 2026-08-04
 
 The human later selected one exact local Codex CLI `0.146.0`/existing-ChatGPT
 boundary and authorized one real CAP-02B run against frozen public Second Mate
 HEAD `94c21707ab13294b8e756049691e89cba1c91725`. Activation
 `cap02b-20260804t224244z-94c21707-audit01` was consumed once. Independent
-inspection—not provider claims—proved the lifecycle, two allowed paths, one
-recovery defect, every repository gate, clean close, and exact private cleanup.
-The signal-exit regression and minimal positive-exit fix are locally committed
-as `3ecf0fe`; [PROGRAM.md](PROGRAM.md) is the canonical evidence record.
+evidence retained today is narrower than the contemporaneous close: the marker
+proves the activation and exact frozen bindings are consumed, while Git and
+current tests prove the two-path signal-exit fix in `3ecf0fe`. The private
+transcript/session/control/close artifacts were intentionally deleted, so the
+recorded lifecycle, original gate output, and exact cleanup cannot be replayed
+from this checkout. [PROGRAM.md](PROGRAM.md) is the canonical evidence
+classification.
 
-CAP-02B therefore closes only this one manual proof boundary. The package still
+CAP-02B therefore closes only this one historical manual boundary. The package still
 has no trusted-local CLI route. CAP-02C subsequently added a dormant reusable
-process adapter, proved against a temporary fake executable only. It binds the
+process adapter, reproducibly tested against temporary fake executables only.
+It binds the
 binary and local probes, model, prompt and environment digests, reduced-
 capability argv, process identity, private streams, and bounded process-group
-cancellation before it can launch. It did not inspect authentication, invoke
+cancellation, phase-gated cleanup, and explicit unknown-running abandonment
+before it can launch or delete private artifacts. It did not inspect
+authentication, invoke
 `codex exec`, call a provider, use a live target, or activate a second run; the
 installed CLI was used only for local version/help/features inventory.
 

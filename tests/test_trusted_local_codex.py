@@ -36,6 +36,7 @@ _DISABLED_FEATURES = (
     "multi_agent_v2",
     "plugins",
     "remote_plugin",
+    "skill_search",
     "skill_mcp_dependency_install",
     "standalone_web_search",
     "web_search_request",
