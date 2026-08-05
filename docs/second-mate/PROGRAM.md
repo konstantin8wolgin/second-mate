@@ -60,6 +60,7 @@ separate records even when supplied in one instruction.
 | 2026-08-05 EVA-02 remaining-plan and target-binding preflight and Execution Consent | Fresh inspection at clean `196dbbcd9a838529b4640098e3110677aa3e0770`, visible fingerprint `42a20b984fff2b7632a97a1d2e2706602b4e10ef747bed628600f637e6cbf533`, and a green 278-test baseline found that commit `196dbbc` conservatively handles cancellation-drain setup failure but is not yet reflected in the canonical close. Whole-plan tracing also found two provider-free contradictions: CAP-02C does not independently recompute the actual target head/fingerprint or bind its resolved root before probes and activation consumption, and its latest durable `unknown-running` state cannot cancel a process the same adapter still owns. | The latest delegation authorizes plan-consistent local code, tests, claim reconciliation, and local commits needed to close those provider-free gaps and classify every remaining checklist item by its actual dependency. It prohibits provider/auth/credential use, CAP-02B replay/resume/redispatch, live dispatch, push/PR, system changes, user-data deletion, `firstmate/` changes, or a fabricated MS-02 judgment. |
 | 2026-08-05 EVA-02 provider-free close | Plan commit `79592eb` froze the exact target/recovery and remaining-plan audit; implementation/evidence commit `503048e` records resolved-root/current-revision binding, cancellation from owned durable `unknown-running`, ownership retention through cancellation ambiguity, 5 new red-green regressions, and canonical dependency reconciliation. Fresh close replay passed 63 trusted-local and 283 total tests, Ruff lint/format, configured and explicit strict mypy for 11 modules, locked-offline sync, source/wheel build and contents, and isolated wheel import/CLI/type-marker/target-binding smoke. | Commit `196dbbc` is now reconciled in the canonical history. The retained CAP-02B marker remained mode `0600` with SHA-256 `0567cd80dddba22b159932ce828648d1e5d1068513a3823bb0991824998dd344`; `firstmate/` remained ignored and untouched. No Codex execution, provider, auth/credential access, live target, system change, push, PR, or user-data deletion occurred. EVA-02 closes locally; only MS-02 and its downstream external or contingent decisions remain. |
 | 2026-08-05 EVA-03 interrupted-cleanup preflight and Execution Consent | Fresh inspection at clean `ee32d05cc824acfa5c7387544dd3aa82d2424e56`, visible fingerprint `572dccc24964df8947e50d1b53c8648187162b4fcb2ef692ad7532b6f84c7048`, 6,408 implementation lines, and a green 283-test baseline found one provider-free contradiction after EVA-02: cleanup validates the exact private set before deletion, but a failure after the first successful unlink leaves no durable cleanup intent, so fresh reload rejects the partial directory and cannot finish the already-authorized narrow cleanup. | The latest delegation authorizes the smallest test-first local repair, adversarial proof, canonical documentation, verification, and local commits. It may add only a durable phase inside the existing identity-recorded session and exact resumption of the three run-owned files or final empty directory. It prohibits broader deletion, recursive cleanup, repository/provider data deletion, live/provider/auth/credential use, CAP-02B replay, push/PR, system changes, `firstmate/`, or a fabricated MS-02 judgment. |
+| 2026-08-05 EVA-03 independent safety review correction | A separate read-only review proved that an empty directory alone cannot establish prior cleanup intent: it can also result from pre-session interruption, outside deletion, or replacement of the original directory. Accepting it would bypass the missing-evidence and replacement gates. | Before unlinking, enrich only the already-retained consumption marker with cleanup authorization bound to the exact run-directory device/inode, in addition to the session phase. Empty recovery must match that surviving identity. This is an evidence-driven correction to the initial no-marker-mutation assumption; it adds no file, path, deletion target, provider/live authority, or recursive behavior. |
 
 The historical repository cannot prove which pre-Program control or Execution
 Consent governed the original bootstrap. This record does not rewrite or
@@ -863,22 +864,30 @@ a successful clean close.
 **Durable intent.** Before the first unlink, rewrite the already
 identity-recorded `session.json` to a `cleanup-pending` phase only after the
 current phase/disposition, consumed marker, exact directory set, session, and
-all three physical identities pass. Add no new file or external state.
+all three physical identities pass. Then enrich the already-retained
+consumption marker with cleanup authorization bound to the exact run-directory
+device/inode. The marker remains one-shot authority history; add no new file,
+path, or deletion target.
 
 **Exact resumption.** Fresh reload may accept a subset of the three recorded
 artifacts only when the surviving identity-recorded session proves
-`cleanup-pending`; it validates every remaining identity before deleting only
+`cleanup-pending` and the marker's cleanup authorization matches the physical
+run directory; it validates every remaining identity before deleting only
 those names. If the session was already removed and only the exact empty run
-directory remains, recovery may remove only that directory. Any nonempty
-partial directory without the durable intent, replacement, unexpected entry,
-or missing session remains a refusal.
+directory remains, recovery may remove only that same identity-bound directory.
+Any absent cleanup authorization, directory replacement, nonempty partial
+directory without durable intent/session, artifact replacement, or unexpected
+entry remains a refusal.
 
 **Test-first proof.** First inject failure after one successful unlink and show
 that current reload rejects the partial directory. Then inject final-directory
 removal failure and show that current reload rejects the empty run directory.
 The minimum implementation must make both resumable from a fresh adapter while
 preserving marker consumption, unrelated sentinels, active/unknown ownership
-gates, pre-delete identity refusal, and every existing test.
+gates, pre-delete identity refusal, and every existing test. Also prove that an
+empty pre-session directory and an empty replacement directory are refused,
+and that cleanup interrupted before the first unlink or with only the session
+remaining can resume without widening authority.
 
 **Stop.** Update only the trusted-local coordinator, its focused tests, and the
 canonical/operator wording required for truthful close, then commit locally.
