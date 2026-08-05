@@ -2,8 +2,8 @@
 
 Status: candidate initial Program; POL-01 narrowly selected, FS-01 canonically
 adopted as the Foundation baseline, CAP-01 and MS-01 complete, and
-DIR-INTAKE-01, CAP-02A, CAP-02C, EVA-01, and EVA-02 implemented and locally
-verified; EVA-03 is active provider-free; PRV-01 and CAP-02B are historically
+DIR-INTAKE-01, CAP-02A, CAP-02C, EVA-01, EVA-02, and EVA-03 implemented and
+locally verified; PRV-01 and CAP-02B are historically
 closed for one consumed run with partial independent evidence retained, while
 MS-02 awaits the human product check
 
@@ -15,8 +15,8 @@ the canonical [workflow specification](workflow-spec.md) and
 The [Foundation-First reference](../placeholder/foundation-first/foundation-first-delivery-design.md)
 is context only, as described by the [canonical package index](README.md).
 
-The Program retains one completed permanent Foundation Slice and keeps only the
-active provider-free cleanup-recovery audit compactly detailed. It does not
+The Program retains one completed permanent Foundation Slice and the completed
+provider-free recovery audits compactly detailed. It does not
 select a product frontier before the MS-02 human product check and is not
 permission to publish, deploy, or use external services.
 
@@ -61,6 +61,7 @@ separate records even when supplied in one instruction.
 | 2026-08-05 EVA-02 provider-free close | Plan commit `79592eb` froze the exact target/recovery and remaining-plan audit; implementation/evidence commit `503048e` records resolved-root/current-revision binding, cancellation from owned durable `unknown-running`, ownership retention through cancellation ambiguity, 5 new red-green regressions, and canonical dependency reconciliation. Fresh close replay passed 63 trusted-local and 283 total tests, Ruff lint/format, configured and explicit strict mypy for 11 modules, locked-offline sync, source/wheel build and contents, and isolated wheel import/CLI/type-marker/target-binding smoke. | Commit `196dbbc` is now reconciled in the canonical history. The retained CAP-02B marker remained mode `0600` with SHA-256 `0567cd80dddba22b159932ce828648d1e5d1068513a3823bb0991824998dd344`; `firstmate/` remained ignored and untouched. No Codex execution, provider, auth/credential access, live target, system change, push, PR, or user-data deletion occurred. EVA-02 closes locally; only MS-02 and its downstream external or contingent decisions remain. |
 | 2026-08-05 EVA-03 interrupted-cleanup preflight and Execution Consent | Fresh inspection at clean `ee32d05cc824acfa5c7387544dd3aa82d2424e56`, visible fingerprint `572dccc24964df8947e50d1b53c8648187162b4fcb2ef692ad7532b6f84c7048`, 6,408 implementation lines, and a green 283-test baseline found one provider-free contradiction after EVA-02: cleanup validates the exact private set before deletion, but a failure after the first successful unlink leaves no durable cleanup intent, so fresh reload rejects the partial directory and cannot finish the already-authorized narrow cleanup. | The latest delegation authorizes the smallest test-first local repair, adversarial proof, canonical documentation, verification, and local commits. It may add only a durable phase inside the existing identity-recorded session and exact resumption of the three run-owned files or final empty directory. It prohibits broader deletion, recursive cleanup, repository/provider data deletion, live/provider/auth/credential use, CAP-02B replay, push/PR, system changes, `firstmate/`, or a fabricated MS-02 judgment. |
 | 2026-08-05 EVA-03 independent safety review correction | A separate read-only review proved that an empty directory alone cannot establish prior cleanup intent: it can also result from pre-session interruption, outside deletion, or replacement of the original directory. The first red test then proved that immediate remove/recreate can reuse the same device/inode. Accepting either signal alone would bypass the missing-evidence and replacement gates. | Before unlinking, enrich only the already-retained consumption marker with cleanup authorization bound to the exact run-directory device/inode and the private root's directory-change identity, in addition to the session phase. File unlinks inside the run do not change that parent token; removing/recreating the run directory does. Empty recovery must match both. This is an evidence-driven correction to the initial no-marker-mutation assumption; it adds no file, path, deletion target, provider/live authority, or recursive behavior. |
+| 2026-08-05 EVA-03 provider-free close | Plan commit `0b87907` froze interrupted-cleanup recovery; review-correction commits `9e8eb35` and `1b215ba` bind empty recovery to the exact run directory and private-root change identity after red tests disproved weaker evidence; implementation/evidence commit `a44c7b0` records durable cleanup authorization, exact restart, adversarial refusals, stopped-process descriptor closure, and canonical/operator wording. Fresh replay passed 73 trusted-local and 293 total warnings-as-errors tests, full Ruff lint/format, configured strict mypy for 11 modules, locked-offline sync, source/wheel build and contents, and isolated wheel import/CLI/type-marker smoke. One independent read-only review and its focused re-review found no remaining Critical or Important defect. | The retained CAP-02B marker remained mode `0600` with SHA-256 `0567cd80dddba22b159932ce828648d1e5d1068513a3823bb0991824998dd344`; `firstmate/` remained ignored and untouched. No installed Codex execution, provider, auth/credential access, live target, system change, user-data deletion, push, or PR occurred. EVA-03 closes provider-free; only the MS-02 human product judgment and its downstream external or contingent decisions remain. |
 
 The historical repository cannot prove which pre-Program control or Execution
 Consent governed the original bootstrap. This record does not rewrite or
@@ -409,7 +410,7 @@ the fixed FS-01 fixture route, not a completed Second Mate Program or product.
 | CAP-02C: Dormant Codex CLI process adapter | Coordinator-side DIR-02 through DIR-05; no provider, target, usability, or containment claim | `completed provider-free` | A library-only real-process boundary binds one resolved target root/current Git revision plus executable/version/help/model/prompt/environment/argv before probes or activation consumption. It streams JSONL and private stderr, resists executable replacement, cancels exact owned process groups from `running` or `unknown-running`, retains available tail and ownership through ambiguity, and preserves no-retry recovery. Temporary Git repositories and fake executables supply all process evidence; no CLI route or real provider call exists. |
 | EVA-01: Evidence-claim and lifecycle hardening | Truthful evidence classification plus coordinator-side DIR-02 and DIR-04 | `completed provider-free` | Every current status and checked readiness claim is classified as reproducible, retained, human-authority, structural, non-replayable, or open. Red-green repairs now preserve active/ambiguous forensics, minimize `skill_search`, and make configured package typing plus wheel metadata executable. |
 | EVA-02: Remaining-plan and target/recovery hardening | Truthful dependency closure plus coordinator-side DIR-02 and DIR-04 | `completed provider-free` | The dormant adapter now binds one resolved target root, independently recomputes Git HEAD/fingerprint before local probes or activation consumption, cancels an exact still-owned process from the latest durable `unknown-running` state, and retains ownership if cancellation itself is ambiguous. Every still-open readiness item is classified without advancing an external gate. |
-| EVA-03: Interrupted exact-cleanup recovery | Coordinator-side DIR-02 and DIR-04; no provider, target, or containment claim | `active provider-free` | Prove that exact private cleanup records durable intent before the first unlink and can resume only its identity-recorded remaining files or final empty run directory after interruption, without widening cleanup authority or adding a new artifact type. |
+| EVA-03: Interrupted exact-cleanup recovery | Coordinator-side DIR-02 and DIR-04; no provider, target, or containment claim | `completed provider-free` | Exact cleanup now persists session intent plus directory-bound authorization before unlink, resumes only identity-recorded remaining artifacts or the same empty directory, rejects absent intent/authorization, artifact/directory replacement including inode reuse, and unexpected entries, and never widens the three-file deletion boundary. |
 | MS-02: Usable manually supervised trusted-local coordinator | One-provider direct-route scope with explicit trusted-local residual risk | `blocked on human product check` | CAP-02B supplies one historically closed real packet with partial retained evidence, and CAP-02C supplies the dormant process adapter. The human must still judge whether that record plus this unactivated adapter boundary make observability, evidence, recovery, cleanup, and residual risk usable and fitting D-01, or whether one newly authorized adapter exercise is required. Full DIR-02 enforcement against executor overreach or hostile repository content remains unproved. |
 | SBOX-01: Sandboxed hardening/deployment path | Strengthens DIR-02 and operational security evidence without changing the coordinator contract | `deferred` | Implement only when deployment, repository trust, data sensitivity, or pilot evidence requires containment. Qualify filesystem, environment, credential, network, optional-capability, cancellation, and cleanup behavior in the actual environment; failure must not downgrade to trusted-local automatically. |
 | PILOT-SELECT-01: Medium pilot target and request | Enables pilot-scoped DIR-01 through DIR-06 evidence | `blocked` | MS-02 plus a baseline-known external target, approved Direction/route, bounded data authority, and separate pilot consent. Select it before CAP-03 so Map/Foundation behavior is earned by the real pilot. |
@@ -423,8 +424,8 @@ prove the unobserved qualities or the whole Direction. MS-02 or MS-03 must not
 declare the whole Direction proven without evidence for the actual completion
 claim.
 
-CAP-02C, EVA-01, and EVA-02 are complete; EVA-03 is an active provider-free
-recovery audit that does not change the product candidate order: MS-02,
+CAP-02C and EVA-01 through EVA-03 are complete provider-free. No repository-only
+packet remains selected before the product candidate order: MS-02,
 PILOT-SELECT-01, CAP-03, then MS-03. SBOX-01 is a separate deferred
 hardening/deployment path and may be pulled forward only by an explicit trust,
 data, deployment, or pilot need. The Map changes only from evidence or an
@@ -855,7 +856,7 @@ locally. It adds no CLI dispatch route, contacts no provider, reuses no CAP-02B
 authority, closes no MS-02 or pilot gate, changes no system configuration or
 user data, does not touch `firstmate/`, and does not push or open a PR.
 
-### Active frontier — EVA-03 interrupted exact-cleanup recovery
+### Completed frontier — EVA-03 interrupted exact-cleanup recovery
 
 **Outcome.** Make an interrupted exact-private-artifact cleanup recoverable
 without broadening what Second Mate may delete or treating missing evidence as
@@ -892,6 +893,20 @@ empty pre-session directory and an empty replacement directory are refused,
 and that cleanup interrupted before the first unlink or with only the session
 remaining can resume without widening authority.
 
+**Result.** Plan commit `0b87907`, safety-correction commits `9e8eb35` and
+`1b215ba`, and implementation/evidence commit `a44c7b0` close the packet. Ten
+interruption/adversarial cases prove fresh recovery before any unlink, after
+one unlink, with only the session remaining, and after final-directory failure;
+they also refuse absent authorization, missing intent/session, unexpected or
+replaced artifacts, and an empty replacement even when run-directory inode
+reuse is simulated. A warnings-as-errors audit separately exposed and repaired
+a stopped-process stdout leak when cancellation-drain setup fails. Final
+evidence passed 73 trusted-local and 293 total tests, full Ruff lint/format,
+strict mypy for 11 modules, locked-offline sync, source/wheel build and
+contents, isolated wheel import/CLI/type-marker smoke, and one independent
+read-only review plus focused re-review. The implementation inventory is 6,672
+handwritten Python lines excluding tests.
+
 **Stop.** Update only the trusted-local coordinator, its focused tests, and the
 canonical/operator wording required for truthful close, then commit locally.
 Do not add recursive deletion, a cleanup CLI, provider/session deletion,
@@ -915,7 +930,7 @@ system changes, `firstmate/`, push, PR, or MS-02 judgment.
   complete, DIR-INTAKE-01 is locally complete, and TLX-01 explicitly selects
   the initial trusted-local mode. PRV-01 and CAP-02B are historically closed
   for one consumed run with partial independent evidence retained; CAP-02C,
-  EVA-01, and EVA-02 are proved provider-free. The next
+  EVA-01, EVA-02, and EVA-03 are proved provider-free. The next
   planning boundary is the MS-02 human product check; it authorizes no second
   provider run, credential/account change, target mutation, or pilot.
 - **Trusted-local activation-ready:** CAP-02A is independently proved offline.

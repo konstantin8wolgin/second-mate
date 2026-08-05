@@ -4,9 +4,8 @@ Status: canonical readiness checklist; POL-01 is narrowly selected, the
 verified FS-01 baseline is canonically adopted, CAP-01 and MS-01 are complete,
 DIR-INTAKE-01 and CAP-02A are implemented and locally verified, PRV-01 plus
 CAP-02B are historically closed for one consumed run with only partial
-independent evidence retained, and CAP-02C plus EVA-01/EVA-02 are reproducible
-without a provider; EVA-03 has a verified implementation awaiting canonical
-close, and MS-02 remains blocked
+independent evidence retained, and CAP-02C plus EVA-01/EVA-02/EVA-03 are
+reproducible without a provider; MS-02 remains blocked
 on the human product check
 
 This checklist records gates and observable readiness. It does not assign tasks, define a backlog, impose ordering beyond the workflow's authority gates, or recreate a Milestone Spine.
@@ -88,7 +87,7 @@ for a provider-free implementation without first receiving its named trigger.
 - [x] **I + H** — Git retains basis `e46c6dc82df54e16ecd39d6ab826c6146d401739`; its recorded consent is limited to the four status documents.
 - [x] **H** — The selected narrow envelope permits no new Validation or Foundation expansion; each later packet remains separately gated.
 - [x] **R within the coordinator boundary** — FS-01 and trusted-local guards refuse mismatched authority. Unsandboxed executors are not technically contained after dispatch.
-- [x] **R** — The current handwritten implementation-Python inventory is 6,665 lines excluding tests, within the 4,000–9,000 scope-pressure range. This rough count proves no broader readiness.
+- [x] **R** — The current handwritten implementation-Python inventory is 6,672 lines excluding tests, within the 4,000–9,000 scope-pressure range. This rough count proves no broader readiness.
 - [x] **S** — Dependency/import and tracked-file inspection finds no FirstMate or Knowless workflow dependency.
 - [x] **I** — The nested `firstmate/` checkout is currently excluded only by local `.git/info/exclude`; it is untracked, untouched, and non-portable.
 - [x] **H** — The roadmap-reconciliation grant covered only that local boundary correction and its two canonical documents.
@@ -128,13 +127,13 @@ for a provider-free implementation without first receiving its named trigger.
 - [ ] An independent Sol Ultra Challenger checks coverage, product meaning, Foundation fit, order, assumptions, proof, and packet breadth.
 - [x] **H** — The human approved the initial Foundation route only, not the later staircase or mutation.
 - [x] **H** — The human approved the exact test-first DIR-INTAKE-01 plan before its bounded mutation.
-- [x] **S** — No packet is currently `ready`; active EVA-03 is detailed and the next product step after its canonical close remains the undetailed MS-02 human gate.
+- [x] **S** — No packet is currently `ready`; completed EVA-03 is detailed and the next product step remains the undetailed MS-02 human gate.
 - [x] **R + S** — Runtime state and the Map keep route status distinct from binding Direction coverage.
 - [x] **S** — The Map contains no full backlog, dependency graph, universal task schema, or Milestone Spine.
 
 ## Packet execution and close
 
-- [x] **S** — No packet is currently `ready`; active EVA-03 has one bounded recovery outcome, named red-green proof, adversarial refusal coverage, and explicit stop conditions.
+- [x] **S** — No packet is currently `ready`; completed EVA-03 has one bounded recovery outcome, named red-green proof, adversarial refusal coverage, and explicit stop conditions.
 - [x] **R + S, packet-scoped** — Executable preflight resolves the repository/instruction/basis fields it owns; EVA-02 inspected every remaining Program dependency and EVA-03 independently replayed the recovery/evidence boundary. This is not a universal automated preflight claim.
 - [ ] User-facing bugs are reproduced end to end before the fix and replayed after it.
 - [ ] The working model may plan, diagnose, implement, test, and iterate freely inside the contract.
