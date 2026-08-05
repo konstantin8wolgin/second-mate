@@ -33,6 +33,7 @@ class RecordingControlPlane:
 class IdleOfflineProcess:
     pid = 4242
     start_token = "mock-process-start-1"
+    manages_control_output = False
 
     def read_chunk(self) -> bytes | None:
         return None
@@ -72,6 +73,7 @@ class AmbiguousLaunchControlPlane:
 class ScriptedOfflineProcess:
     pid = 8484
     start_token = "mock-process-start-2"
+    manages_control_output = False
 
     def __init__(self, chunks: list[bytes], exit_code: int) -> None:
         self._chunks = list(chunks)
@@ -329,6 +331,8 @@ def test_matching_activation_creates_exact_private_run_envelope_and_launches_moc
         activation_id="run-001",
         repository=repository.resolve(strict=True),
         transcript_path=private_root / "run-001" / "transcript.jsonl",
+        control_path=private_root / "run-001" / "control.tmp",
+        control_identity=run.artifact_identities["control.tmp"],
     )
 
     run_directory = private_root / "run-001"

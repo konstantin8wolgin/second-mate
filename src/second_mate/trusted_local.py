@@ -35,18 +35,21 @@ class TrustedLocalBoundaryError(RuntimeError):
 
 @dataclass(frozen=True, slots=True)
 class OfflineLaunchRequest:
-    """The only request CAP-02A can pass to its injected offline control plane."""
+    """The exact private paths a trusted-local control plane may receive."""
 
     activation_id: str
     repository: Path
     transcript_path: Path
+    control_path: Path
+    control_identity: tuple[int, int]
 
 
 class OfflineProcess(Protocol):
-    """A mock process surface; CAP-02A has no production subprocess implementation."""
+    """The process surface consumed by the trusted-local lifecycle."""
 
     pid: int
     start_token: str
+    manages_control_output: bool
 
     def read_chunk(self) -> bytes | None:
         """Return the next JSONL byte chunk, or ``None`` at end of stream."""
@@ -661,6 +664,11 @@ class OfflineTrustedLocalAdapter:
         self._processes: dict[str, OfflineProcess] = {}
         self._bases: dict[str, TrustedLocalBasis] = {}
 
+    def _validate_control_plane(self, *, basis: TrustedLocalBasis, repository: Path) -> None:
+        del basis, repository
+        if self._control_plane.offline is not True:
+            raise TrustedLocalBoundaryError("CAP-02A requires an explicitly offline control plane")
+
     def start(
         self,
         *,
@@ -690,11 +698,10 @@ class OfflineTrustedLocalAdapter:
                 raise TrustedLocalAuthorityError(
                     f"trusted-local activation {label} does not match the frozen basis"
                 )
-        if self._control_plane.offline is not True:
-            raise TrustedLocalBoundaryError("CAP-02A requires an explicitly offline control plane")
         repository_path = _real_directory(repository, "trusted-local repository")
         private_root_path = _private_directory(private_root, "trusted-local private root")
         _validate_disjoint(repository_path, private_root_path)
+        self._validate_control_plane(basis=basis, repository=repository_path)
         _claim_activation(private_root_path, activation.id, basis)
 
         run_directory = private_root_path / activation.id
@@ -715,6 +722,8 @@ class OfflineTrustedLocalAdapter:
             activation_id=activation.id,
             repository=repository_path,
             transcript_path=run_directory / "transcript.jsonl",
+            control_path=run_directory / "control.tmp",
+            control_identity=identities["control.tmp"],
         )
         launching = TrustedLocalRun(
             activation_id=activation.id,
@@ -880,11 +889,12 @@ class OfflineTrustedLocalAdapter:
                         run = replace(run, session_id=lifecycle.session_id)
                         self._persist(run)
                     cursor = newline + 1
-                _write_identified_file(
-                    control_path,
-                    run.artifact_identities["control.tmp"],
-                    buffer,
-                )
+                if not process.manages_control_output:
+                    _write_identified_file(
+                        control_path,
+                        run.artifact_identities["control.tmp"],
+                        buffer,
+                    )
             if buffer or discarding_oversized_line:
                 lifecycle.invalid = True
             exit_code = process.wait()

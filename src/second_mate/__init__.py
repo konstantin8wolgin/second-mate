@@ -34,11 +34,17 @@ from second_mate.trusted_local import (
     TrustedLocalBoundaryError,
     TrustedLocalRun,
 )
+from second_mate.trusted_local_codex import (
+    CodexCliProviderBoundary,
+    CodexCliTrustedLocalAdapter,
+)
 
 __all__ = [
     "ApprovedDirectionVersion",
     "AuthorityError",
     "CloseFailure",
+    "CodexCliProviderBoundary",
+    "CodexCliTrustedLocalAdapter",
     "DirectionCandidateEnvelope",
     "DirectionConflictError",
     "Draft",
