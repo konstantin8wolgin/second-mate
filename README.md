@@ -20,7 +20,9 @@ cancellation drain cannot be prepared, without widening deletion or live-run
 authority. CAP-02B previously
 manually enveloped exactly one consumed real Codex CLI run. See the
 [Direction operator guide](docs/second-mate/DIRECTION-OPERATOR.md) and
-[trusted-local contract](docs/second-mate/TRUSTED-LOCAL-OPERATOR.md).
+[trusted-local contract](docs/second-mate/TRUSTED-LOCAL-OPERATOR.md). The
+[MS-02 walkthrough](docs/second-mate/MS-02-OPERATOR-WALKTHROUGH.md) provides a
+provider-free hands-on product review without activating the dormant adapter.
 
 Those local capabilities are not the whole intended workflow. The dormant
 adapter has no current provider/target activation or real-run evidence and the

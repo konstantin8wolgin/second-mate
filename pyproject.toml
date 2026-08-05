@@ -31,6 +31,7 @@ include = [
   "/README.md",
   "/docs/second-mate/DIRECTION-OPERATOR.md",
   "/docs/second-mate/FS-01-OPERATOR.md",
+  "/docs/second-mate/MS-02-OPERATOR-WALKTHROUGH.md",
   "/docs/second-mate/TRUSTED-LOCAL-OPERATOR.md",
   "/pyproject.toml",
   "/src/second_mate",

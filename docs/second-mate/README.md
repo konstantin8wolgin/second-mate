@@ -17,7 +17,10 @@ operated manually and does not self-orchestrate. The
 [Direction operator guide](DIRECTION-OPERATOR.md),
 [FS-01 operator guide](FS-01-OPERATOR.md), and
 [trusted-local operator contract](TRUSTED-LOCAL-OPERATOR.md) describe those
-boundaries. CAP-02A remains the injected-mock reference. CAP-02C adds an
+boundaries. The [MS-02 usability walkthrough](MS-02-OPERATOR-WALKTHROUGH.md)
+combines the safe fixture journey, D-01 questions, and the historical-versus-
+dormant evidence distinction without activating a provider. CAP-02A remains
+the injected-mock reference. CAP-02C adds an
 activation-gated subprocess implementation but no CLI route; every test used a
 temporary fake executable and made no provider call. CAP-02B called one exact
 local Codex CLI host through a private manual envelope whose activation is now
