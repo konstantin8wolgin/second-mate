@@ -62,6 +62,7 @@ separate records even when supplied in one instruction.
 | 2026-08-05 EVA-03 interrupted-cleanup preflight and Execution Consent | Fresh inspection at clean `ee32d05cc824acfa5c7387544dd3aa82d2424e56`, visible fingerprint `572dccc24964df8947e50d1b53c8648187162b4fcb2ef692ad7532b6f84c7048`, 6,408 implementation lines, and a green 283-test baseline found one provider-free contradiction after EVA-02: cleanup validates the exact private set before deletion, but a failure after the first successful unlink leaves no durable cleanup intent, so fresh reload rejects the partial directory and cannot finish the already-authorized narrow cleanup. | The latest delegation authorizes the smallest test-first local repair, adversarial proof, canonical documentation, verification, and local commits. It may add only a durable phase inside the existing identity-recorded session and exact resumption of the three run-owned files or final empty directory. It prohibits broader deletion, recursive cleanup, repository/provider data deletion, live/provider/auth/credential use, CAP-02B replay, push/PR, system changes, `firstmate/`, or a fabricated MS-02 judgment. |
 | 2026-08-05 EVA-03 independent safety review correction | A separate read-only review proved that an empty directory alone cannot establish prior cleanup intent: it can also result from pre-session interruption, outside deletion, or replacement of the original directory. The first red test then proved that immediate remove/recreate can reuse the same device/inode. Accepting either signal alone would bypass the missing-evidence and replacement gates. | Before unlinking, enrich only the already-retained consumption marker with cleanup authorization bound to the exact run-directory device/inode and the private root's directory-change identity, in addition to the session phase. File unlinks inside the run do not change that parent token; removing/recreating the run directory does. Empty recovery must match both. This is an evidence-driven correction to the initial no-marker-mutation assumption; it adds no file, path, deletion target, provider/live authority, or recursive behavior. |
 | 2026-08-05 EVA-03 provider-free close | Plan commit `0b87907` froze interrupted-cleanup recovery; review-correction commits `9e8eb35` and `1b215ba` bind empty recovery to the exact run directory and private-root change identity after red tests disproved weaker evidence; implementation/evidence commit `a44c7b0` records durable cleanup authorization, exact restart, adversarial refusals, stopped-process descriptor closure, and canonical/operator wording. Fresh replay passed 73 trusted-local and 293 total warnings-as-errors tests, full Ruff lint/format, configured strict mypy for 11 modules, locked-offline sync, source/wheel build and contents, and isolated wheel import/CLI/type-marker smoke. One independent read-only review and its focused re-review found no remaining Critical or Important defect. | The retained CAP-02B marker remained mode `0600` with SHA-256 `0567cd80dddba22b159932ce828648d1e5d1068513a3823bb0991824998dd344`; `firstmate/` remained ignored and untouched. No installed Codex execution, provider, auth/credential access, live target, system change, user-data deletion, push, or PR occurred. EVA-03 closes provider-free; only the MS-02 human product judgment and its downstream external or contingent decisions remain. |
+| 2026-08-05 EVA-04 cleanup-record crash-safety preflight and Execution Consent | Fresh inspection at clean `52db12f2b585b39c8b40610b1d500ef56f5763c4` replayed all 293 warnings-as-errors tests and the package gates, then an independent provider-free audit reproduced interruption while persisting both cleanup records. The current in-place truncate/write can leave `session.json` or the retained consumption marker as invalid partial JSON before any unlink, so fresh reload fails closed but cannot resume the already-authorized exact cleanup. | The latest delegation authorizes plan-consistent provider-free gap repair, adversarial tests, canonical documentation, verification, and local commits. EVA-04 may change only persistence and parsing of the existing identity-recorded session and marker, preserving their inodes, exact artifact names, cleanup boundary, parent/run-directory identity checks, strict complete-record validation, and legacy single-document compatibility. It prohibits new deletion targets, provider/live/auth/credential use, CAP-02B replay, push/PR, system changes, `firstmate/`, or a fabricated MS-02 judgment. |
 
 The historical repository cannot prove which pre-Program control or Execution
 Consent governed the original bootstrap. This record does not rewrite or
@@ -912,6 +913,40 @@ canonical/operator wording required for truthful close, then commit locally.
 Do not add recursive deletion, a cleanup CLI, provider/session deletion,
 repository rollback, dispatch, credentials, network use, CAP-02B replay,
 system changes, `firstmate/`, push, PR, or MS-02 judgment.
+
+### Active frontier — EVA-04 crash-safe cleanup-record persistence
+
+**Outcome.** Preserve the last complete session and consumption-marker record
+when interruption occurs during cleanup-intent or cleanup-authorization
+persistence, so a fresh adapter can safely retry before any unlink without
+weakening corruption or identity refusal.
+
+**Record protocol.** Keep the original deterministic strict-JSON document as
+the backward-compatible first record. Cleanup-only updates append a bounded
+versioned frame containing an exact byte length, SHA-256 digest, and another
+strict-JSON document to the same already-validated `0600` inode, then `fsync`
+that inode. A reader selects only the latest complete, digest-valid, strict
+record. It may ignore only a structurally exact incomplete final frame; a
+complete malformed frame, bad digest, non-frame suffix, unsafe inode, or
+oversized record fails closed. Before retry, truncate only the incomplete tail
+back to the last validated record, `fsync`, and append again. Add no sidecar,
+temporary path, artifact name, recursive operation, or provider/session effect.
+
+**Test-first proof.** First inject partial `os.write` interruption against the
+cleanup-pending session append and the marker-authorization append and prove
+that fresh load currently fails on invalid JSON. The minimum repair must make
+both paths reloadable and exactly cleanable while preserving the consumed
+marker and unrelated sentinels. Add adversarial cases proving that a complete
+bad-digest frame and a non-frame suffix remain refusals, then replay the full
+trusted-local, warnings-as-errors, lint, format, strict-type, locked-offline,
+build/package-content, and isolated-wheel gates.
+
+**Stop.** Update only `trusted_local.py`, its focused tests, and the canonical
+and trusted-local operator wording needed for a truthful close, then commit
+locally. Do not replace identity-bound files, add cleanup artifacts or paths,
+weaken complete-record validation, contact a provider, inspect credentials,
+reuse CAP-02B, touch `firstmate/`, change the system, push, open a PR, or close
+MS-02.
 
 ## 8. Traceability and readiness
 
