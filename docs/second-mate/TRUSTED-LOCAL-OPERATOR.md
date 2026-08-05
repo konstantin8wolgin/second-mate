@@ -1,9 +1,10 @@
 # Trusted-local execution operator contract
 
 Status: canonical activation gate plus CAP-02A offline/mock reference,
-CAP-02C dormant process adapter, and one historically closed CAP-02B run with
-partial independent evidence retained; no trusted-local CLI dispatch command is
-implemented
+CAP-02C dormant process adapter, EVA-03/EVA-04 exact-cleanup recovery and
+crash-safe record persistence, and one historically closed CAP-02B run with
+partial independent evidence retained; no trusted-local CLI dispatch command
+is implemented
 
 This document defines Second Mate's first planned live execution mode. It is a
 manual, single-run mode for a human-selected local machine, operating-system
@@ -50,6 +51,13 @@ intent; if all files were already removed, it may remove only the same
 identity-bound empty run directory under the unchanged private root. A missing
 authorization/session/intent, directory or artifact replacement, or unexpected
 entry remains a refusal. Cleanup never deletes the consumption marker.
+Cleanup-only session and marker updates append bounded, digest-checked frames
+to the same `0600` files rather than replacing their identity. The original
+strict-JSON document remains the backward-compatible first record. Reload uses
+the last complete valid record, may recover only an exact viable incomplete
+final frame, and rejects complete corruption, impossible or oversized lengths,
+and non-frame suffixes. Before any retry unlink, it re-`fsync`s visible cleanup
+intent and authorization, including after an ambiguous earlier `fsync`.
 
 This is executable evidence for the coordinator-side contract only. It is not
 provider readiness, containment, process-group cancellation proof,
@@ -310,6 +318,14 @@ or any unexpected entry fails closed without deleting more. Any unrelated
 entry creation or removal in that private root after authorization also changes
 the parent token and conservatively blocks automatic cleanup recovery; the
 operator must inspect that state rather than bypass the refusal.
+The durable session and marker are record streams after cleanup persistence
+begins, not single JSON documents for manual rewriting. Each retains a legacy
+strict-JSON base followed only by bounded, digest-checked same-inode frames.
+The adapter may discard only an exact viable incomplete final frame, then
+re-`fsync` the visible cleanup authority before unlink; complete corruption,
+impossible lengths, or any other suffix remains a refusal. Operators must not
+manually truncate, repair, replace, or recreate these files to bypass that
+refusal. Inspect the failure and preserve the artifacts for authorized recovery.
 Repository or external recovery always requires its own evidence and authority.
 The one-shot activation-consumption marker is authority history, not disposable
 session/transcript/temp state, and remains so cleanup cannot make the grant

@@ -11,11 +11,13 @@ evidence, durable continuation, and recoverable clean close. CAP-02A adds an
 injected mock control-plane path. CAP-02C adds an activation-gated real-process
 library boundary that binds one resolved target and current Git revision,
 proved only with temporary Git repositories and fake executables; it has never
-called a provider and exposes no CLI dispatch route. EVA-03 makes its exact
-private-artifact cleanup restart-safe by binding durable cleanup authorization
-to the run-directory and private-root identities; it also closes stopped-process
-stdout when a cancellation drain cannot be prepared, without widening deletion
-or live-run authority. CAP-02B previously
+called a provider and exposes no CLI dispatch route. EVA-03 binds exact-cleanup
+authorization to the run-directory and private-root identities; EVA-04 then
+closes the cleanup-record persistence crash window with bounded, digest-checked
+same-inode records, strict complete-corruption refusal, and durable retry
+revalidation. The recovery audits also close stopped-process stdout when a
+cancellation drain cannot be prepared, without widening deletion or live-run
+authority. CAP-02B previously
 manually enveloped exactly one consumed real Codex CLI run. See the
 [Direction operator guide](docs/second-mate/DIRECTION-OPERATOR.md) and
 [trusted-local contract](docs/second-mate/TRUSTED-LOCAL-OPERATOR.md).

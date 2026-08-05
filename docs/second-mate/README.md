@@ -2,7 +2,7 @@
 
 Status: canonical design; POL-01 narrowly selected, the verified FS-01
 Foundation baseline canonically adopted, CAP-01 and MS-01 complete, and
-DIR-INTAKE-01, CAP-02A, CAP-02C, EVA-01, EVA-02, and EVA-03 implemented and
+DIR-INTAKE-01, CAP-02A, CAP-02C, EVA-01, EVA-02, EVA-03, and EVA-04 implemented and
 locally verified; PRV-01 and CAP-02B are historically closed for one consumed
 run with partial independent evidence retained, while MS-02 still needs the
 human product check
@@ -37,7 +37,7 @@ every remaining unchecked claim to its exact contingent, human, provider,
 sandbox, target, or pilot dependency. These are provider-free coordinator
 hardening only.
 
-EVA-03 makes that exact cleanup restart-safe without widening deletion
+EVA-03 makes interrupted exact cleanup resumable without widening deletion
 authority. Before the first unlink it persists `cleanup-pending` in the
 identity-recorded session and records cleanup authorization in the retained
 consumption marker, bound to the run-directory identity and private-root change
@@ -47,6 +47,15 @@ Missing authorization/intent/session, directory or artifact replacement, and
 unexpected entries still fail closed. The same audit also closes a stopped CAP-02C
 process's stdout when nonblocking cancellation-drain setup fails, while
 retaining the durable `unknown-running` result.
+
+EVA-04 closes the crash window while persisting those two cleanup records.
+Cleanup-only updates append bounded, digest-checked frames to the same
+identity-recorded files, preserving their inodes and legacy base documents. A
+fresh adapter accepts only the last complete valid record plus an exact viable
+incomplete final frame, rejects complete corruption and impossible lengths,
+uses linearly bounded parsing, and re-syncs visible cleanup authority before
+unlink after an ambiguous prior write. This remains provider-free coordinator
+hardening and does not widen cleanup or live-run authority.
 
 ## Authority and sources
 
