@@ -1,7 +1,8 @@
 # Trusted-local execution operator contract
 
-Status: canonical activation gate plus CAP-02A offline/mock reference and one
-consumed CAP-02B manual proof; no production live adapter command is implemented
+Status: canonical activation gate plus CAP-02A offline/mock reference,
+CAP-02C dormant process adapter, and one consumed CAP-02B manual proof; no
+trusted-local CLI dispatch command is implemented
 
 This document defines Second Mate's first planned live execution mode. It is a
 manual, single-run mode for a human-selected local machine, operating-system
@@ -70,6 +71,56 @@ production control-plane implementation or reusable Second Mate command. Its
 authority is exhausted: do not resume, retry, or redispatch it. A future run
 needs a new current preflight and activation; MS-02 additionally requires the
 human product check described in the Program.
+
+## Dormant CAP-02C process adapter
+
+CAP-02C adds public `CodexCliProviderBoundary` and
+`CodexCliTrustedLocalAdapter` library types. It deliberately adds no
+`second-mate` CLI subcommand. The subprocess control plane is private to the
+activation-validating adapter and one-shot, so the supported package entry
+cannot be used as a standalone launch shortcut.
+
+The immutable provider-boundary digest covers the absolute unaliased executable
+path and SHA-256, exact `--version` line and `exec --help` digest, model, prompt
+digest, sorted environment names and value digests, fixed command policy, and
+bounded interrupt/terminate timings. Raw prompt and environment values remain
+memory-only. Before activation consumption, the adapter validates the private
+root and target boundary, refuses target-local `.codex/config.toml`, hashes the
+opened executable, and runs only its bound local version/help probes. Launch
+reopens and re-hashes the executable and executes that verified descriptor, so
+replacement between qualification and launch becomes `unknown-running` rather
+than dispatching a different path.
+
+The fixed command requests strict config, JSONL, ephemeral CLI session storage,
+ignored user config and exec-policy rules, empty MCP configuration, no color,
+an exact model and working directory, stdin prompt input, explicit unsandboxed
+execution, and disabled app/browser/computer/hook/plugin/subagent/web-related
+features. These switches are capability minimization, not containment: the
+agent, shell commands, trusted repository instructions, provider, and network
+still have the broad trusted-local exposure described below. A future real
+boundary should name the installed native Codex binary itself, not a package-
+manager symlink or wrapper that could select a second unbound executable.
+
+The process starts in its own Linux session/process group and records a boot ID
+plus `/proc` start-time token. Stdout feeds the existing strict bounded JSONL
+lifecycle; stderr appends only to the identity-recorded private `control.tmp`.
+Cancellation verifies the process identity, sends bounded `SIGINT`, `SIGTERM`,
+then `SIGKILL`, non-blockingly retains the available transcript tail, and still
+persists `unknown-running`. Reload never reattaches or retries. Exact cleanup
+remains the CAP-02A identity-bound three-file cleanup and retains the consumed
+activation marker.
+
+All CAP-02C process-execution evidence used temporary local fake executables. Tests
+proved binary/probe/runtime drift refusal, target-config refusal, replacement
+resistance, exact argv/prompt/environment, split JSONL, private stderr,
+one-shot consumption, owned-group cancellation including a child process,
+transcript-tail retention, restart ambiguity, and sentinel-safe cleanup. The
+installed CLI supplied only local `--version`, `exec --help`, and feature-list
+inventory; no `codex exec`, authentication inspection, provider/network call,
+or live target was used. Consequently CAP-02C is reusable preparation, not
+current provider readiness or activation. A real use still needs every
+preflight and consent below, including a newly selected exact model, native
+binary, auth/data/retention boundary, target, and one-shot activation.
 
 ## What trusted-local means
 

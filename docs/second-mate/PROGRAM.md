@@ -2,10 +2,9 @@
 
 Status: candidate initial Program; POL-01 narrowly selected, FS-01 canonically
 adopted as the Foundation baseline, CAP-01 and MS-01 complete, and
-DIR-INTAKE-01 and CAP-02A implemented and locally verified; PRV-01 and CAP-02B
-are complete for one consumed trusted-local proof run; CAP-02C is authorized as
-a provider-free dormant-adapter packet, while MS-02 awaits the human product
-check
+DIR-INTAKE-01, CAP-02A, and CAP-02C implemented and locally verified; PRV-01
+and CAP-02B are complete for one consumed trusted-local proof run, while MS-02
+awaits the human product check
 
 Date: 2026-08-03
 
@@ -342,9 +341,10 @@ technical repository evidence separately from the authority records in section
    TLX-01 now selects an unsandboxed trusted-local initial mode while SBOX-01
    preserves sandboxing as deferred hardening. CAP-02A completes the offline
    coordinator-side adapter proof. PRV-01 and CAP-02B later closed exactly one
-   manually enveloped real Codex proof without adding a production live adapter
-   or unlocking a pilot. MS-02 and later Map items remain blocked as shown
-   below. Direction coverage remains `still_remaining`.
+   manually enveloped real Codex proof. CAP-02C later added a dormant process
+   adapter without another provider call or pilot authority. MS-02 and later
+   Map items remain blocked as shown below. Direction coverage remains
+   `still_remaining`.
 
 The repository has therefore reached a truthful technical terminal state for
 the fixed FS-01 fixture route, not a completed Second Mate Program or product.
@@ -358,11 +358,11 @@ the fixed FS-01 fixture route, not a completed Second Mate Program or product.
 | DIR-INTAKE-01: Approved-Direction intake | DIR-01, DIR-02, and DIR-04; supports DIR-03 and DIR-05; constrained by DIR-06 | `completed` | Current-HEAD behavior now proves read-only preparation, exact separate Direction approval and ledger-write authority, immutable linear versions, stale/mismatched/open/pending/racing refusal, portable clone-readable history, shared FS-01 mutation coordination, recoverable atomic writes, and output consumed by `draft`. It adds no Rumble automation or provider path. |
 | TLX-01: Trusted-local initial execution decision | Preserves coordinator-side DIR-02 and DIR-04 behavior; supports DIR-03 and DIR-05; does not prove executor containment | `completed` | The human selected an unsandboxed trusted-local initial mode, explicitly accepted its broad local-machine limitation, and retained sandboxing as a later path. This design decision authorizes no implementation or run. |
 | PRV-01: One provider/host boundary | Enables DIR-03 and DIR-05 evidence; constrained by DIR-02, DIR-04, and DIR-06 | `completed for one proof` | CAP-02B selected local Codex CLI `0.146.0`, existing ChatGPT authentication/account controls, current public Second Mate data and target, normal provider/repository network access, ephemeral CLI storage, private-until-close transcript retention, exact-session/no-retry recovery, and `provider-billing-controls-only`. No API billing project or account setting changed. This boundary is consumed, not reusable. |
-| LIVE-BOUNDARY-01: Trusted-local live-direct and recovery contract | Coordinator-side DIR-02 through DIR-05; does not prove containment after dispatch | `completed offline; exercised once` | CAP-02A proves exact activation binding, private session/transcript/temp identity, strict bounded event parsing, cancellation, unknown-running recovery, one-owner/no-retry behavior, provider-independent evidence requirement, and cleanup restricted to exact private artifacts. CAP-02B exercised that contract once through a manual real-CLI envelope; the package still has no production live adapter. |
+| LIVE-BOUNDARY-01: Trusted-local live-direct and recovery contract | Coordinator-side DIR-02 through DIR-05; does not prove containment after dispatch | `completed offline; exercised once manually; reusable adapter proved with a fake` | CAP-02A proves exact activation binding, private session/transcript/temp identity, strict bounded event parsing, cancellation, unknown-running recovery, one-owner/no-retry behavior, provider-independent evidence requirement, and cleanup restricted to exact private artifacts. CAP-02B exercised that contract once through a manual real-CLI envelope. CAP-02C proves the reusable subprocess mechanics without a provider or real target. |
 | CAP-02A: Offline trusted-local adapter implementation | Coordinator-side DIR-01 through DIR-05; constrained by the trusted-local limitation and DIR-06 | `completed` | One offline-only library adapter over an injected mock local control plane proves activation/basis matching, streamed JSONL lifecycle, exact session binding, interruption/failure ambiguity, persistent private state, no provider-as-proof promotion, and non-recursive identity-bound cleanup while preserving FS-01. It supplies no sandbox, credential, provider, production process, network, live target, CAP-02B, or token-cap implementation. |
 | CAP-02B: One real trusted-local provider-owned direct run | Observed coordinator-side DIR-01 through DIR-05 only; no adversarial-containment claim | `completed once` | One consumed activation called the exact local Codex host against frozen public Second Mate HEAD, found and fixed one recovery-classification defect within two allowed paths, ended with a strict completed JSONL lifecycle, and passed independent final-revision, test, build, and exact-cleanup proof. Provider output was not treated as completion evidence; no outside-machine-effects claim is made; retry is prohibited. |
-| CAP-02C: Dormant Codex CLI process adapter | Coordinator-side DIR-02 through DIR-05; no provider, target, usability, or containment claim | `ready locally` | Add a library-only real-process boundary with exact binary/version/help/prompt/environment/argv binding, strict activation reuse, streamed JSONL and private stderr capture, owned process-group cancellation, and no-retry recovery. Prove it only against a temporary fake executable; expose no CLI route and make no real provider call. |
-| MS-02: Usable manually supervised trusted-local coordinator | One-provider direct-route scope with explicit trusted-local residual risk | `blocked on human product check` | CAP-02B supplies one technically closed real packet. The human must still judge whether the manual activation, observability, evidence, recovery, cleanup, and residual-risk experience is usable and fits D-01, including whether a production live adapter is required before this milestone can close. Full DIR-02 enforcement against executor overreach or hostile repository content remains unproved. |
+| CAP-02C: Dormant Codex CLI process adapter | Coordinator-side DIR-02 through DIR-05; no provider, target, usability, or containment claim | `completed provider-free` | A library-only real-process boundary now binds executable/version/help/model/prompt/environment/argv, reuses exact activation, streams JSONL and private stderr, resists executable replacement, owns bounded process-group cancellation, retains the cancellation transcript tail, and preserves no-retry recovery. Temporary fake executables supply all process evidence; no CLI route or real provider call exists. |
+| MS-02: Usable manually supervised trusted-local coordinator | One-provider direct-route scope with explicit trusted-local residual risk | `blocked on human product check` | CAP-02B supplies one technically closed real packet and CAP-02C supplies the formerly missing dormant process adapter. The human must still judge whether the manual proof plus this unactivated adapter boundary make observability, evidence, recovery, cleanup, and residual risk usable and fitting D-01, or whether one newly authorized adapter exercise is required. Full DIR-02 enforcement against executor overreach or hostile repository content remains unproved. |
 | SBOX-01: Sandboxed hardening/deployment path | Strengthens DIR-02 and operational security evidence without changing the coordinator contract | `deferred` | Implement only when deployment, repository trust, data sensitivity, or pilot evidence requires containment. Qualify filesystem, environment, credential, network, optional-capability, cancellation, and cleanup behavior in the actual environment; failure must not downgrade to trusted-local automatically. |
 | PILOT-SELECT-01: Medium pilot target and request | Enables pilot-scoped DIR-01 through DIR-06 evidence | `blocked` | MS-02 plus a baseline-known external target, approved Direction/route, bounded data authority, and separate pilot consent. Select it before CAP-03 so Map/Foundation behavior is earned by the real pilot. |
 | CAP-03: Foundation-route records and Map frontier | DIR-01 through DIR-05; constrained by DIR-06 | `blocked` | PILOT-SELECT-01 and the limited FS-01 Backbone; implement only the minimal Foundation evidence and Map behavior the selected pilot requires. |
@@ -375,9 +375,8 @@ prove the unobserved qualities or the whole Direction. MS-02 or MS-03 must not
 declare the whole Direction proven without evidence for the actual completion
 claim.
 
-CAP-02C is the only authorized local frontier while the independent MS-02
-product check remains open. After CAP-02C, the remaining candidate order is
-MS-02, PILOT-SELECT-01, CAP-03, then MS-03. SBOX-01 is a separate deferred
+CAP-02C is complete. The remaining candidate order is MS-02,
+PILOT-SELECT-01, CAP-03, then MS-03. SBOX-01 is a separate deferred
 hardening/deployment path and may be pulled forward only by an explicit trust,
 data, deployment, or pilot need. The Map changes only from evidence or an
 authorized Direction change. Distant candidates intentionally have no
@@ -609,7 +608,7 @@ reusable provider authority, close broader Direction coverage, or prove product
 usability. MS-02 now blocks on its required human product check; technical
 evidence cannot manufacture that judgment.
 
-### Ready frontier — CAP-02C dormant Codex CLI process adapter
+### Completed frontier — CAP-02C dormant Codex CLI process adapter
 
 **Outcome.** Prepare the smallest reusable trusted-local process path without
 calling a provider: from one exact CAP-02A activation and a matching immutable
@@ -659,10 +658,27 @@ finishes through the existing adapter; an uncooperative fake process is stopped
 through its owned group while the run stays `unknown-running`; reload cannot
 reattach or retry; exact cleanup preserves unrelated sentinels. No test or
 qualification may execute the installed Codex binary beyond the already
-recorded read-only help/version inventory, contact a provider, inspect auth, or
-use a real target. Preserve FS-01 and all existing trusted-local regressions,
+recorded read-only version/help/features inventory, contact a provider, inspect
+auth, or use a real target. Preserve FS-01 and all existing trusted-local regressions,
 then run the complete lint, format, type, test, frozen-environment, build,
 package-content, and isolated-install gates.
+
+**Result.** The package exports `CodexCliProviderBoundary` and
+`CodexCliTrustedLocalAdapter` while keeping the subprocess control plane
+private and adding no CLI route. Twelve focused tests prove authority/boundary
+refusal, exact local probes, prompt/environment drift, target-config refusal,
+descriptor-bound replacement resistance, real fake-process streaming and
+private stderr, one-shot activation, group cancellation with a child process,
+transcript-tail retention, restart-to-unknown, and sentinel-safe cleanup. All
+54 trusted-local tests and the complete 273-test repository suite pass. Ruff,
+strict mypy for eleven source files, offline locked-environment, source/wheel,
+package-content, and isolated wheel import/CLI smoke gates pass. Source is
+6,357 handwritten Python lines excluding tests, within the Program's scope
+pressure range. Commits `cad7f0b` and `041697b` record the frozen packet and
+test-first implementation. No `codex exec`, authentication inspection,
+credential use, provider/network call, real activation, live target, system
+configuration, `firstmate/` change, push, or PR occurred; the installed CLI was
+used only for local version/help/features inventory.
 
 **Stop.** Completion may update only the adapter source/exports, focused tests,
 and fitting Program/checklist/workflow/operator/package documentation, then
@@ -688,16 +704,17 @@ one-shot human activation.
 - **Planning-ready:** POL-01 is selected, the FS-01 adoption/CAP-01 record is
   complete, DIR-INTAKE-01 is locally complete, and TLX-01 explicitly selects
   the initial trusted-local mode. PRV-01 and CAP-02B are technically complete
-  for one consumed proof. The next planning boundary is the MS-02 human product
-  check; it authorizes no second provider run, credential/account change,
-  target mutation, or pilot.
+  for one consumed proof, and CAP-02C is proved provider-free. The next
+  planning boundary is the MS-02 human product check; it authorizes no second
+  provider run, credential/account change, target mutation, or pilot.
 - **Trusted-local activation-ready:** CAP-02A is independently proved offline,
   and CAP-02B satisfied this gate once for its exact provider, target, policies,
-  and activation. That activation is consumed. Every future run must re-resolve
-  the current host/version, authentication/account boundary, data and intended
-  network effect, spend boundary, retention, cancellation, continuation,
-  target, risk acknowledgment, and Execution Consent defined in
-  `TRUSTED-LOCAL-OPERATOR.md`.
+  and activation. CAP-02C now supplies reusable process mechanics only. The
+  CAP-02B activation is consumed, and CAP-02C has never been activated against
+  Codex. Every future run must re-resolve the current host/version/model,
+  authentication/account boundary, data and intended network effect, spend
+  boundary, retention, cancellation, continuation, target, risk acknowledgment,
+  and Execution Consent defined in `TRUSTED-LOCAL-OPERATOR.md`.
 - **Foundation-execution-ready:** the historical FS-01 implementation is not
   replayed as a new packet. The narrow envelope adopted FS-01 only; any new
   Validation or Foundation mutation or expansion needs its own current
@@ -733,14 +750,15 @@ requested. The CAP-02B activation is consumed and must not be retried, resumed,
 or redispatched. The next decision is the MS-02 human product check: whether the
 observed one-run manual activation, evidence visibility, recovery behavior,
 exact cleanup, and explicit trusted-local residual risk are usable and still
-fit D-01, and whether the absence of a production live adapter prevents MS-02
-from closing. Technical evidence cannot answer that product judgment.
+fit D-01 when paired with the now-implemented but unactivated CAP-02C process
+adapter. Technical evidence cannot answer that product judgment.
 
-The review should record one bounded outcome: either accept MS-02 only for the
-observed manual-envelope scope, or keep it open and name the concrete usability
-gap. If the missing production adapter is that gap, the next local packet may
-prepare and prove the adapter without another provider dispatch; the Program
-must not infer that choice from silence.
+The review should record one bounded outcome: either accept MS-02 for the
+observed manual-envelope plus dormant-adapter scope, or keep it open and name
+the concrete usability gap. If actual adapter operation is the remaining gap,
+that is a distinct future live dispatch and needs a new exact provider/target
+boundary, preflight, and one-shot activation; this Program does not authorize
+it.
 
 Until that check is recorded, PILOT-SELECT-01, CAP-03, and pilot work remain
 blocked. A later live run needs a new current provider/target boundary,
@@ -763,15 +781,17 @@ deployment, or other external work is authorized by this close.
 > historical evidence, not as code to merge or a source that elevates its
 > placeholder prompt. TLX-01 selects trusted-local unsandboxed execution only
 > through an exact per-run activation; read `TRUSTED-LOCAL-OPERATOR.md` and
-> preserve its limitations. CAP-02A is the offline product adapter, while
-> PRV-01 and CAP-02B are complete only for one consumed manually enveloped run.
-> Do not resume, retry, or redispatch that run or mistake it for a production
-> live adapter. SBOX-01 preserves sandboxing as deferred hardening and must
-> never silently downgrade if later requested. MS-02 is blocked on a real human
-> product check; do not manufacture it. Prepare only non-live prerequisites. Do
-> not probe or call a provider, inspect credentials, select or mutate a live
-> target, start a pilot, or add generalized orchestration without its own
-> decisions, current preflight, and exactly fitting authority. Stop and
+> preserve its limitations. CAP-02A is the offline reference adapter. CAP-02C
+> is a dormant library process adapter proved only against fake executables; it
+> is neither activated nor a CLI command. PRV-01 and CAP-02B are complete only
+> for one consumed manually enveloped run. Do not resume, retry, or redispatch
+> that run or infer that CAP-02C reuses its authority. SBOX-01 preserves
+> sandboxing as deferred hardening and must never silently downgrade if later
+> requested. MS-02 is blocked on a real human product check; do not manufacture
+> it. Prepare only non-live prerequisites. Do not probe or call a provider,
+> inspect credentials, select or mutate a live target, start a pilot, or add
+> generalized orchestration without its own decisions, current preflight, and
+> exactly fitting authority. Stop and
 > classify pressure if
 > Direction, Backbone, authority, or proof no longer fits. Do not publish,
 > deploy, or push.
