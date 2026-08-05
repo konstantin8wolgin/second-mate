@@ -543,3 +543,46 @@ def test_owned_process_group_cancellation_is_unknown_running_and_not_reattached(
     assert recovered.process_id == cancelled.process_id
     assert recovered.process_start_token == cancelled.process_start_token
     assert (tmp_path / "launches.log").read_bytes() == b"launch\n"
+
+
+def test_cancellation_drain_failure_still_persists_unknown_running(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    executable = _write_fake_codex(tmp_path / "fake-codex")
+    environment = _environment(tmp_path, mode="cancel")
+    boundary = _boundary(executable, environment)
+    basis = _basis(boundary.digest())
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    private_root = _private_root(tmp_path / "private")
+    adapter = CodexCliTrustedLocalAdapter(
+        boundary=boundary, environment=environment, prompt=_PROMPT
+    )
+    run = adapter.start(
+        basis=basis,
+        activation_data=_activation(basis),
+        repository=repository,
+        private_root=private_root,
+    )
+    deadline = time.monotonic() + 3
+    while not (tmp_path / "ready.json").exists() and time.monotonic() < deadline:
+        time.sleep(0.01)
+
+    def fail_drain(fd: int, blocking: bool) -> None:
+        del fd, blocking
+        raise OSError("stdout descriptor disappeared")
+
+    monkeypatch.setattr("second_mate.trusted_local_codex.os.set_blocking", fail_drain)
+
+    cancelled = adapter.cancel(run)
+
+    assert cancelled.phase == "unknown-running"
+    recovered = CodexCliTrustedLocalAdapter(
+        boundary=boundary, environment=environment, prompt=_PROMPT
+    ).load(
+        basis=basis,
+        activation_id=cancelled.activation_id,
+        repository=repository,
+        private_root=private_root,
+    )
+    assert recovered.phase == "unknown-running"
