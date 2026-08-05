@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 import stat
@@ -23,6 +24,17 @@ _MODE = "trusted-local-unsandboxed"
 _SPEND_POLICY = "provider-billing-controls-only"
 _CLEANUP_POLICY = "exact-private-run-artifacts-only"
 _MAX_JSONL_LINE_BYTES = 1024 * 1024
+_DURABLE_RECORD_PREFIX = b"\x1eSECOND-MATE-DURABLE-JSON-V1 "
+_DURABLE_RECORD_LENGTH_HEX_BYTES = 8
+_DURABLE_RECORD_DIGEST_HEX_BYTES = 64
+_DURABLE_RECORD_HEADER_BYTES = (
+    len(_DURABLE_RECORD_PREFIX)
+    + _DURABLE_RECORD_LENGTH_HEX_BYTES
+    + 1
+    + _DURABLE_RECORD_DIGEST_HEX_BYTES
+    + 1
+)
+_LOWER_HEX_BYTES = frozenset(b"0123456789abcdef")
 
 
 class TrustedLocalAuthorityError(RuntimeError):
@@ -395,6 +407,218 @@ def _read_private_file(path: Path, label: str) -> bytes:
             os.close(descriptor)
 
 
+def _is_incomplete_durable_header(
+    content: bytes,
+    label: str,
+    maximum_record_length: int,
+) -> bool:
+    prefix_length = min(len(content), len(_DURABLE_RECORD_PREFIX))
+    if content[:prefix_length] != _DURABLE_RECORD_PREFIX[:prefix_length]:
+        return False
+    if maximum_record_length < 1:
+        raise TrustedLocalBoundaryError(f"{label} durable record length is invalid")
+    if len(content) <= len(_DURABLE_RECORD_PREFIX):
+        return True
+    remainder = content[len(_DURABLE_RECORD_PREFIX) :]
+    length_bytes = remainder[:_DURABLE_RECORD_LENGTH_HEX_BYTES]
+    if any(byte not in _LOWER_HEX_BYTES for byte in length_bytes):
+        return False
+    missing_digits = _DURABLE_RECORD_LENGTH_HEX_BYTES - len(length_bytes)
+    minimum_length = int(length_bytes + (b"0" * missing_digits), 16)
+    maximum_length = int(length_bytes + (b"f" * missing_digits), 16)
+    if max(1, minimum_length) > maximum_record_length or maximum_length < 1:
+        raise TrustedLocalBoundaryError(f"{label} durable record length is invalid")
+    if len(remainder) <= _DURABLE_RECORD_LENGTH_HEX_BYTES:
+        return True
+    if remainder[_DURABLE_RECORD_LENGTH_HEX_BYTES] != ord(" "):
+        return False
+    digest_start = _DURABLE_RECORD_LENGTH_HEX_BYTES + 1
+    digest = remainder[digest_start : digest_start + _DURABLE_RECORD_DIGEST_HEX_BYTES]
+    if any(byte not in _LOWER_HEX_BYTES for byte in digest):
+        return False
+    if len(remainder) <= digest_start + _DURABLE_RECORD_DIGEST_HEX_BYTES:
+        return True
+    return remainder[digest_start + _DURABLE_RECORD_DIGEST_HEX_BYTES] == ord("\n")
+
+
+def _initial_json_record_end(content: bytes, label: str) -> int:
+    offset = 0
+    while offset < len(content) and content[offset] in b" \t\r\n":
+        offset += 1
+    if offset == len(content) or content[offset] not in b"{[":
+        raise TrustedLocalBoundaryError(f"{label} has no complete strict JSON record")
+    depth = 0
+    in_string = False
+    escaped = False
+    for index in range(offset, len(content)):
+        byte = content[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif byte == ord("\\"):
+                escaped = True
+            elif byte == ord('"'):
+                in_string = False
+            continue
+        if byte == ord('"'):
+            in_string = True
+        elif byte in b"{[":
+            depth += 1
+        elif byte in b"}]":
+            depth -= 1
+            if depth == 0:
+                record_end = index + 1
+                while record_end < len(content) and content[record_end] in b" \t\r\n":
+                    record_end += 1
+                return record_end
+    raise TrustedLocalBoundaryError(f"{label} has no complete strict JSON record")
+
+
+def _decode_durable_json_records(content: bytes, label: str) -> tuple[object, int]:
+    offset = _initial_json_record_end(content, label)
+    try:
+        value = strict_json_loads(content[:offset])
+    except (ValueError, UnicodeDecodeError) as error:
+        raise TrustedLocalBoundaryError(
+            f"{label} has no complete strict JSON record: {error}"
+        ) from error
+
+    while offset < len(content):
+        remaining = content[offset:]
+        maximum_record_length = _MAX_JSONL_LINE_BYTES - offset - _DURABLE_RECORD_HEADER_BYTES
+        if len(remaining) < _DURABLE_RECORD_HEADER_BYTES:
+            if _is_incomplete_durable_header(remaining, label, maximum_record_length):
+                return value, offset
+            raise TrustedLocalBoundaryError(f"{label} has a non-frame suffix")
+        header = remaining[:_DURABLE_RECORD_HEADER_BYTES]
+        if not header.startswith(_DURABLE_RECORD_PREFIX):
+            raise TrustedLocalBoundaryError(f"{label} has a non-frame suffix")
+        length_start = len(_DURABLE_RECORD_PREFIX)
+        length_end = length_start + _DURABLE_RECORD_LENGTH_HEX_BYTES
+        digest_start = length_end + 1
+        digest_end = digest_start + _DURABLE_RECORD_DIGEST_HEX_BYTES
+        length_bytes = header[length_start:length_end]
+        digest = header[digest_start:digest_end]
+        if (
+            any(byte not in _LOWER_HEX_BYTES for byte in length_bytes)
+            or header[length_end] != ord(" ")
+            or any(byte not in _LOWER_HEX_BYTES for byte in digest)
+            or header[digest_end] != ord("\n")
+        ):
+            raise TrustedLocalBoundaryError(f"{label} has an invalid durable record header")
+        record_length = int(length_bytes, 16)
+        if record_length <= 0 or record_length > maximum_record_length:
+            raise TrustedLocalBoundaryError(f"{label} durable record length is invalid")
+        record_start = offset + _DURABLE_RECORD_HEADER_BYTES
+        record_end = record_start + record_length
+        if record_end > len(content):
+            return value, offset
+        record = content[record_start:record_end]
+        if hashlib.sha256(record).hexdigest().encode("ascii") != digest:
+            raise TrustedLocalBoundaryError(f"{label} durable record digest is invalid")
+        try:
+            candidate = strict_json_loads(record)
+        except (ValueError, UnicodeDecodeError) as error:
+            raise TrustedLocalBoundaryError(
+                f"{label} durable record is not strict JSON: {error}"
+            ) from error
+        if (
+            not isinstance(candidate, dict)
+            or not all(isinstance(key, str) for key in candidate)
+            or deterministic_json_bytes(cast(JsonObject, candidate)) != record
+        ):
+            raise TrustedLocalBoundaryError(f"{label} durable record is not deterministic JSON")
+        value = candidate
+        offset = record_end
+    return value, offset
+
+
+def _read_durable_json(path: Path, label: str) -> object:
+    value, _ = _decode_durable_json_records(_read_private_file(path, label), label)
+    return value
+
+
+def _append_durable_json_record(
+    path: Path,
+    identity: tuple[int, int],
+    content: bytes,
+) -> None:
+    if not content or len(content) > _MAX_JSONL_LINE_BYTES:
+        raise TrustedLocalBoundaryError(f"durable private record is invalid for {path.name}")
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(path, os.O_RDWR | os.O_NOFOLLOW | os.O_CLOEXEC)
+        metadata = os.fstat(descriptor)
+        entry = path.lstat()
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_nlink != 1
+            or metadata.st_uid != os.geteuid()
+            or stat.S_IMODE(metadata.st_mode) != 0o600
+            or (metadata.st_dev, metadata.st_ino) != identity
+            or (entry.st_dev, entry.st_ino) != identity
+            or metadata.st_size > _MAX_JSONL_LINE_BYTES
+        ):
+            raise OSError("private durable record identity is unsafe")
+        current = b""
+        while len(current) < metadata.st_size:
+            chunk = os.read(descriptor, metadata.st_size - len(current))
+            if not chunk:
+                raise OSError("short read")
+            current += chunk
+        _, valid_bytes = _decode_durable_json_records(current, path.name)
+        if valid_bytes < len(current):
+            os.ftruncate(descriptor, valid_bytes)
+            os.fsync(descriptor)
+        digest = hashlib.sha256(content).hexdigest().encode("ascii")
+        header = (
+            _DURABLE_RECORD_PREFIX + f"{len(content):08x}".encode("ascii") + b" " + digest + b"\n"
+        )
+        frame = header + content
+        if valid_bytes + len(frame) > _MAX_JSONL_LINE_BYTES:
+            raise OSError("durable private record exceeds its size limit")
+        os.lseek(descriptor, valid_bytes, os.SEEK_SET)
+        remaining = memoryview(frame)
+        while remaining:
+            written = os.write(descriptor, remaining)
+            if written == 0:
+                raise OSError("short write")
+            remaining = remaining[written:]
+        os.fsync(descriptor)
+    except OSError as error:
+        raise TrustedLocalBoundaryError(
+            f"cannot safely append durable private record {path.name}: {error}"
+        ) from error
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+
+
+def _sync_identified_file(path: Path, identity: tuple[int, int]) -> None:
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        metadata = os.fstat(descriptor)
+        entry = path.lstat()
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_nlink != 1
+            or metadata.st_uid != os.geteuid()
+            or stat.S_IMODE(metadata.st_mode) != 0o600
+            or (metadata.st_dev, metadata.st_ino) != identity
+            or (entry.st_dev, entry.st_ino) != identity
+        ):
+            raise OSError("private durable record identity is unsafe")
+        os.fsync(descriptor)
+    except OSError as error:
+        raise TrustedLocalBoundaryError(
+            f"cannot safely sync durable private record {path.name}: {error}"
+        ) from error
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+
+
 def _fsync_directory(path: Path) -> None:
     descriptor = os.open(path, os.O_RDONLY | os.O_CLOEXEC)
     try:
@@ -454,12 +678,7 @@ def _validate_consumption_marker(
     private_root: Path, activation_id: str, basis: TrustedLocalBasis
 ) -> _CleanupAuthorization | None:
     marker = _consumption_marker(private_root, activation_id)
-    try:
-        value = strict_json_loads(_read_private_file(marker, "activation consumption marker"))
-    except (ValueError, UnicodeDecodeError) as error:
-        raise TrustedLocalBoundaryError(
-            f"activation consumption marker is not strict JSON: {error}"
-        ) from error
+    value = _read_durable_json(marker, "activation consumption marker")
     if value == _consumption_document(activation_id, basis):
         return None
     if not isinstance(value, dict):
@@ -532,10 +751,6 @@ def _authorize_cleanup(
         ),
     )
     existing = _validate_consumption_marker(private_root, activation_id, basis)
-    if existing is not None:
-        if existing != authorization:
-            raise TrustedLocalBoundaryError("cleanup authorization run directory identity changed")
-        return
     marker = _consumption_marker(private_root, activation_id)
     try:
         metadata = marker.lstat()
@@ -545,7 +760,12 @@ def _authorize_cleanup(
         ) from error
     marker_identity = (metadata.st_dev, metadata.st_ino)
     _validate_identified_file(marker, marker_identity)
-    _write_identified_file(
+    if existing is not None:
+        if existing != authorization:
+            raise TrustedLocalBoundaryError("cleanup authorization run directory identity changed")
+        _sync_identified_file(marker, marker_identity)
+        return
+    _append_durable_json_record(
         marker,
         marker_identity,
         deterministic_json_bytes(_consumption_document(activation_id, basis, authorization)),
@@ -943,6 +1163,16 @@ class OfflineTrustedLocalAdapter:
             deterministic_json_bytes(_session_document(run, basis)),
         )
 
+    def _persist_cleanup_intent(self, run: TrustedLocalRun) -> None:
+        basis = self._bases.get(run.activation_id)
+        if basis is None:
+            raise TrustedLocalBoundaryError("trusted-local run basis is unavailable")
+        _append_durable_json_record(
+            run.run_directory / "session.json",
+            run.artifact_identities["session.json"],
+            deterministic_json_bytes(_session_document(run, basis)),
+        )
+
     def load(
         self,
         *,
@@ -1001,13 +1231,7 @@ class OfflineTrustedLocalAdapter:
             raise TrustedLocalBoundaryError(
                 "partial private cleanup omits its durable session intent"
             )
-        session_content = _read_private_file(entries["session.json"], "trusted-local session")
-        try:
-            session_value = strict_json_loads(session_content)
-        except (ValueError, UnicodeDecodeError) as error:
-            raise TrustedLocalBoundaryError(
-                f"trusted-local session is not strict JSON: {error}"
-            ) from error
+        session_value = _read_durable_json(entries["session.json"], "trusted-local session")
         run = _run_from_session(
             session_value,
             basis=basis,
@@ -1255,14 +1479,9 @@ class OfflineTrustedLocalAdapter:
         # The complete set and every physical identity are checked before the first unlink.
         for name in entry_names:
             _validate_identified_file(entries[name], run.artifact_identities[name])
-        try:
-            stored_session = strict_json_loads(
-                _read_private_file(entries["session.json"], "trusted-local session")
-            )
-        except (ValueError, UnicodeDecodeError) as error:
-            raise TrustedLocalBoundaryError(
-                f"trusted-local cleanup session record is invalid: {error}"
-            ) from error
+        stored_session = _read_durable_json(
+            entries["session.json"], "trusted-local cleanup session record"
+        )
         expected_session = _session_document(run, basis)
         if stored_session != expected_session:
             raise TrustedLocalBoundaryError(
@@ -1270,7 +1489,9 @@ class OfflineTrustedLocalAdapter:
             )
         if run.phase != "cleanup-pending":
             run = replace(run, phase="cleanup-pending")
-            self._persist(run)
+            self._persist_cleanup_intent(run)
+        else:
+            _sync_identified_file(entries["session.json"], run.artifact_identities["session.json"])
         _authorize_cleanup(
             private_root,
             run.activation_id,

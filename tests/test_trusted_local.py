@@ -477,7 +477,10 @@ def test_interrupted_cleanup_persists_intent_and_fresh_reload_resumes_exact_rema
             adapter.cleanup(run)
 
     assert {path.name for path in run.run_directory.iterdir()} == remaining_names
-    session = json.loads((run.run_directory / "session.json").read_bytes())
+    session = trusted_local_module._read_durable_json(
+        run.run_directory / "session.json", "test session"
+    )
+    assert isinstance(session, dict)
     assert session["phase"] == "cleanup-pending"
 
     recovery = OfflineTrustedLocalAdapter(LaunchingControlPlane())
@@ -493,6 +496,275 @@ def test_interrupted_cleanup_persists_intent_and_fresh_reload_resumes_exact_rema
     assert not run.run_directory.exists()
     assert (private_root / "activation.run-001.consumed.json").is_file()
     assert repository_sentinel.read_text(encoding="utf-8") == "preserve repository work\n"
+    assert private_sentinel.read_text(encoding="utf-8") == "preserve sibling\n"
+
+
+@pytest.mark.parametrize(
+    "partial_bytes",
+    [11, trusted_local_module._DURABLE_RECORD_HEADER_BYTES + 17],
+)
+def test_cleanup_intent_write_interruption_preserves_reloadable_previous_session(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, partial_bytes: int
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    repository_sentinel = repository / "work.txt"
+    repository_sentinel.write_text("preserve repository work\n", encoding="utf-8")
+    private_root = _private_root(tmp_path / "private")
+    private_sentinel = private_root / "another-run.keep"
+    private_sentinel.write_text("preserve sibling\n", encoding="utf-8")
+    adapter, running, _ = _start_mock_run(repository, private_root)
+    run = adapter.cancel(running)
+    session_path = run.run_directory / "session.json"
+    real_write = os.write
+    interrupted = False
+
+    def interrupt_session_write(descriptor: int, content: bytes | memoryview) -> int:
+        nonlocal interrupted
+        descriptor_path = Path(os.readlink(f"/proc/self/fd/{descriptor}"))
+        if not interrupted and descriptor_path == session_path:
+            interrupted = True
+            real_write(descriptor, content[:partial_bytes])
+            raise OSError("injected interruption during cleanup intent persistence")
+        return real_write(descriptor, content)
+
+    with monkeypatch.context() as context:
+        context.setattr("second_mate.trusted_local.os.write", interrupt_session_write)
+        with pytest.raises(TrustedLocalBoundaryError, match="cannot safely append"):
+            adapter.cleanup(run, recovery_disposition="abandoned")
+
+    assert interrupted is True
+    recovery = OfflineTrustedLocalAdapter(LaunchingControlPlane())
+    recovered = recovery.load(
+        basis=_basis(),
+        activation_id=run.activation_id,
+        repository=repository,
+        private_root=private_root,
+    )
+    assert recovered.phase == "unknown-running"
+    recovery.cleanup(recovered, recovery_disposition="abandoned")
+
+    assert not run.run_directory.exists()
+    assert (private_root / "activation.run-001.consumed.json").is_file()
+    assert repository_sentinel.read_text(encoding="utf-8") == "preserve repository work\n"
+    assert private_sentinel.read_text(encoding="utf-8") == "preserve sibling\n"
+
+
+@pytest.mark.parametrize(
+    "partial_bytes",
+    [13, trusted_local_module._DURABLE_RECORD_HEADER_BYTES + 19],
+)
+def test_cleanup_authorization_write_interruption_preserves_reloadable_marker(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, partial_bytes: int
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    repository_sentinel = repository / "work.txt"
+    repository_sentinel.write_text("preserve repository work\n", encoding="utf-8")
+    private_root = _private_root(tmp_path / "private")
+    private_sentinel = private_root / "another-run.keep"
+    private_sentinel.write_text("preserve sibling\n", encoding="utf-8")
+    adapter, running, _ = _start_mock_run(repository, private_root)
+    run = adapter.cancel(running)
+    marker_path = private_root / "activation.run-001.consumed.json"
+    real_write = os.write
+    interrupted = False
+
+    def interrupt_marker_write(descriptor: int, content: bytes | memoryview) -> int:
+        nonlocal interrupted
+        descriptor_path = Path(os.readlink(f"/proc/self/fd/{descriptor}"))
+        if not interrupted and descriptor_path == marker_path:
+            interrupted = True
+            real_write(descriptor, content[:partial_bytes])
+            raise OSError("injected interruption during cleanup authorization persistence")
+        return real_write(descriptor, content)
+
+    with monkeypatch.context() as context:
+        context.setattr("second_mate.trusted_local.os.write", interrupt_marker_write)
+        with pytest.raises(TrustedLocalBoundaryError, match="cannot safely append"):
+            adapter.cleanup(run, recovery_disposition="abandoned")
+
+    assert interrupted is True
+    recovery = OfflineTrustedLocalAdapter(LaunchingControlPlane())
+    pending = recovery.load(
+        basis=_basis(),
+        activation_id=run.activation_id,
+        repository=repository,
+        private_root=private_root,
+    )
+    assert pending.phase == "cleanup-pending"
+    recovery.cleanup(pending)
+
+    assert not run.run_directory.exists()
+    assert marker_path.is_file()
+    assert repository_sentinel.read_text(encoding="utf-8") == "preserve repository work\n"
+    assert private_sentinel.read_text(encoding="utf-8") == "preserve sibling\n"
+
+
+@pytest.mark.parametrize("record_name", ["session", "marker"])
+@pytest.mark.parametrize(
+    ("suffix", "message"),
+    [
+        (
+            trusted_local_module._DURABLE_RECORD_PREFIX + b"00000003 " + (b"0" * 64) + b"\n{}\n",
+            "digest",
+        ),
+        (trusted_local_module._DURABLE_RECORD_PREFIX + b"00000000 ", "length"),
+        (trusted_local_module._DURABLE_RECORD_PREFIX + b"ffffffff ", "length"),
+        (trusted_local_module._DURABLE_RECORD_PREFIX + b"f", "length"),
+        (trusted_local_module._DURABLE_RECORD_PREFIX + b"0011", "length"),
+        (trusted_local_module._DURABLE_RECORD_PREFIX + b"00100000 ", "length"),
+        (b"not-a-durable-frame", "non-frame"),
+    ],
+)
+def test_cleanup_record_complete_corruption_fails_closed_without_deletion(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    record_name: str,
+    suffix: bytes,
+    message: str,
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    repository_sentinel = repository / "work.txt"
+    repository_sentinel.write_text("preserve repository work\n", encoding="utf-8")
+    private_root = _private_root(tmp_path / "private")
+    private_sentinel = private_root / "another-run.keep"
+    private_sentinel.write_text("preserve sibling\n", encoding="utf-8")
+    adapter, running, _ = _start_mock_run(repository, private_root)
+    run = adapter.cancel(running)
+
+    def interrupt_before_first_unlink(path: str, *, dir_fd: int | None = None) -> None:
+        del dir_fd
+        raise OSError(f"injected interruption before {path}")
+
+    with monkeypatch.context() as context:
+        context.setattr("second_mate.trusted_local.os.unlink", interrupt_before_first_unlink)
+        with pytest.raises(TrustedLocalBoundaryError, match="cannot remove exact"):
+            adapter.cleanup(run, recovery_disposition="abandoned")
+
+    if record_name == "session":
+        record_path = run.run_directory / "session.json"
+    else:
+        record_path = private_root / "activation.run-001.consumed.json"
+    with record_path.open("ab") as stream:
+        stream.write(suffix)
+        stream.flush()
+        os.fsync(stream.fileno())
+
+    recovery = OfflineTrustedLocalAdapter(LaunchingControlPlane())
+    with pytest.raises(TrustedLocalBoundaryError, match=message):
+        recovery.load(
+            basis=_basis(),
+            activation_id=run.activation_id,
+            repository=repository,
+            private_root=private_root,
+        )
+
+    assert {path.name for path in run.run_directory.iterdir()} == {
+        "session.json",
+        "transcript.jsonl",
+        "control.tmp",
+    }
+    assert repository_sentinel.read_text(encoding="utf-8") == "preserve repository work\n"
+    assert private_sentinel.read_text(encoding="utf-8") == "preserve sibling\n"
+
+
+def test_durable_record_initial_scan_is_bounded_for_newline_dense_invalid_input(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    strict_parse_count = 0
+    real_strict_json_loads = trusted_local_module.strict_json_loads
+
+    def count_strict_parse(content: str | bytes) -> object:
+        nonlocal strict_parse_count
+        strict_parse_count += 1
+        return real_strict_json_loads(content)
+
+    monkeypatch.setattr(trusted_local_module, "strict_json_loads", count_strict_parse)
+
+    with pytest.raises(TrustedLocalBoundaryError, match="no complete strict JSON"):
+        trusted_local_module._decode_durable_json_records(
+            b"{" + (b"\n" * 4096), "newline-dense record"
+        )
+
+    assert strict_parse_count <= 1
+
+
+def test_durable_record_near_capacity_rejects_even_a_partial_magic_prefix() -> None:
+    initial_record = b"{}\n"
+    content = (
+        initial_record
+        + (b" " * (trusted_local_module._MAX_JSONL_LINE_BYTES - len(initial_record) - 1))
+        + trusted_local_module._DURABLE_RECORD_PREFIX[:1]
+    )
+
+    with pytest.raises(TrustedLocalBoundaryError, match="length"):
+        trusted_local_module._decode_durable_json_records(content, "near-capacity record")
+
+
+@pytest.mark.parametrize("record_name", ["session", "marker"])
+def test_cleanup_retry_resyncs_a_visible_record_after_ambiguous_fsync(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    record_name: str,
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    private_root = _private_root(tmp_path / "private")
+    private_sentinel = private_root / "another-run.keep"
+    private_sentinel.write_text("preserve sibling\n", encoding="utf-8")
+    adapter, running, _ = _start_mock_run(repository, private_root)
+    run = adapter.cancel(running)
+    if record_name == "session":
+        record_path = run.run_directory / "session.json"
+    else:
+        record_path = private_root / "activation.run-001.consumed.json"
+    real_fsync = os.fsync
+    interrupted = False
+
+    def fail_target_fsync_once(descriptor: int) -> None:
+        nonlocal interrupted
+        descriptor_path = Path(os.readlink(f"/proc/self/fd/{descriptor}"))
+        if not interrupted and descriptor_path == record_path:
+            interrupted = True
+            raise OSError("injected ambiguous durable-record fsync")
+        real_fsync(descriptor)
+
+    with monkeypatch.context() as context:
+        context.setattr("second_mate.trusted_local.os.fsync", fail_target_fsync_once)
+        with pytest.raises(TrustedLocalBoundaryError, match="cannot safely append"):
+            adapter.cleanup(run, recovery_disposition="abandoned")
+
+    assert interrupted is True
+    recovery = OfflineTrustedLocalAdapter(LaunchingControlPlane())
+    pending = recovery.load(
+        basis=_basis(),
+        activation_id=run.activation_id,
+        repository=repository,
+        private_root=private_root,
+    )
+    assert pending.phase == "cleanup-pending"
+
+    def fail_target_fsync(descriptor: int) -> None:
+        descriptor_path = Path(os.readlink(f"/proc/self/fd/{descriptor}"))
+        if descriptor_path == record_path:
+            raise OSError("injected repeated durable-record fsync failure")
+        real_fsync(descriptor)
+
+    with monkeypatch.context() as context:
+        context.setattr("second_mate.trusted_local.os.fsync", fail_target_fsync)
+        with pytest.raises(TrustedLocalBoundaryError, match="cannot safely sync"):
+            recovery.cleanup(pending)
+
+    assert {path.name for path in run.run_directory.iterdir()} == {
+        "session.json",
+        "transcript.jsonl",
+        "control.tmp",
+    }
+    recovery.cleanup(pending)
+
+    assert not run.run_directory.exists()
     assert private_sentinel.read_text(encoding="utf-8") == "preserve sibling\n"
 
 
@@ -578,7 +850,10 @@ def test_empty_replacement_directory_is_not_interrupted_cleanup_recovery(
         with pytest.raises(TrustedLocalBoundaryError, match="cannot remove empty"):
             adapter.cleanup(run, recovery_disposition="abandoned")
 
-    marker = json.loads((private_root / "activation.run-001.consumed.json").read_bytes())
+    marker = trusted_local_module._read_durable_json(
+        private_root / "activation.run-001.consumed.json", "test marker"
+    )
+    assert isinstance(marker, dict)
     recorded_run_identity = (
         marker["cleanup_authorization"]["run_directory"]["device"],
         marker["cleanup_authorization"]["run_directory"]["inode"],
@@ -658,7 +933,8 @@ def test_reload_refuses_tampered_interrupted_cleanup_without_deleting_more(
     elif mutation == "missing-session":
         session_path.unlink()
     else:
-        session = json.loads(session_path.read_bytes())
+        session = trusted_local_module._read_durable_json(session_path, "test session")
+        assert isinstance(session, dict)
         session["phase"] = "unknown-running"
         session_path.write_text(json.dumps(session), encoding="utf-8")
 
