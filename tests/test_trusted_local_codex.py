@@ -3,12 +3,14 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import subprocess
 import time
 from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
+from second_mate.repository import inspect_revision
 from second_mate.trusted_local import (
     TrustedLocalAuthorityError,
     TrustedLocalBasis,
@@ -56,6 +58,20 @@ def _private_root(path: Path) -> Path:
     path.mkdir(mode=0o700)
     os.chmod(path, 0o700)
     return path
+
+
+def _git_repository(path: Path) -> Path:
+    path.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main", path], check=True)
+    subprocess.run(["git", "-C", path, "config", "user.email", "fixture@example.com"], check=True)
+    subprocess.run(["git", "-C", path, "config", "user.name", "Fixture"], check=True)
+    (path / "tracked.txt").write_text("frozen target\n", encoding="utf-8")
+    subprocess.run(["git", "-C", path, "add", "tracked.txt"], check=True)
+    subprocess.run(
+        ["git", "-C", path, "commit", "-q", "-m", "create frozen target"],
+        check=True,
+    )
+    return path.resolve(strict=True)
 
 
 def _write_fake_codex(path: Path) -> Path:
@@ -153,6 +169,7 @@ def _boundary(
     return CodexCliProviderBoundary(
         executable=executable,
         executable_sha256=executable_sha256 or _file_sha256(executable),
+        target_root=executable.parent / "repository",
         version_output=version_output,
         exec_help_sha256=exec_help_sha256,
         model="fake-model",
@@ -175,6 +192,15 @@ def _basis(provider_boundary_digest: str) -> TrustedLocalBasis:
         target_fingerprint="c" * 64,
         owner_id="owner-1",
         provider_boundary_digest=provider_boundary_digest,
+    )
+
+
+def _basis_from_repository(provider_boundary_digest: str, repository: Path) -> TrustedLocalBasis:
+    revision = inspect_revision(repository)
+    return replace(
+        _basis(provider_boundary_digest),
+        target_head=revision.head,
+        target_fingerprint=revision.fingerprint,
     )
 
 
@@ -233,6 +259,71 @@ def _process_is_running(process_id: int) -> bool:
     return state.split()[0] != "Z"
 
 
+def test_target_revision_drift_refuses_before_probe_or_activation_consumption(
+    tmp_path: Path,
+) -> None:
+    executable = _write_fake_codex(tmp_path / "fake-codex")
+    environment = _environment(tmp_path)
+    boundary = _boundary(executable, environment)
+    repository = _git_repository(tmp_path / "repository")
+    basis = _basis_from_repository(boundary.digest(), repository)
+    (repository / "tracked.txt").write_text("drifted target\n", encoding="utf-8")
+    private_root = _private_root(tmp_path / "private")
+
+    with pytest.raises(TrustedLocalBoundaryError, match="target fingerprint"):
+        CodexCliTrustedLocalAdapter(
+            boundary=boundary, environment=environment, prompt=_PROMPT
+        ).start(
+            basis=basis,
+            activation_data=_activation(basis),
+            repository=repository,
+            private_root=private_root,
+        )
+
+    assert tuple(private_root.iterdir()) == ()
+    assert not (tmp_path / "probes.log").exists()
+    assert not (tmp_path / "launches.log").exists()
+
+
+def test_identical_clone_refuses_bound_target_root_before_probe_or_consumption(
+    tmp_path: Path,
+) -> None:
+    executable = _write_fake_codex(tmp_path / "fake-codex")
+    environment = _environment(tmp_path)
+    repository = _git_repository(tmp_path / "repository")
+    boundary = replace(
+        _boundary(executable, environment),
+        target_root=repository,
+    )
+    basis = _basis_from_repository(boundary.digest(), repository)
+    clone = tmp_path / "clone"
+    subprocess.run(["git", "clone", "-q", repository, clone], check=True)
+    private_root = _private_root(tmp_path / "private")
+
+    with pytest.raises(TrustedLocalBoundaryError, match="target root"):
+        CodexCliTrustedLocalAdapter(
+            boundary=boundary, environment=environment, prompt=_PROMPT
+        ).start(
+            basis=basis,
+            activation_data=_activation(basis),
+            repository=clone,
+            private_root=private_root,
+        )
+
+    assert tuple(private_root.iterdir()) == ()
+    assert not (tmp_path / "probes.log").exists()
+    assert not (tmp_path / "launches.log").exists()
+
+
+def test_provider_boundary_rejects_a_relative_target_root(tmp_path: Path) -> None:
+    executable = _write_fake_codex(tmp_path / "fake-codex")
+    environment = _environment(tmp_path)
+    boundary = _boundary(executable, environment)
+
+    with pytest.raises(TrustedLocalBoundaryError, match="target root"):
+        replace(boundary, target_root=Path("relative-target"))
+
+
 def test_provider_boundary_mismatch_refuses_before_probe_state_or_launch(tmp_path: Path) -> None:
     executable = _write_fake_codex(tmp_path / "fake-codex")
     environment = _environment(tmp_path)
@@ -270,9 +361,8 @@ def test_binary_or_probe_drift_refuses_before_activation_consumption(
     executable = _write_fake_codex(tmp_path / "fake-codex")
     environment = _environment(tmp_path)
     boundary = replace(_boundary(executable, environment), **boundary_change)
-    basis = _basis(boundary.digest())
-    repository = tmp_path / "repository"
-    repository.mkdir()
+    repository = _git_repository(tmp_path / "repository")
+    basis = _basis_from_repository(boundary.digest(), repository)
     private_root = _private_root(tmp_path / "private")
 
     with pytest.raises(TrustedLocalBoundaryError, match=message):
@@ -318,10 +408,10 @@ def test_target_codex_config_refuses_before_activation_consumption(tmp_path: Pat
     executable = _write_fake_codex(tmp_path / "fake-codex")
     environment = _environment(tmp_path)
     boundary = _boundary(executable, environment)
-    basis = _basis(boundary.digest())
-    repository = tmp_path / "repository"
+    repository = _git_repository(tmp_path / "repository")
     (repository / ".codex").mkdir(parents=True)
     (repository / ".codex" / "config.toml").write_text("[hooks]\n", encoding="utf-8")
+    basis = _basis_from_repository(boundary.digest(), repository)
     private_root = _private_root(tmp_path / "private")
 
     with pytest.raises(TrustedLocalBoundaryError, match="target Codex configuration"):
@@ -380,9 +470,8 @@ with open(os.environ["SM_FAKE_LAUNCHES"], "ab") as stream:
         "SM_FAKE_REPLACEMENT": str(replacement),
     }
     boundary = _boundary(executable, environment)
-    basis = _basis(boundary.digest())
-    repository = tmp_path / "repository"
-    repository.mkdir()
+    repository = _git_repository(tmp_path / "repository")
+    basis = _basis_from_repository(boundary.digest(), repository)
     private_root = _private_root(tmp_path / "private")
 
     run = CodexCliTrustedLocalAdapter(
@@ -404,11 +493,10 @@ def test_fake_codex_process_proves_exact_launch_stream_and_private_control(
     executable = _write_fake_codex(tmp_path / "fake-codex")
     environment = _environment(tmp_path)
     boundary = _boundary(executable, environment)
-    basis = _basis(boundary.digest())
-    repository = tmp_path / "repository"
-    repository.mkdir()
+    repository = _git_repository(tmp_path / "repository")
     repository_sentinel = repository / "sentinel.txt"
     repository_sentinel.write_text("preserve repository work\n", encoding="utf-8")
+    basis = _basis_from_repository(boundary.digest(), repository)
     private_root = _private_root(tmp_path / "private")
     private_sentinel = private_root / "preserve.txt"
     private_sentinel.write_text("unrelated private data\n", encoding="utf-8")
@@ -457,9 +545,8 @@ def test_consumed_activation_cannot_launch_the_fake_process_twice(tmp_path: Path
     executable = _write_fake_codex(tmp_path / "fake-codex")
     environment = _environment(tmp_path)
     boundary = _boundary(executable, environment)
-    basis = _basis(boundary.digest())
-    repository = tmp_path / "repository"
-    repository.mkdir()
+    repository = _git_repository(tmp_path / "repository")
+    basis = _basis_from_repository(boundary.digest(), repository)
     private_root = _private_root(tmp_path / "private")
     adapter = CodexCliTrustedLocalAdapter(
         boundary=boundary, environment=environment, prompt=_PROMPT
@@ -492,9 +579,8 @@ def test_owned_process_group_cancellation_is_unknown_running_and_not_reattached(
     executable = _write_fake_codex(tmp_path / "fake-codex")
     environment = _environment(tmp_path, mode="cancel")
     boundary = _boundary(executable, environment)
-    basis = _basis(boundary.digest())
-    repository = tmp_path / "repository"
-    repository.mkdir()
+    repository = _git_repository(tmp_path / "repository")
+    basis = _basis_from_repository(boundary.digest(), repository)
     private_root = _private_root(tmp_path / "private")
     adapter = CodexCliTrustedLocalAdapter(
         boundary=boundary, environment=environment, prompt=_PROMPT
@@ -545,15 +631,121 @@ def test_owned_process_group_cancellation_is_unknown_running_and_not_reattached(
     assert (tmp_path / "launches.log").read_bytes() == b"launch\n"
 
 
+def test_owned_unknown_running_state_can_cancel_exact_process_group(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    executable = _write_fake_codex(tmp_path / "fake-codex")
+    environment = _environment(tmp_path, mode="cancel")
+    boundary = _boundary(executable, environment)
+    repository = _git_repository(tmp_path / "repository")
+    basis = _basis_from_repository(boundary.digest(), repository)
+    private_root = _private_root(tmp_path / "private")
+    adapter = CodexCliTrustedLocalAdapter(
+        boundary=boundary, environment=environment, prompt=_PROMPT
+    )
+    run = adapter.start(
+        basis=basis,
+        activation_data=_activation(basis),
+        repository=repository,
+        private_root=private_root,
+    )
+    deadline = time.monotonic() + 3
+    while not (tmp_path / "ready.json").exists() and time.monotonic() < deadline:
+        time.sleep(0.01)
+    identities = json.loads((tmp_path / "ready.json").read_text(encoding="utf-8"))
+
+    def fail_read(process: object) -> bytes | None:
+        del process
+        raise OSError("stdout read became ambiguous")
+
+    with monkeypatch.context() as context:
+        context.setattr(
+            "second_mate.trusted_local_codex._CodexCliProcess.read_chunk",
+            fail_read,
+        )
+        unknown = adapter.finish(run)
+
+    assert unknown.phase == "unknown-running"
+    with pytest.raises(TrustedLocalBoundaryError, match="still owns the process"):
+        adapter.cleanup(unknown, recovery_disposition="abandoned")
+
+    try:
+        cancelled = adapter.cancel(unknown)
+        assert cancelled.phase == "unknown-running"
+        assert (cancelled.run_directory / "transcript.jsonl").read_bytes() == (
+            b'{"type":"thread.started","thread_id":"12345678-1234-5678-9234-567812345678"}\n'
+            b'{"type":"turn.started"}\n'
+        )
+        deadline = time.monotonic() + 3
+        while (
+            any(_process_is_running(identities[name]) for name in identities)
+            and time.monotonic() < deadline
+        ):
+            time.sleep(0.01)
+        assert not _process_is_running(identities["parent_pid"])
+        assert not _process_is_running(identities["child_pid"])
+        adapter.cleanup(cancelled, recovery_disposition="abandoned")
+        assert not cancelled.run_directory.exists()
+    finally:
+        if run.run_directory.exists():
+            adapter.cancel(run)
+
+
+def test_ambiguous_unknown_running_cancellation_retains_process_ownership(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    executable = _write_fake_codex(tmp_path / "fake-codex")
+    environment = _environment(tmp_path, mode="cancel")
+    boundary = _boundary(executable, environment)
+    repository = _git_repository(tmp_path / "repository")
+    basis = _basis_from_repository(boundary.digest(), repository)
+    private_root = _private_root(tmp_path / "private")
+    adapter = CodexCliTrustedLocalAdapter(
+        boundary=boundary, environment=environment, prompt=_PROMPT
+    )
+    run = adapter.start(
+        basis=basis,
+        activation_data=_activation(basis),
+        repository=repository,
+        private_root=private_root,
+    )
+    deadline = time.monotonic() + 3
+    while not (tmp_path / "ready.json").exists() and time.monotonic() < deadline:
+        time.sleep(0.01)
+
+    unknown = replace(run, phase="unknown-running")
+
+    def fail_cancel(process: object) -> None:
+        del process
+        raise TrustedLocalBoundaryError("process group remains ambiguous")
+
+    try:
+        with monkeypatch.context() as context:
+            context.setattr(
+                "second_mate.trusted_local_codex._CodexCliProcess.request_cancel",
+                fail_cancel,
+            )
+            ambiguous = adapter.cancel(unknown)
+
+        assert ambiguous.phase == "unknown-running"
+        with pytest.raises(TrustedLocalBoundaryError, match="still owns the process"):
+            adapter.cleanup(ambiguous, recovery_disposition="abandoned")
+        cancelled = adapter.cancel(ambiguous)
+        adapter.cleanup(cancelled, recovery_disposition="abandoned")
+        assert not cancelled.run_directory.exists()
+    finally:
+        if run.run_directory.exists():
+            adapter.cancel(run)
+
+
 def test_cancellation_drain_failure_still_persists_unknown_running(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     executable = _write_fake_codex(tmp_path / "fake-codex")
     environment = _environment(tmp_path, mode="cancel")
     boundary = _boundary(executable, environment)
-    basis = _basis(boundary.digest())
-    repository = tmp_path / "repository"
-    repository.mkdir()
+    repository = _git_repository(tmp_path / "repository")
+    basis = _basis_from_repository(boundary.digest(), repository)
     private_root = _private_root(tmp_path / "private")
     adapter = CodexCliTrustedLocalAdapter(
         boundary=boundary, environment=environment, prompt=_PROMPT

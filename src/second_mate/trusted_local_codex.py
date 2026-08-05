@@ -15,7 +15,8 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import BinaryIO, cast
 
-from second_mate.domain import JsonObject, digest_json
+from second_mate.domain import JsonObject, ValidationError, digest_json
+from second_mate.repository import inspect_revision
 from second_mate.trusted_local import (
     OfflineLaunchRequest,
     OfflineTrustedLocalAdapter,
@@ -86,7 +87,8 @@ def _provider_boundary_document(boundary: CodexCliProviderBoundary) -> JsonObjec
         "exec_help_sha256": boundary.exec_help_sha256,
         "model": boundary.model,
         "prompt_sha256": boundary.prompt_sha256,
-        "schema_version": 1,
+        "schema_version": 2,
+        "target_root": str(boundary.target_root),
         "version_output": boundary.version_output,
     }
 
@@ -96,6 +98,7 @@ class CodexCliProviderBoundary:
     """Immutable inputs whose digest must match one trusted-local activation."""
 
     executable: Path
+    target_root: Path
     executable_sha256: str
     version_output: str
     exec_help_sha256: str
@@ -109,6 +112,10 @@ class CodexCliProviderBoundary:
         if not isinstance(self.executable, Path) or not self.executable.is_absolute():
             raise TrustedLocalBoundaryError(
                 "Codex CLI executable must be an absolute unaliased path"
+            )
+        if not isinstance(self.target_root, Path) or not self.target_root.is_absolute():
+            raise TrustedLocalBoundaryError(
+                "Codex CLI target root must be an absolute unaliased path"
             )
         for label, digest_value in (
             ("executable", self.executable_sha256),
@@ -587,12 +594,24 @@ class CodexCliTrustedLocalAdapter(OfflineTrustedLocalAdapter):
             raise TrustedLocalAuthorityError(
                 "Codex CLI provider boundary does not match the frozen basis"
             )
+        if repository != self._codex_control_plane.boundary.target_root:
+            raise TrustedLocalBoundaryError("Codex CLI target root changed")
+        try:
+            revision = inspect_revision(repository)
+        except ValidationError as error:
+            raise TrustedLocalBoundaryError(
+                f"cannot inspect Codex CLI target revision: {error}"
+            ) from error
+        if revision.head != basis.target_head:
+            raise TrustedLocalBoundaryError("Codex CLI target head changed")
+        if revision.fingerprint != basis.target_fingerprint:
+            raise TrustedLocalBoundaryError("Codex CLI target fingerprint changed")
         self._codex_control_plane.qualify(repository)
 
     def cancel(self, run: TrustedLocalRun) -> TrustedLocalRun:
         """Cancel one owned group, then retain every immediately available stream byte."""
 
-        if run.phase != "running":
+        if run.phase not in {"running", "unknown-running"}:
             return run
         process = self._processes.get(run.activation_id)
         if (
@@ -604,10 +623,15 @@ class CodexCliTrustedLocalAdapter(OfflineTrustedLocalAdapter):
             unknown = replace(run, phase="unknown-running")
             self._persist(unknown)
             return unknown
-        with suppress(Exception):
+        try:
             process.request_cancel()
+        except Exception:
+            unknown = replace(run, phase="unknown-running")
+            self._persist(unknown)
+            return unknown
         if process.prepare_cancel_drain():
-            drained = self.finish(run)
+            drain_source = replace(run, phase="running")
+            drained = self.finish(drain_source)
             unknown = replace(drained, phase="unknown-running")
         else:
             unknown = replace(run, phase="unknown-running")

@@ -2,10 +2,10 @@
 
 Status: canonical design; POL-01 narrowly selected, the verified FS-01
 Foundation baseline canonically adopted, CAP-01 and MS-01 complete, and
-DIR-INTAKE-01, CAP-02A, and EVA-01 implemented and locally verified; PRV-01 and CAP-02B
-historically closed for one consumed run with partial independent evidence
-retained; CAP-02C is reproducible without a provider, while MS-02 still needs
-the human product check
+DIR-INTAKE-01, CAP-02A, CAP-02C, EVA-01, and EVA-02 implemented and locally
+verified; PRV-01 and CAP-02B historically closed for one consumed run with
+partial independent evidence retained, while MS-02 still needs the human
+product check
 
 Second Mate is a lean coordinator for AI coding work. It preserves human-owned product Direction, gives capable models room to solve technical problems, and requires evidence that fits each completion claim. It is a clean project, not a retrofit of FirstMate, Knowless, or their backlog and worker structures.
 
@@ -29,7 +29,13 @@ EVA-01 classifies every current readiness label by reproducible, retained,
 human-authority, structural, non-replayable, or open evidence. It also refuses
 cleanup of active runs, requires explicit abandonment before cleanup of
 `unknown-running`, disables the inventoried `skill_search` surface, and ships a
-typed-package marker. These are provider-free coordinator hardening only.
+typed-package marker. EVA-02 independently binds the dormant adapter to one
+resolved target and its current Git revision before probes or activation
+consumption, permits exact owned-process cancellation from durable
+`unknown-running`, retains ownership through cancellation ambiguity, and maps
+every remaining unchecked claim to its exact contingent, human, provider,
+sandbox, target, or pilot dependency. These are provider-free coordinator
+hardening only.
 
 ## Authority and sources
 

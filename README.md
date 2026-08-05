@@ -9,7 +9,8 @@ are not replayable from this checkout. FS-01 carries one supervised, local direc
 packet against a deterministic fixture through explicit consent, claim-fit
 evidence, durable continuation, and recoverable clean close. CAP-02A adds an
 injected mock control-plane path. CAP-02C adds an activation-gated real-process
-library boundary proved only with a temporary fake executable; it has never
+library boundary that binds one resolved target and current Git revision,
+proved only with temporary Git repositories and fake executables; it has never
 called a provider and exposes no CLI dispatch route. CAP-02B previously
 manually enveloped exactly one consumed real Codex CLI run. See the
 [Direction operator guide](docs/second-mate/DIRECTION-OPERATOR.md) and

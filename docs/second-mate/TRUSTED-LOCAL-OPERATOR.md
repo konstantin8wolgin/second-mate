@@ -90,14 +90,16 @@ cannot be used as a standalone launch shortcut.
 
 The immutable provider-boundary digest covers the absolute unaliased executable
 path and SHA-256, exact `--version` line and `exec --help` digest, model, prompt
-digest, sorted environment names and value digests, fixed command policy, and
-bounded interrupt/terminate timings. Raw prompt and environment values remain
-memory-only. Before activation consumption, the adapter validates the private
-root and target boundary, refuses target-local `.codex/config.toml`, hashes the
-opened executable, and runs only its bound local version/help probes. Launch
-reopens and re-hashes the executable and executes that verified descriptor, so
-replacement between qualification and launch becomes `unknown-running` rather
-than dispatching a different path.
+digest, sorted environment names and value digests, fixed command policy,
+bounded interrupt/terminate timings, and the exact resolved target root. Raw
+prompt and environment values remain memory-only. Before activation
+consumption, the adapter canonicalizes the target, independently inspects its
+actual Git root, HEAD, and visible fingerprint, requires them to match both the
+provider boundary and frozen basis, then refuses target-local
+`.codex/config.toml`, hashes the opened executable, and runs only its bound
+local version/help probes. Launch reopens and re-hashes the executable and
+executes that verified descriptor, so replacement between qualification and
+launch becomes `unknown-running` rather than dispatching a different path.
 
 The fixed command requests strict config, JSONL, ephemeral CLI session storage,
 ignored user config and exec-policy rules, empty MCP configuration, no color,
@@ -113,23 +115,29 @@ manager symlink or wrapper that could select a second unbound executable.
 The process starts in its own Linux session/process group and records a boot ID
 plus `/proc` start-time token. Stdout feeds the existing strict bounded JSONL
 lifecycle; stderr appends only to the identity-recorded private `control.tmp`.
-Cancellation verifies the process identity, sends bounded `SIGINT`, `SIGTERM`,
-then `SIGKILL`, non-blockingly retains the available transcript tail, and still
-persists `unknown-running`. Reload never reattaches or retries. Exact cleanup
+Cancellation from either `running` or the latest owned `unknown-running` state
+verifies the process identity, sends bounded `SIGINT`, `SIGTERM`, then
+`SIGKILL`, non-blockingly retains the available transcript tail, and still
+persists `unknown-running`. Signal ambiguity retains in-memory process
+ownership so cleanup remains blocked; a later exact cancellation may retry the
+signal sequence, while reload never reattaches or redispatches. Exact cleanup
 inherits the CAP-02A phase and explicit-abandonment gate, identity-bound
 three-file deletion, and retained consumption marker.
 
-All CAP-02C process-execution evidence used temporary local fake executables. Tests
-proved binary/probe/runtime drift refusal, target-config refusal, replacement
-resistance, exact argv/prompt/environment, split JSONL, private stderr,
-one-shot consumption, owned-group cancellation including a child process,
-transcript-tail retention, restart ambiguity, and sentinel-safe cleanup. The
-installed CLI supplied only local `--version`, `exec --help`, and feature-list
-inventory; no `codex exec`, authentication inspection, provider/network call,
-or live target was used. Consequently CAP-02C is reusable preparation, not
-current provider readiness or activation. A real use still needs every
-preflight and consent below, including a newly selected exact model, native
-binary, auth/data/retention boundary, target, and one-shot activation.
+All CAP-02C process-execution evidence used temporary Git repositories and
+local fake executables. Tests proved exact target-root binding, identical-clone
+refusal, current HEAD/fingerprint drift refusal before probes or activation
+consumption, binary/probe/runtime drift refusal, target-config refusal,
+replacement resistance, exact argv/prompt/environment, split JSONL, private
+stderr, one-shot consumption, owned-group cancellation including a child
+process, transcript-tail retention, process ownership through ambiguous
+cancellation, restart ambiguity, and sentinel-safe cleanup. The installed CLI
+supplied only local `--version`, `exec --help`, and feature-list inventory; no
+`codex exec`, authentication inspection, provider/network call, or live target
+was used. Consequently CAP-02C is reusable preparation, not current provider
+readiness or activation. A real use still needs every preflight and consent
+below, including a newly selected exact model, native binary,
+auth/data/retention boundary, target, and one-shot activation.
 
 ## What trusted-local means
 

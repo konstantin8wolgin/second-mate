@@ -452,13 +452,15 @@ The activation record is defined operationally in
 CAP-02A now exercises these coordinator-side activation, session, event,
 ambiguity, evidence, and cleanup rules entirely offline over an injected mock
 control plane. CAP-02C additionally provides a dormant library-only Codex CLI
-subprocess boundary: exact binary/probe/prompt/environment/argv qualification,
-private JSONL and stderr handling, Linux process identity, owned process-group
-cancellation, and restart-to-unknown behavior are proved against temporary fake
-executables. The package still contains no trusted-local CLI dispatch route,
-and CAP-02C made no provider call or real-target claim. Neither proof satisfies
-a current provider, target, human-usability, or per-run activation gate; every
-real use still needs a fresh exact boundary and separately scoped activation.
+subprocess boundary: exact resolved target-root/current-revision and
+binary/probe/prompt/environment/argv qualification, private JSONL and stderr
+handling, Linux process identity, owned process-group cancellation from
+`running` or `unknown-running`, and ownership-preserving ambiguity are proved
+against temporary Git repositories and fake executables. The package still
+contains no trusted-local CLI dispatch route, and CAP-02C made no provider call
+or real-target claim. Neither proof satisfies a current provider, target,
+human-usability, or per-run activation gate; every real use still needs a fresh
+exact boundary and separately scoped activation.
 
 ### Deferred sandboxed execution path
 
