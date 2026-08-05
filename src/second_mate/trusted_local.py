@@ -194,6 +194,12 @@ _CONSUMED_MARKER_PREFIX = "activation."
 _CONSUMED_MARKER_SUFFIX = ".consumed.json"
 
 
+@dataclass(frozen=True)
+class _CleanupAuthorization:
+    run_directory_identity: tuple[int, int]
+    private_root_change_identity: tuple[int, int, int]
+
+
 def _validate_activation_id(value: str) -> None:
     if value in {".", ".."} or _ACTIVATION_ID.fullmatch(value) is None:
         raise TrustedLocalAuthorityError(
@@ -218,6 +224,38 @@ def _private_directory(path: Path, label: str) -> Path:
     if metadata.st_uid != os.geteuid() or stat.S_IMODE(metadata.st_mode) != 0o700:
         raise TrustedLocalBoundaryError(f"{label} must be owned by this user with mode 0700")
     return resolved
+
+
+def _private_directory_identity(path: Path, label: str) -> tuple[int, int]:
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        metadata = os.fstat(descriptor)
+        entry = path.lstat()
+        if (
+            not stat.S_ISDIR(metadata.st_mode)
+            or metadata.st_uid != os.geteuid()
+            or stat.S_IMODE(metadata.st_mode) != 0o700
+            or (metadata.st_dev, metadata.st_ino) != (entry.st_dev, entry.st_ino)
+        ):
+            raise OSError(f"unsafe {label}")
+        return (metadata.st_dev, metadata.st_ino)
+    except OSError as error:
+        raise TrustedLocalBoundaryError(f"cannot identify {label}: {error}") from error
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+
+
+def _private_directory_change_identity(path: Path, label: str) -> tuple[int, int, int]:
+    device, inode = _private_directory_identity(path, label)
+    try:
+        metadata = path.lstat()
+    except OSError as error:
+        raise TrustedLocalBoundaryError(f"cannot inspect {label}: {error}") from error
+    if (metadata.st_dev, metadata.st_ino) != (device, inode):
+        raise TrustedLocalBoundaryError(f"{label} identity changed during inspection")
+    return (device, inode, metadata.st_ctime_ns)
 
 
 def _validate_disjoint(repository: Path, private_root: Path) -> None:
@@ -378,8 +416,12 @@ def _basis_document(basis: TrustedLocalBasis) -> JsonObject:
     }
 
 
-def _consumption_document(activation_id: str, basis: TrustedLocalBasis) -> JsonObject:
-    return {
+def _consumption_document(
+    activation_id: str,
+    basis: TrustedLocalBasis,
+    cleanup_authorization: _CleanupAuthorization | None = None,
+) -> JsonObject:
+    document: JsonObject = {
         "activation_id": activation_id,
         "basis": _basis_document(basis),
         "cleanup_policy": _CLEANUP_POLICY,
@@ -389,6 +431,19 @@ def _consumption_document(activation_id: str, basis: TrustedLocalBasis) -> JsonO
         "spend_policy": _SPEND_POLICY,
         "state": "consumed",
     }
+    if cleanup_authorization is not None:
+        document["cleanup_authorization"] = {
+            "private_root": {
+                "change_time_ns": cleanup_authorization.private_root_change_identity[2],
+                "device": cleanup_authorization.private_root_change_identity[0],
+                "inode": cleanup_authorization.private_root_change_identity[1],
+            },
+            "run_directory": {
+                "device": cleanup_authorization.run_directory_identity[0],
+                "inode": cleanup_authorization.run_directory_identity[1],
+            },
+        }
+    return document
 
 
 def _consumption_marker(private_root: Path, activation_id: str) -> Path:
@@ -397,7 +452,7 @@ def _consumption_marker(private_root: Path, activation_id: str) -> Path:
 
 def _validate_consumption_marker(
     private_root: Path, activation_id: str, basis: TrustedLocalBasis
-) -> None:
+) -> _CleanupAuthorization | None:
     marker = _consumption_marker(private_root, activation_id)
     try:
         value = strict_json_loads(_read_private_file(marker, "activation consumption marker"))
@@ -405,10 +460,118 @@ def _validate_consumption_marker(
         raise TrustedLocalBoundaryError(
             f"activation consumption marker is not strict JSON: {error}"
         ) from error
-    if value != _consumption_document(activation_id, basis):
+    if value == _consumption_document(activation_id, basis):
+        return None
+    if not isinstance(value, dict):
         raise TrustedLocalBoundaryError(
             "activation consumption marker does not match the frozen basis"
         )
+    cleanup_authorization = value.get("cleanup_authorization")
+    if not isinstance(cleanup_authorization, dict) or set(cleanup_authorization) != {
+        "private_root",
+        "run_directory",
+    }:
+        raise TrustedLocalBoundaryError(
+            "activation consumption marker cleanup authorization is invalid"
+        )
+    run_directory = cleanup_authorization["run_directory"]
+    if not isinstance(run_directory, dict) or set(run_directory) != {"device", "inode"}:
+        raise TrustedLocalBoundaryError(
+            "activation consumption marker directory identity is invalid"
+        )
+    device = run_directory["device"]
+    inode = run_directory["inode"]
+    if type(device) is not int or device < 0 or type(inode) is not int or inode <= 0:
+        raise TrustedLocalBoundaryError(
+            "activation consumption marker directory identity is invalid"
+        )
+    private_root = cleanup_authorization["private_root"]
+    if not isinstance(private_root, dict) or set(private_root) != {
+        "change_time_ns",
+        "device",
+        "inode",
+    }:
+        raise TrustedLocalBoundaryError(
+            "activation consumption marker private root identity is invalid"
+        )
+    root_device = private_root["device"]
+    root_inode = private_root["inode"]
+    root_change_time = private_root["change_time_ns"]
+    if (
+        type(root_device) is not int
+        or root_device < 0
+        or type(root_inode) is not int
+        or root_inode <= 0
+        or type(root_change_time) is not int
+        or root_change_time <= 0
+    ):
+        raise TrustedLocalBoundaryError(
+            "activation consumption marker private root identity is invalid"
+        )
+    authorization = _CleanupAuthorization(
+        run_directory_identity=(device, inode),
+        private_root_change_identity=(root_device, root_inode, root_change_time),
+    )
+    if value != _consumption_document(activation_id, basis, authorization):
+        raise TrustedLocalBoundaryError(
+            "activation consumption marker does not match the frozen basis"
+        )
+    return authorization
+
+
+def _authorize_cleanup(
+    private_root: Path,
+    activation_id: str,
+    basis: TrustedLocalBasis,
+    run_directory_identity: tuple[int, int],
+) -> None:
+    authorization = _CleanupAuthorization(
+        run_directory_identity=run_directory_identity,
+        private_root_change_identity=_private_directory_change_identity(
+            private_root, "trusted-local private root"
+        ),
+    )
+    existing = _validate_consumption_marker(private_root, activation_id, basis)
+    if existing is not None:
+        if existing != authorization:
+            raise TrustedLocalBoundaryError("cleanup authorization run directory identity changed")
+        return
+    marker = _consumption_marker(private_root, activation_id)
+    try:
+        metadata = marker.lstat()
+    except OSError as error:
+        raise TrustedLocalBoundaryError(
+            f"cannot inspect activation consumption marker identity: {error}"
+        ) from error
+    marker_identity = (metadata.st_dev, metadata.st_ino)
+    _validate_identified_file(marker, marker_identity)
+    _write_identified_file(
+        marker,
+        marker_identity,
+        deterministic_json_bytes(_consumption_document(activation_id, basis, authorization)),
+    )
+    if (
+        _private_directory_change_identity(private_root, "trusted-local private root")
+        != authorization.private_root_change_identity
+    ):
+        raise TrustedLocalBoundaryError(
+            "cleanup authorization private root directory identity changed"
+        )
+
+
+def _validate_cleanup_authorization(
+    authorization: _CleanupAuthorization,
+    private_root: Path,
+    run_directory_identity: tuple[int, int],
+) -> None:
+    current = _CleanupAuthorization(
+        run_directory_identity=run_directory_identity,
+        private_root_change_identity=_private_directory_change_identity(
+            private_root, "trusted-local private root"
+        ),
+    )
+    if authorization != current:
+        raise TrustedLocalBoundaryError("cleanup authorization directory identity changed")
 
 
 def _claim_activation(private_root: Path, activation_id: str, basis: TrustedLocalBasis) -> None:
@@ -551,7 +714,14 @@ def _run_from_session(
         identities[name] = (device, inode)
 
     phase = _session_text(document["phase"], "trusted-local session phase")
-    if phase not in {"launching", "running", "unknown-running", "completed", "failed"}:
+    if phase not in {
+        "launching",
+        "running",
+        "unknown-running",
+        "completed",
+        "failed",
+        "cleanup-pending",
+    }:
         raise TrustedLocalBoundaryError("trusted-local session phase is invalid")
     process_value = document["process"]
     if process_value is None:
@@ -787,19 +957,49 @@ class OfflineTrustedLocalAdapter:
         repository_path = _real_directory(repository, "trusted-local repository")
         private_root_path = _private_directory(private_root, "trusted-local private root")
         _validate_disjoint(repository_path, private_root_path)
-        _validate_consumption_marker(private_root_path, activation_id, basis)
+        cleanup_authorization = _validate_consumption_marker(
+            private_root_path, activation_id, basis
+        )
         run_directory = _private_directory(
             private_root_path / activation_id, "trusted-local run directory"
         )
+        actual_directory_identity = _private_directory_identity(
+            run_directory, "trusted-local run directory"
+        )
+        if cleanup_authorization is not None:
+            _validate_cleanup_authorization(
+                cleanup_authorization,
+                private_root_path,
+                actual_directory_identity,
+            )
         try:
             entries = {path.name: path for path in run_directory.iterdir()}
         except OSError as error:
             raise TrustedLocalBoundaryError(
                 f"cannot enumerate private run artifacts: {error}"
             ) from error
-        if set(entries) != set(_PRIVATE_ARTIFACT_NAMES):
+        entry_names = set(entries)
+        if not entry_names:
+            if cleanup_authorization is None:
+                raise TrustedLocalBoundaryError(
+                    "empty private run directory has no cleanup authorization"
+                )
+            run = TrustedLocalRun(
+                activation_id=activation_id,
+                phase="cleanup-pending",
+                process_id=None,
+                process_start_token=None,
+                session_id=None,
+                independent_evidence_required=True,
+                repository=repository_path,
+                run_directory=run_directory,
+                artifact_identities={},
+            )
+            self._bases[activation_id] = basis
+            return run
+        if "session.json" not in entries:
             raise TrustedLocalBoundaryError(
-                "private run directory must contain exactly the recorded artifacts"
+                "partial private cleanup omits its durable session intent"
             )
         session_content = _read_private_file(entries["session.json"], "trusted-local session")
         try:
@@ -815,7 +1015,20 @@ class OfflineTrustedLocalAdapter:
             repository=repository_path,
             run_directory=run_directory,
         )
-        for name in _PRIVATE_ARTIFACT_NAMES:
+        if run.phase == "cleanup-pending":
+            if cleanup_authorization is None and entry_names != set(_PRIVATE_ARTIFACT_NAMES):
+                raise TrustedLocalBoundaryError(
+                    "partial cleanup-pending directory has no cleanup authorization"
+                )
+            if not entry_names.issubset(_PRIVATE_ARTIFACT_NAMES):
+                raise TrustedLocalBoundaryError(
+                    "cleanup-pending directory contains an unexpected artifact"
+                )
+        elif entry_names != set(_PRIVATE_ARTIFACT_NAMES):
+            raise TrustedLocalBoundaryError(
+                "private run directory must contain exactly the recorded artifacts"
+            )
+        for name in entry_names:
             _validate_identified_file(entries[name], run.artifact_identities[name])
         self._bases[activation_id] = basis
         if run.phase in {"launching", "running"}:
@@ -964,7 +1177,7 @@ class OfflineTrustedLocalAdapter:
                 raise TrustedLocalBoundaryError(
                     "cannot clean up while this adapter still owns the process"
                 )
-        elif run.phase in {"completed", "failed"}:
+        elif run.phase in {"completed", "failed", "cleanup-pending"}:
             if recovery_disposition is not None:
                 raise TrustedLocalBoundaryError(
                     "terminal trusted-local cleanup does not accept a recovery disposition"
@@ -972,7 +1185,9 @@ class OfflineTrustedLocalAdapter:
         else:
             raise TrustedLocalBoundaryError("trusted-local cleanup phase is invalid")
         _validate_activation_id(run.activation_id)
-        if set(run.artifact_identities) != set(_PRIVATE_ARTIFACT_NAMES):
+        if run.phase == "cleanup-pending" and not run.artifact_identities:
+            pass
+        elif set(run.artifact_identities) != set(_PRIVATE_ARTIFACT_NAMES):
             raise TrustedLocalBoundaryError(
                 "private run identity record must name exactly the cleanup artifacts"
             )
@@ -985,7 +1200,16 @@ class OfflineTrustedLocalAdapter:
             raise TrustedLocalBoundaryError(
                 "trusted-local cleanup requires a validated durable session record"
             )
-        _validate_consumption_marker(private_root, run.activation_id, basis)
+        cleanup_authorization = _validate_consumption_marker(private_root, run.activation_id, basis)
+        actual_directory_identity = _private_directory_identity(
+            run_directory, "trusted-local run directory"
+        )
+        if cleanup_authorization is not None:
+            _validate_cleanup_authorization(
+                cleanup_authorization,
+                private_root,
+                actual_directory_identity,
+            )
         if run_directory != private_root / run.activation_id:
             raise TrustedLocalBoundaryError(
                 "private run directory does not match the activation identity"
@@ -996,13 +1220,40 @@ class OfflineTrustedLocalAdapter:
             raise TrustedLocalBoundaryError(
                 f"cannot enumerate private run artifacts: {error}"
             ) from error
-        if set(entries) != set(_PRIVATE_ARTIFACT_NAMES):
+        entry_names = set(entries)
+        if run.phase == "cleanup-pending" and not run.artifact_identities:
+            if cleanup_authorization is None:
+                raise TrustedLocalBoundaryError(
+                    "empty private run directory has no cleanup authorization"
+                )
+            if entry_names:
+                raise TrustedLocalBoundaryError(
+                    "empty cleanup recovery directory is no longer empty"
+                )
+            try:
+                os.rmdir(run_directory)
+                _fsync_directory(private_root)
+            except OSError as error:
+                raise TrustedLocalBoundaryError(
+                    f"cannot remove empty private run directory: {error}"
+                ) from error
+            return
+        if run.phase == "cleanup-pending":
+            if cleanup_authorization is None and entry_names != set(_PRIVATE_ARTIFACT_NAMES):
+                raise TrustedLocalBoundaryError(
+                    "partial cleanup-pending directory has no cleanup authorization"
+                )
+            if "session.json" not in entries or not entry_names.issubset(_PRIVATE_ARTIFACT_NAMES):
+                raise TrustedLocalBoundaryError(
+                    "cleanup-pending directory must retain its session and only recorded artifacts"
+                )
+        elif entry_names != set(_PRIVATE_ARTIFACT_NAMES):
             raise TrustedLocalBoundaryError(
                 "private run directory must contain exactly the recorded artifacts"
             )
 
         # The complete set and every physical identity are checked before the first unlink.
-        for name in _PRIVATE_ARTIFACT_NAMES:
+        for name in entry_names:
             _validate_identified_file(entries[name], run.artifact_identities[name])
         try:
             stored_session = strict_json_loads(
@@ -1017,6 +1268,15 @@ class OfflineTrustedLocalAdapter:
             raise TrustedLocalBoundaryError(
                 "trusted-local cleanup session record does not match the requested run"
             )
+        if run.phase != "cleanup-pending":
+            run = replace(run, phase="cleanup-pending")
+            self._persist(run)
+        _authorize_cleanup(
+            private_root,
+            run.activation_id,
+            basis,
+            actual_directory_identity,
+        )
         directory_descriptor: int | None = None
         try:
             directory_descriptor = os.open(
@@ -1024,6 +1284,8 @@ class OfflineTrustedLocalAdapter:
                 os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
             )
             for name in ("transcript.jsonl", "control.tmp", "session.json"):
+                if name not in entries:
+                    continue
                 _validate_identified_file(entries[name], run.artifact_identities[name])
                 os.unlink(name, dir_fd=directory_descriptor)
         except OSError as error:

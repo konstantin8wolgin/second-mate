@@ -39,9 +39,17 @@ evidence. Cancellation and ambiguous launch, read, wait, or restart state stay
 unless the operator first makes the required recovery decision and supplies the
 exact `abandoned` disposition. Cleanup also refuses while that adapter still
 owns the process; recovery/reload never reattaches. Completed and failed runs
-need no recovery disposition. Cleanup then attests the durable session, exact directory contents,
-and every recorded identity before unlinking only the three known files and the
-empty directory. It validates but never deletes the consumption marker.
+need no recovery disposition. Cleanup then attests the durable session, exact
+directory contents, and every recorded identity, persists `cleanup-pending` in
+that same session, and enriches the retained consumption marker with cleanup
+authorization bound to the physical run directory and private-root change
+identity before the first unlink. It then deletes only the three known files
+and empty directory. After interruption, a fresh adapter may resume only the
+surviving identity-recorded subset while both durable records still prove that
+intent; if all files were already removed, it may remove only the same
+identity-bound empty run directory under the unchanged private root. A missing
+authorization/session/intent, directory or artifact replacement, or unexpected
+entry remains a refusal. Cleanup never deletes the consumption marker.
 
 This is executable evidence for the coordinator-side contract only. It is not
 provider readiness, containment, process-group cancellation proof,
@@ -122,7 +130,11 @@ persists `unknown-running`. Signal ambiguity retains in-memory process
 ownership so cleanup remains blocked; a later exact cancellation may retry the
 signal sequence, while reload never reattaches or redispatches. Exact cleanup
 inherits the CAP-02A phase and explicit-abandonment gate, identity-bound
-three-file deletion, and retained consumption marker.
+three-file deletion, durable interrupted-cleanup resumption, and retained
+consumption marker. If a stopped process's stdout cannot be made nonblocking
+for the bounded cancellation drain, the adapter closes that undrainable owned
+descriptor and conservatively persists `unknown-running`; it neither retries
+nor claims a complete transcript.
 
 All CAP-02C process-execution evidence used temporary Git repositories and
 local fake executables. Tests proved exact target-root binding, identical-clone
@@ -131,7 +143,9 @@ consumption, binary/probe/runtime drift refusal, target-config refusal,
 replacement resistance, exact argv/prompt/environment, split JSONL, private
 stderr, one-shot consumption, owned-group cancellation including a child
 process, transcript-tail retention, process ownership through ambiguous
-cancellation, restart ambiguity, and sentinel-safe cleanup. The installed CLI
+cancellation, failed-drain descriptor closure, restart ambiguity, interrupted
+exact-cleanup resumption, adversarial cleanup refusal, and sentinel-safe
+cleanup. The installed CLI
 supplied only local `--version`, `exec --help`, and feature-list inventory; no
 `codex exec`, authentication inspection, provider/network call, or live target
 was used. Consequently CAP-02C is reusable preparation, not current provider
@@ -283,6 +297,19 @@ then remove only the exact private files created and identity-recorded for the
 run plus the now-empty dedicated run directory. It does not revert repository
 changes, delete other local files, invoke provider session deletion, or erase
 provider-side data.
+Before the first unlink, the adapter durably records `cleanup-pending` in the
+existing identity-recorded session and adds cleanup authorization to the
+retained consumption marker. That authorization binds the physical run
+directory plus the private root's directory-change identity so remove/recreate
+cannot pass merely through inode reuse. An interrupted cleanup can resume from
+a fresh adapter only if those records and every surviving file retain their
+exact identities. If the session was the last file removed, recovery may
+remove only the same identity-bound empty run directory. Partial state without
+authorization/intent, a missing session in a nonempty directory, a replacement,
+or any unexpected entry fails closed without deleting more. Any unrelated
+entry creation or removal in that private root after authorization also changes
+the parent token and conservatively blocks automatic cleanup recovery; the
+operator must inspect that state rather than bypass the refusal.
 Repository or external recovery always requires its own evidence and authority.
 The one-shot activation-consumption marker is authority history, not disposable
 session/transcript/temp state, and remains so cleanup cannot make the grant

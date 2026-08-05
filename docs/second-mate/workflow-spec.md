@@ -442,9 +442,15 @@ The following controls remain non-negotiable even though containment is not:
    `unknown-running` envelope additionally requires an explicit human
    abandonment decision and matching recovery disposition, and refuses while
    the adapter still owns the process. It must refuse unexpected or replaced
-   entries and must never recursively delete, follow provider-supplied paths,
-   alter repository work, remove arbitrary system files, or claim to delete
-   provider-side data.
+   entries. Before the first unlink it must persist durable cleanup intent in
+   the existing identity-recorded session and bind retained cleanup authority
+   to the physical run directory plus private-root change identity. Restart
+   may then remove only the exact surviving recorded subset or that same empty
+   run directory; absent intent/authorization, a directory replacement, or a
+   nonempty partial directory without the session still fails closed. Cleanup
+   must never recursively delete, follow provider-supplied
+   paths, alter repository work, remove arbitrary system files, or claim to
+   delete provider-side data.
 
 The activation record is defined operationally in
 [TRUSTED-LOCAL-OPERATOR.md](TRUSTED-LOCAL-OPERATOR.md).
@@ -456,7 +462,10 @@ subprocess boundary: exact resolved target-root/current-revision and
 binary/probe/prompt/environment/argv qualification, private JSONL and stderr
 handling, Linux process identity, owned process-group cancellation from
 `running` or `unknown-running`, and ownership-preserving ambiguity are proved
-against temporary Git repositories and fake executables. The package still
+against temporary Git repositories and fake executables. Exact cleanup also
+records durable intent plus directory-bound authorization and resumes only an
+identity-validated remainder or the same empty run directory after interruption.
+The package still
 contains no trusted-local CLI dispatch route, and CAP-02C made no provider call
 or real-target claim. Neither proof satisfies a current provider, target,
 human-usability, or per-run activation gate; every real use still needs a fresh

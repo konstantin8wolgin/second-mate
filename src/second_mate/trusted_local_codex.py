@@ -352,6 +352,8 @@ class _CodexCliProcess:
         try:
             os.set_blocking(self._stdout.fileno(), False)
         except (OSError, ValueError):
+            with suppress(OSError, ValueError):
+                self._stdout.close()
             return False
         self._nonblocking_after_cancel = True
         return True

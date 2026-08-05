@@ -756,6 +756,8 @@ def test_cancellation_drain_failure_still_persists_unknown_running(
         repository=repository,
         private_root=private_root,
     )
+    owned_process = adapter._processes[run.activation_id]
+    owned_stdout = owned_process._stdout
     deadline = time.monotonic() + 3
     while not (tmp_path / "ready.json").exists() and time.monotonic() < deadline:
         time.sleep(0.01)
@@ -769,6 +771,7 @@ def test_cancellation_drain_failure_still_persists_unknown_running(
     cancelled = adapter.cancel(run)
 
     assert cancelled.phase == "unknown-running"
+    assert owned_stdout.closed
     recovered = CodexCliTrustedLocalAdapter(
         boundary=boundary, environment=environment, prompt=_PROMPT
     ).load(

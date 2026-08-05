@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from second_mate import trusted_local as trusted_local_module
 from second_mate.trusted_local import (
     OfflineLaunchRequest,
     OfflineProcess,
@@ -415,6 +416,265 @@ def test_cleanup_removes_only_the_exact_identified_run_artifacts(tmp_path: Path)
     assert not run.run_directory.exists()
     assert repository_sentinel.read_text(encoding="utf-8") == "preserve repository work\n"
     assert sibling.read_text(encoding="utf-8") == "preserve sibling\n"
+
+
+@pytest.mark.parametrize(
+    ("failure_name", "remaining_names"),
+    [
+        (
+            "transcript.jsonl",
+            {"transcript.jsonl", "control.tmp", "session.json"},
+        ),
+        ("control.tmp", {"control.tmp", "session.json"}),
+        ("session.json", {"session.json"}),
+    ],
+)
+def test_interrupted_cleanup_persists_intent_and_fresh_reload_resumes_exact_remainder(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    failure_name: str,
+    remaining_names: set[str],
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    repository_sentinel = repository / "work.txt"
+    repository_sentinel.write_text("preserve repository work\n", encoding="utf-8")
+    private_root = _private_root(tmp_path / "private")
+    private_sentinel = private_root / "another-run.keep"
+    private_sentinel.write_text("preserve sibling\n", encoding="utf-8")
+    process = ScriptedOfflineProcess(
+        [
+            _event_line(
+                {
+                    "type": "thread.started",
+                    "thread_id": "019fcdda-2c17-7f51-9e81-a56f5b9585dc",
+                }
+            )
+            + _event_line({"type": "turn.started"})
+            + _event_line({"type": "turn.completed"})
+        ],
+        exit_code=0,
+    )
+    adapter = OfflineTrustedLocalAdapter(LaunchingControlPlane(process))
+    run = adapter.finish(
+        adapter.start(
+            basis=_basis(),
+            activation_data=_activation(),
+            repository=repository,
+            private_root=private_root,
+        )
+    )
+    real_unlink = os.unlink
+
+    def interrupt_cleanup(path: str, *, dir_fd: int | None = None) -> None:
+        if path == failure_name:
+            raise OSError(f"injected interruption before {failure_name}")
+        real_unlink(path, dir_fd=dir_fd)
+
+    with monkeypatch.context() as context:
+        context.setattr("second_mate.trusted_local.os.unlink", interrupt_cleanup)
+        with pytest.raises(TrustedLocalBoundaryError, match="cannot remove exact"):
+            adapter.cleanup(run)
+
+    assert {path.name for path in run.run_directory.iterdir()} == remaining_names
+    session = json.loads((run.run_directory / "session.json").read_bytes())
+    assert session["phase"] == "cleanup-pending"
+
+    recovery = OfflineTrustedLocalAdapter(LaunchingControlPlane())
+    pending = recovery.load(
+        basis=_basis(),
+        activation_id=run.activation_id,
+        repository=repository,
+        private_root=private_root,
+    )
+    assert pending.phase == "cleanup-pending"
+    recovery.cleanup(pending)
+
+    assert not run.run_directory.exists()
+    assert (private_root / "activation.run-001.consumed.json").is_file()
+    assert repository_sentinel.read_text(encoding="utf-8") == "preserve repository work\n"
+    assert private_sentinel.read_text(encoding="utf-8") == "preserve sibling\n"
+
+
+def test_empty_directory_after_interrupted_cleanup_is_reloadable_for_final_rmdir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    private_root = _private_root(tmp_path / "private")
+    private_sentinel = private_root / "another-run.keep"
+    private_sentinel.write_text("preserve sibling\n", encoding="utf-8")
+    adapter, running, _ = _start_mock_run(repository, private_root)
+    run = adapter.cancel(running)
+
+    def interrupt_final_rmdir(path: str | Path) -> None:
+        raise OSError(f"injected final-directory interruption: {path}")
+
+    with monkeypatch.context() as context:
+        context.setattr("second_mate.trusted_local.os.rmdir", interrupt_final_rmdir)
+        with pytest.raises(TrustedLocalBoundaryError, match="cannot remove empty"):
+            adapter.cleanup(run, recovery_disposition="abandoned")
+
+    assert run.run_directory.is_dir()
+    assert tuple(run.run_directory.iterdir()) == ()
+
+    recovery = OfflineTrustedLocalAdapter(LaunchingControlPlane())
+    pending = recovery.load(
+        basis=_basis(),
+        activation_id=run.activation_id,
+        repository=repository,
+        private_root=private_root,
+    )
+    assert pending.phase == "cleanup-pending"
+    assert pending.artifact_identities == {}
+    recovery.cleanup(pending)
+
+    assert not run.run_directory.exists()
+    assert (private_root / "activation.run-001.consumed.json").is_file()
+    assert private_sentinel.read_text(encoding="utf-8") == "preserve sibling\n"
+
+
+def test_empty_directory_without_cleanup_authorization_is_not_recovery_evidence(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    private_root = _private_root(tmp_path / "private")
+    _adapter, run, _ = _start_mock_run(repository, private_root)
+    for artifact in run.run_directory.iterdir():
+        artifact.unlink()
+
+    recovery = OfflineTrustedLocalAdapter(LaunchingControlPlane())
+    with pytest.raises(TrustedLocalBoundaryError, match="cleanup authorization"):
+        recovery.load(
+            basis=_basis(),
+            activation_id=run.activation_id,
+            repository=repository,
+            private_root=private_root,
+        )
+
+    assert run.run_directory.is_dir()
+    assert tuple(run.run_directory.iterdir()) == ()
+    assert (private_root / "activation.run-001.consumed.json").is_file()
+
+
+def test_empty_replacement_directory_is_not_interrupted_cleanup_recovery(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    private_root = _private_root(tmp_path / "private")
+    adapter, running, _ = _start_mock_run(repository, private_root)
+    run = adapter.cancel(running)
+
+    def interrupt_final_rmdir(path: str | Path) -> None:
+        raise OSError(f"injected interruption: {path}")
+
+    with monkeypatch.context() as context:
+        context.setattr(
+            "second_mate.trusted_local.os.rmdir",
+            interrupt_final_rmdir,
+        )
+        with pytest.raises(TrustedLocalBoundaryError, match="cannot remove empty"):
+            adapter.cleanup(run, recovery_disposition="abandoned")
+
+    marker = json.loads((private_root / "activation.run-001.consumed.json").read_bytes())
+    recorded_run_identity = (
+        marker["cleanup_authorization"]["run_directory"]["device"],
+        marker["cleanup_authorization"]["run_directory"]["inode"],
+    )
+    recorded_root_change_time = marker["cleanup_authorization"]["private_root"]["change_time_ns"]
+    run.run_directory.rmdir()
+    run.run_directory.mkdir(mode=0o700)
+    assert private_root.stat().st_ctime_ns != recorded_root_change_time
+
+    real_directory_identity = trusted_local_module._private_directory_identity
+
+    def report_reused_run_identity(path: Path, label: str) -> tuple[int, int]:
+        if path == run.run_directory:
+            return recorded_run_identity
+        return real_directory_identity(path, label)
+
+    recovery = OfflineTrustedLocalAdapter(LaunchingControlPlane())
+    with monkeypatch.context() as context:
+        context.setattr(
+            "second_mate.trusted_local._private_directory_identity",
+            report_reused_run_identity,
+        )
+        with pytest.raises(TrustedLocalBoundaryError, match="directory identity"):
+            recovery.load(
+                basis=_basis(),
+                activation_id=run.activation_id,
+                repository=repository,
+                private_root=private_root,
+            )
+
+    assert run.run_directory.is_dir()
+    assert tuple(run.run_directory.iterdir()) == ()
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("unexpected", "unexpected artifact"),
+        ("replaced", "identity"),
+        ("missing-session", "omits its durable session intent"),
+        ("missing-intent", "exactly the recorded artifacts"),
+    ],
+)
+def test_reload_refuses_tampered_interrupted_cleanup_without_deleting_more(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+    message: str,
+) -> None:
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    private_root = _private_root(tmp_path / "private")
+    private_sentinel = private_root / "another-run.keep"
+    private_sentinel.write_text("preserve sibling\n", encoding="utf-8")
+    adapter, running, _ = _start_mock_run(repository, private_root)
+    run = adapter.cancel(running)
+    real_unlink = os.unlink
+
+    def interrupt_after_first_unlink(path: str, *, dir_fd: int | None = None) -> None:
+        if path == "control.tmp":
+            raise OSError("injected interruption after first unlink")
+        real_unlink(path, dir_fd=dir_fd)
+
+    with monkeypatch.context() as context:
+        context.setattr("second_mate.trusted_local.os.unlink", interrupt_after_first_unlink)
+        with pytest.raises(TrustedLocalBoundaryError, match="cannot remove exact"):
+            adapter.cleanup(run, recovery_disposition="abandoned")
+
+    session_path = run.run_directory / "session.json"
+    control_path = run.run_directory / "control.tmp"
+    if mutation == "unexpected":
+        (run.run_directory / "unrecorded.txt").write_text("do not guess\n", encoding="utf-8")
+    elif mutation == "replaced":
+        control_path.unlink()
+        control_path.write_text("replacement\n", encoding="utf-8")
+        os.chmod(control_path, 0o600)
+    elif mutation == "missing-session":
+        session_path.unlink()
+    else:
+        session = json.loads(session_path.read_bytes())
+        session["phase"] = "unknown-running"
+        session_path.write_text(json.dumps(session), encoding="utf-8")
+
+    remaining_names = {path.name for path in run.run_directory.iterdir()}
+    recovery = OfflineTrustedLocalAdapter(LaunchingControlPlane())
+    with pytest.raises(TrustedLocalBoundaryError, match=message):
+        recovery.load(
+            basis=_basis(),
+            activation_id=run.activation_id,
+            repository=repository,
+            private_root=private_root,
+        )
+
+    assert {path.name for path in run.run_directory.iterdir()} == remaining_names
+    assert (private_root / "activation.run-001.consumed.json").is_file()
+    assert private_sentinel.read_text(encoding="utf-8") == "preserve sibling\n"
 
 
 def test_cleanup_refuses_an_active_run_and_preserves_every_recovery_artifact(

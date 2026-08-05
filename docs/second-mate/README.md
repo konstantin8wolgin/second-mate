@@ -3,7 +3,8 @@
 Status: canonical design; POL-01 narrowly selected, the verified FS-01
 Foundation baseline canonically adopted, CAP-01 and MS-01 complete, and
 DIR-INTAKE-01, CAP-02A, CAP-02C, EVA-01, and EVA-02 implemented and locally
-verified; PRV-01 and CAP-02B historically closed for one consumed run with
+verified; EVA-03 has a locally verified implementation awaiting canonical
+close; PRV-01 and CAP-02B are historically closed for one consumed run with
 partial independent evidence retained, while MS-02 still needs the human
 product check
 
@@ -36,6 +37,17 @@ consumption, permits exact owned-process cancellation from durable
 every remaining unchecked claim to its exact contingent, human, provider,
 sandbox, target, or pilot dependency. These are provider-free coordinator
 hardening only.
+
+EVA-03 makes that exact cleanup restart-safe without widening deletion
+authority. Before the first unlink it persists `cleanup-pending` in the
+identity-recorded session and records cleanup authorization in the retained
+consumption marker, bound to the run-directory identity and private-root change
+identity. A fresh adapter may then resume only the remaining recorded artifacts,
+or remove the exact empty run directory if all three files were already removed.
+Missing authorization/intent/session, directory or artifact replacement, and
+unexpected entries still fail closed. The same audit also closes a stopped CAP-02C
+process's stdout when nonblocking cancellation-drain setup fails, while
+retaining the durable `unknown-running` result.
 
 ## Authority and sources
 
