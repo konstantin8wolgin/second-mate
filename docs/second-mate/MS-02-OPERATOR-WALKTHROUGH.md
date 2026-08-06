@@ -6,8 +6,8 @@ Execution Consent, or trusted-local activation
 This walkthrough lets the operator handle the prototype that exists today and
 then judge it against approved Direction D-01 in [PROGRAM.md](PROGRAM.md). It
 uses only the deterministic FS-01 fixture in a disposable local Git worktree.
-It does not inspect authentication, call a provider, use the dormant Codex
-adapter, replay CAP-02B, or prove that a working model has useful autonomy.
+It does not inspect authentication, call a provider, activate or reuse either
+consumed trusted-local run, or prove that a working model has useful autonomy.
 
 ## The decision this supports
 
@@ -38,11 +38,15 @@ run the fixed FS-01 lifecycle: `draft`, read-only `preflight`, authority-gated
 `start` or same-owner `restart`, independent `evidence`, recoverable `close`,
 and `show`. Its only executor choice is `fixture`.
 
-Separately, the Python package exposes an offline mock adapter and the dormant
-`CodexCliTrustedLocalAdapter`. The latter has one-shot activation, real-process,
-JSONL, cancellation, recovery, and exact-cleanup mechanics, but no CLI route
-and no real Codex activation. It must not be inferred from the fixture commands
-below.
+Separately, the Python package exposes an offline mock adapter and the
+library-only `CodexCliTrustedLocalAdapter`. The latter has one-shot activation,
+real-process, JSONL, cancellation, recovery, and exact-cleanup mechanics, but no
+CLI route. One disposable real activation was consumed and conservatively
+closed as `unknown-running` after a pre-turn diagnostic; its intended target
+file was observed, but it did not establish terminal success. The corrected
+argument set has only provider-free regression evidence. None of those claims
+may be inferred from the fixture commands below, and neither consumed activation
+may be reused.
 
 ## Local prerequisites
 
@@ -246,11 +250,11 @@ cleanup as repository rollback or provider-side deletion.
 |---|---|---|---|
 | This FS-01 walkthrough | Current CLI plus deterministic fixture | Reproducible authority, refusal, evidence, continuation, and close mechanics | Working-model autonomy, provider or trusted-local usability |
 | CAP-02B | One manually enveloped real run whose activation is consumed | Retained marker proves consumption and Git proves its bounded fix | Deleted event/close artifacts, replayability, or reusable authority |
-| CAP-02C | Current public library adapter tested with fake executables | Reproducible binding, JSONL, process, cancellation, recovery, and cleanup mechanics | A user-facing launch route, current provider readiness, or any real activation |
+| CAP-02C | Current public library adapter, fake-process tests, and one consumed disposable live exercise | Reproducible binding/recovery mechanics; the consumed marker independently proves exhausted activation and frozen bindings, while the sanitized record preserves non-replayable historical observations of target output, conservative ambiguity, no retry, and cleanup | Independent replay of the deleted live artifacts, a user-facing launch route, terminal live close of the corrected argv, absence of outside effects, or reusable authority |
 
-CAP-02B must never be replayed or treated as CAP-02C authority. CAP-02C being
-reusable code does not mean it has been qualified or activated in the current
-environment.
+CAP-02B and activation `cap02c-live-20260806-02-4ybb2d` must never be replayed,
+resumed, or treated as reusable authority. CAP-02C being reusable code does not
+make its provider boundary or consent reusable.
 
 ## Acceptance questions
 
@@ -260,9 +264,9 @@ Record the answers as human product judgment, not technical proof:
    packet through close, or did the artifacts obscure it?
 2. **Authority:** Was the distinction between Direction, read-only preflight,
    exact grant, and execution obvious enough to prevent accidental permission?
-3. **Autonomy:** Is the historical one-run record plus the unactivated adapter
-   enough to judge useful working-model freedom, or is one fresh live exercise
-   still necessary?
+3. **Autonomy:** Do the two consumed records—including CAP-02C's exact target
+   result and conservative ambiguity—show useful working-model freedom, or must
+   the corrected adapter later receive a separately authorized terminal proof?
 4. **Truthful completion:** Were independent evidence, residual uncertainty,
    coverage, and handoff understandable and appropriately narrow?
 5. **Supervision:** Could one operator supervise the lifecycle at consequential
@@ -279,14 +283,24 @@ The valid MS-02 outcomes are either a narrow acceptance with these evidence
 limits or an open gate naming the concrete usability gap. This walkthrough
 does not choose either outcome.
 
-## Smallest future real exercise
+## Consumed exercise and any future real proof
 
-If the unanswered question is actual CAP-02C operation, the smallest next
-activation is one new, non-retryable, unsandboxed trusted-local exercise on a
-fresh baseline-known disposable target. It is not a CAP-02B replay. Because no
-CLI route exists, the packet must also authorize and independently review one
-exact invocation harness for the public adapter; activation consent alone
-cannot launch it.
+The separately authorized 2026-08-06 exercise already consumed one new CAP-02C
+activation on a fresh baseline-known disposable target. Its contemporaneous
+close records the exact requested file, an ended process, `unknown-running`
+after a pre-`turn.started` deprecated-feature diagnostic, no retry, and later
+exact cleanup under the explicit abandoned disposition. The retained marker
+independently proves that activation and its bindings remain consumed; the
+deleted raw artifacts make the other observations non-replayable. Provider-free
+code now omits that deprecated default-disabled flag, but no second provider
+call validated the corrected argv.
+
+If a terminal live close is still decision-changing after the normal-use bridge
+is designed, it requires another separately authorized, non-retryable
+activation. It is not a retry of CAP-02B or the consumed CAP-02C exercise.
+Because no CLI route exists, the packet must also authorize and independently
+review one exact invocation harness for the public adapter; activation consent
+alone cannot launch it.
 
 Before that single dispatch, record and bind:
 

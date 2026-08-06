@@ -1,4 +1,4 @@
-"""Dormant Codex CLI process boundary for provider-free CAP-02C proof."""
+"""Activation-gated Codex CLI process boundary for trusted-local runs."""
 
 from __future__ import annotations
 
@@ -47,7 +47,6 @@ _DISABLED_FEATURES = (
     "skill_search",
     "skill_mcp_dependency_install",
     "standalone_web_search",
-    "web_search_request",
     "workspace_dependencies",
 )
 

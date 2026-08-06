@@ -4,35 +4,43 @@ Status: canonical design; POL-01 narrowly selected, the verified FS-01
 Foundation baseline canonically adopted, CAP-01 and MS-01 complete, and
 DIR-INTAKE-01, CAP-02A, CAP-02C, EVA-01, EVA-02, EVA-03, and EVA-04 implemented and
 locally verified; PRV-01 and CAP-02B are historically closed for one consumed
-run with partial independent evidence retained, while MS-02 still needs the
-human product check
+run with partial independent evidence retained; one CAP-02C disposable exercise
+is also consumed and conservatively closed as `unknown-running`, while MS-02
+still needs the human product check and the normal-use conversation bridge
 
 Second Mate is a lean coordinator for AI coding work. It preserves human-owned product Direction, gives capable models room to solve technical problems, and requires evidence that fits each completion claim. It is a clean project, not a retrofit of FirstMate, Knowless, or their backlog and worker structures.
 
 The repository contains a Python 3.12 coordinator for approved Direction
 intake, the fixture-only FS-01 lifecycle, the CAP-02A offline adapter proof, and
-the dormant CAP-02C Codex CLI process adapter, plus partial retained evidence
-for one historically closed, manually enveloped CAP-02B run. It is
+the library-only CAP-02C Codex CLI process adapter, plus partial retained
+evidence for one historically closed, manually enveloped CAP-02B run and one
+consumed disposable CAP-02C exercise. It is
 operated manually and does not self-orchestrate. The
 [Direction operator guide](DIRECTION-OPERATOR.md),
 [FS-01 operator guide](FS-01-OPERATOR.md), and
 [trusted-local operator contract](TRUSTED-LOCAL-OPERATOR.md) describe those
 boundaries. The [MS-02 usability walkthrough](MS-02-OPERATOR-WALKTHROUGH.md)
 combines the safe fixture journey, D-01 questions, and the historical-versus-
-dormant evidence distinction without activating a provider. CAP-02A remains
+reproducible evidence distinction without activating a provider. CAP-02A remains
 the injected-mock reference. CAP-02C adds an
-activation-gated subprocess implementation but no CLI route; every test used a
-temporary fake executable and made no provider call. CAP-02B called one exact
+activation-gated subprocess implementation but no CLI route. Its reproducible
+tests use temporary fake executables. The contemporaneous close for one later
+authorized live exercise records the exact target result and `unknown-running`
+after a deprecated feature diagnostic preceded `turn.started`; deletion of the
+raw artifacts makes its result, lifecycle, no-retry handling, and cleanup
+non-replayable. The retained one-shot marker independently proves that the
+activation and frozen bindings are consumed. CAP-02B called one exact
 local Codex CLI host through a private manual envelope whose activation is now
 consumed. Executable evidence is recorded in [PROGRAM.md](PROGRAM.md); that
-evidence does not prove current provider readiness, a second live dispatch,
-automated Rumble, the broader workflow, or product readiness.
+evidence does not prove a successful terminal CAP-02C close, a second live
+dispatch, a normal conversation handoff, automated Rumble, the broader
+workflow, or product readiness.
 
 EVA-01 classifies every current readiness label by reproducible, retained,
 human-authority, structural, non-replayable, or open evidence. It also refuses
 cleanup of active runs, requires explicit abandonment before cleanup of
 `unknown-running`, disables the inventoried `skill_search` surface, and ships a
-typed-package marker. EVA-02 independently binds the dormant adapter to one
+typed-package marker. EVA-02 independently binds the library adapter to one
 resolved target and its current Git revision before probes or activation
 consumption, permits exact owned-process cancellation from durable
 `unknown-running`, retains ownership through cancellation ambiguity, and maps
@@ -206,19 +214,26 @@ recorded lifecycle, original gate output, and exact cleanup cannot be replayed
 from this checkout. [PROGRAM.md](PROGRAM.md) is the canonical evidence
 classification.
 
-CAP-02B therefore closes only this one historical manual boundary. The package still
-has no trusted-local CLI route. CAP-02C subsequently added a dormant reusable
-process adapter, reproducibly tested against temporary fake executables only.
+CAP-02B therefore closes only this one historical manual boundary. The package
+still has no trusted-local CLI route. CAP-02C subsequently added a reusable
+process adapter with reproducible fake-executable coverage.
 It binds the
 binary and local probes, model, prompt and environment digests, reduced-
 capability argv, process identity, private streams, and bounded process-group
 cancellation, phase-gated cleanup, and explicit unknown-running abandonment
-before it can launch or delete private artifacts. It did not inspect
-authentication, invoke
-`codex exec`, call a provider, use a live target, or activate a second run; the
-installed CLI was used only for local version/help/features inventory.
+before it can launch or delete private artifacts. A later one-shot disposable
+exercise did invoke `codex exec` with existing ChatGPT authentication. It
+produced the exact target file and exited, but the strict parser retained
+`unknown-running` because Codex emitted a deprecated-feature diagnostic before
+`turn.started`. The activation is consumed, no retry occurred, exact private
+artifacts were cleaned after explicit abandonment, and a provider-free
+regression removes the deprecated default-disabled flag. The current code has
+not received a second live validation.
 
 MS-02 cannot be completed from technical evidence alone. The next gate remains
-the human product check on whether the observed manual activation and the now-
-available but unactivated adapter boundary make the evidence, recovery,
-cleanup, and residual-risk experience usable and still fitting D-01.
+the human product check on whether the observed manual activations, conservative
+CAP-02C recovery, and still-manual library boundary make the evidence, cleanup,
+and residual-risk experience usable and still fitting D-01. The user's accepted
+normal-use direction additionally requires a First Mate conversation to hand an
+explicitly approved Direction into Second Mate without exposing activation or
+executable internals; that bridge does not exist yet.

@@ -1,0 +1,81 @@
+{
+  "activation": {
+    "id": "cap02c-live-20260806-02-4ybb2d",
+    "mode": "trusted-local-unsandboxed",
+    "provider_boundary_sha256": "178155bc55f431efbf2764937de870255d167a4d7fa00214b59a397953183a1e",
+    "retry_or_redispatch_performed": false
+  },
+  "assessment": "unknown-running-with-exact-target-result",
+  "claims_not_made": [
+    "terminal live CAP-02C completion",
+    "independent replay of exact target result, lifecycle, stopped-process observation, no-retry handling, or cleanup",
+    "absence of effects outside the disposable target",
+    "provider-side deletion or retention result",
+    "ordinary operator usability",
+    "corrected argv live validation"
+  ],
+  "cleanup": {
+    "consumed_marker_retained": true,
+    "consumed_marker_sha256_after": "fd4f77dfd93c07cf7d3c7978f7dcfcfd650f3d6430cb7d54d835f5aa2c57efb8",
+    "exact_run_directory_exists_after": false,
+    "private_artifact_sha256_before": {
+      "control.tmp": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "session.json": "01a609b6b6641b996f7c22e3689528eabf5d5a8b3bbb6414201fd712de6c1a11",
+      "transcript.jsonl": "572265ed6a5f2172118797d7f658d6e892cc8e0c8472f04505a77c246c07ac4a"
+    },
+    "raw_private_artifacts_deleted": true,
+    "recovery_disposition": "abandoned"
+  },
+  "diagnostic": {
+    "classification": "deprecated default-disabled web_search_request feature flag",
+    "message_sha256": "462cbd24fc7212da04c67ee5dc8406a250a157e2e8fce605e7d6d3e7e1002c60",
+    "position": "item.completed error before turn.started",
+    "raw_message_retained": false
+  },
+  "evidence_policy": {
+    "contains_credentials": false,
+    "contains_environment_values": false,
+    "contains_private_paths": false,
+    "contains_prompt_text": false,
+    "contains_provider_session_id": false,
+    "contains_transcript_text": false
+  },
+  "executable": {
+    "mode": "0755",
+    "owner_uid": 1000,
+    "sha256": "2e863156ed35ecc5253b1e2f907a9143077b9f7cb51942070c61996471ff6e04",
+    "type": "unaliased-native-regular-file",
+    "version": "codex-cli 0.146.0"
+  },
+  "lifecycle_event_types": [
+    "thread.started",
+    "item.completed",
+    "turn.started",
+    "item.completed",
+    "item.started",
+    "item.completed",
+    "item.completed",
+    "turn.completed"
+  ],
+  "model": "gpt-5.6-luna",
+  "process": {
+    "exact_recorded_identity_exists_after": false,
+    "provider_process_started_once": true
+  },
+  "prompt_sha256": "09cc0ce2694b574c778bc701d74d7bf360d2933467379d65520e1760bc3d7538",
+  "schema_version": 1,
+  "source": {
+    "head": "374c3f3779a2a2af8c5d6cbd6c8916c08b4352cf"
+  },
+  "target": {
+    "after_fingerprint": "04f45594321acfeea5c156e14dcb00ac6306392e4d5e72d86328f99ecb7869b2",
+    "before_fingerprint": "b631e1746dfb6ea450174c9f7bf651d6a853170bdb134ae19f01eeb876da3ca0",
+    "head": "887d0da07b70ff7b602873122a419ed23d39b72f",
+    "result_sha256": "12d83d9da4030d2e6e995bdf2c214bb359cd5bccde1f8b7c5fb688bd55ffd7fd",
+    "sentinel_sha256": "7f09515df57386e82c3649b042fc80c26994879f47f07d74832327e59f73a4a7",
+    "status_short": [
+      "?? result.txt"
+    ],
+    "target_sha256": "a1148ccaec01c649320fa0a3f443205413913a4ddb7a819b7a603b104ac77c7a"
+  }
+}

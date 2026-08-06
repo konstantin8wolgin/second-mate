@@ -167,3 +167,18 @@ These behaviors prove only manual approved-Direction intake and safe handoff to
 the existing draft flow. They do not prove automated or high-quality Rumble, a
 provider run, route or Map execution, pilot usefulness, or complete Direction
 coverage.
+
+## Normal-use conversation gap
+
+The intended ordinary entry is a First Mate conversation that researches and
+clarifies scope, presents one exact proposed Direction for explicit human
+approval, and hands that approved proposal to Second Mate. That handoff is not
+implemented today; operators still perform the commands above manually.
+
+The planned bridge must preserve this guide's authority split. Conversation may
+propose Direction but cannot infer approval, promote different bytes, or grant
+Execution Consent. Second Mate should own durable import, preflight, one-shot
+execution state, evidence, and recovery behind a high-level facade without
+requiring the human to manage digests, activation JSON, executable modes, or
+private-state paths. `PROGRAM.md` owns the bounded CONV-BRIDGE-01 plan; this
+guide does not authorize its implementation or a live run.

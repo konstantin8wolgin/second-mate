@@ -1,15 +1,15 @@
 # Trusted-local execution operator contract
 
 Status: canonical activation gate plus CAP-02A offline/mock reference,
-CAP-02C dormant process adapter, EVA-03/EVA-04 exact-cleanup recovery and
-crash-safe record persistence, and one historically closed CAP-02B run with
-partial independent evidence retained; no trusted-local CLI dispatch command
-is implemented
+CAP-02C library process adapter, EVA-03/EVA-04 exact-cleanup recovery and
+crash-safe record persistence, one historically closed CAP-02B run, and one
+consumed CAP-02C disposable exercise closed conservatively as
+`unknown-running`; no trusted-local CLI dispatch command is implemented
 
-This document defines Second Mate's first planned live execution mode. It is a
+This document defines Second Mate's trusted-local execution mode. It is a
 manual, single-run mode for a human-selected local machine, operating-system
 account, repository, and worktree that the human is willing to trust without a
-sandbox. It does not describe a live command that can be run today.
+sandbox. It does not describe a supported live command that can be run today.
 
 ## Implemented offline proof boundary
 
@@ -96,7 +96,7 @@ authority is exhausted: do not resume, retry, or redispatch it. A future run
 needs a new current preflight and activation; MS-02 additionally requires the
 human product check described in the Program.
 
-## Dormant CAP-02C process adapter
+## CAP-02C library process adapter
 
 CAP-02C adds public `CodexCliProviderBoundary` and
 `CodexCliTrustedLocalAdapter` library types. It deliberately adds no
@@ -121,8 +121,11 @@ The fixed command requests strict config, JSONL, ephemeral CLI session storage,
 ignored user config and exec-policy rules, empty MCP configuration, no color,
 an exact model and working directory, stdin prompt input, explicit unsandboxed
 execution, and disabled app/browser/computer/hook/plugin/subagent/skill-search
-and web-related features. These switches are capability minimization, not
-containment: the
+and supported web-related features. Pinned Codex 0.146 reports the deprecated
+`web_search_request` feature as default-disabled; passing `--disable` for it
+emits a pre-turn diagnostic, so the current boundary omits that deprecated flag
+while continuing to disable `standalone_web_search` and ignore user config.
+These switches are capability minimization, not containment: the
 agent, shell commands, trusted repository instructions, provider, and network
 still have the broad trusted-local exposure described below. A future real
 boundary should name the installed native Codex binary itself, not a package-
@@ -144,8 +147,8 @@ for the bounded cancellation drain, the adapter closes that undrainable owned
 descriptor and conservatively persists `unknown-running`; it neither retries
 nor claims a complete transcript.
 
-All CAP-02C process-execution evidence used temporary Git repositories and
-local fake executables. Tests proved exact target-root binding, identical-clone
+CAP-02C's reproducible process evidence uses temporary Git repositories and
+local fake executables. Tests prove exact target-root binding, identical-clone
 refusal, current HEAD/fingerprint drift refusal before probes or activation
 consumption, binary/probe/runtime drift refusal, target-config refusal,
 replacement resistance, exact argv/prompt/environment, split JSONL, private
@@ -153,13 +156,47 @@ stderr, one-shot consumption, owned-group cancellation including a child
 process, transcript-tail retention, process ownership through ambiguous
 cancellation, failed-drain descriptor closure, restart ambiguity, interrupted
 exact-cleanup resumption, adversarial cleanup refusal, and sentinel-safe
-cleanup. The installed CLI
-supplied only local `--version`, `exec --help`, and feature-list inventory; no
-`codex exec`, authentication inspection, provider/network call, or live target
-was used. Consequently CAP-02C is reusable preparation, not current provider
-readiness or activation. A real use still needs every preflight and consent
-below, including a newly selected exact model, native binary,
-auth/data/retention boundary, target, and one-shot activation.
+cleanup. One later disposable exercise supplied separate non-replayable live
+evidence, described next. It does not replace the fake-process regression set
+or make the library a supported launch route.
+
+## Consumed CAP-02C disposable exercise — 2026-08-06
+
+The human separately approved one new, non-retryable exercise on a fresh local
+Git target. The exact preflight bound source HEAD `374c3f3`, target HEAD
+`887d0da`, native Codex `0.146.0` at an unaliased owner-owned `0755` ELF with
+SHA-256 `2e863156ed35ecc5253b1e2f907a9143077b9f7cb51942070c61996471ff6e04`,
+model `gpt-5.6-luna`, prompt and environment digests, no Git remote or target
+Codex config, and activation `cap02c-live-20260806-02-4ybb2d`.
+
+The contemporaneous close records that the provider process started once,
+created only untracked `result.txt` with the exact approved bytes, emitted
+`turn.completed`, exited, and was confirmed gone. It also records that Codex
+first emitted a deprecated `web_search_request` diagnostic as an
+`item.completed` error before `turn.started`; the strict lifecycle therefore
+refused to manufacture `completed` and persisted `unknown-running`. No retry or
+redispatch was recorded. After the recorded abandonment decision, cleanup was
+recorded as removing only the three identity-bound private files and empty run
+directory. Those live event, result, process, no-retry, and cleanup observations
+are non-replayable because their raw artifacts were intentionally deleted. The
+`0600` consumed marker independently remains with
+SHA-256 `fd4f77dfd93c07cf7d3c7978f7dcfcfd650f3d6430cb7d54d835f5aa2c57efb8`.
+The repository retains a [sanitized content-free close record](evidence/CAP-02C-20260806.json);
+raw prompt, transcript text, environment values, credentials, session identity,
+and private paths are absent.
+
+A test-first provider-free correction removes only that deprecated,
+default-disabled flag from the fixed argv while retaining explicit
+`standalone_web_search` denial. Fake-process tests prove the corrected command;
+there was no second provider call. Current code reproducibly proves the
+provider-free activation, JSONL, ambiguity, no-retry, recovery, and exact-cleanup
+contracts. The marker independently proves the live activation and its frozen
+bindings are consumed. The sanitized record preserves the non-replayable live
+observations above; it does not independently prove their semantic content.
+Nothing proves a terminal corrected live CAP-02C close, absence of outside
+effects, provider-side deletion, or ordinary operator usability. Any future
+live use still needs a fresh exact boundary and activation and must never reuse
+either consumed marker.
 
 ## What trusted-local means
 

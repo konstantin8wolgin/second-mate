@@ -3,9 +3,10 @@
 Status: candidate initial Program; POL-01 narrowly selected, FS-01 canonically
 adopted as the Foundation baseline, CAP-01 and MS-01 complete, and
 DIR-INTAKE-01, CAP-02A, CAP-02C, EVA-01, EVA-02, EVA-03, and EVA-04 implemented and
-locally verified; PRV-01 and CAP-02B are historically
-closed for one consumed run with partial independent evidence retained, while
-MS-02 awaits the human product check
+locally verified; PRV-01 and CAP-02B are historically closed for one consumed
+run with partial independent evidence retained. One CAP-02C disposable exercise
+is also consumed and conservatively closed as `unknown-running`; MS-02 now
+awaits the normal-use conversation bridge and human product check
 
 Date: 2026-08-03
 
@@ -65,6 +66,9 @@ separate records even when supplied in one instruction.
 | 2026-08-05 EVA-04 cleanup-record crash-safety preflight and Execution Consent | Fresh inspection at clean `52db12f2b585b39c8b40610b1d500ef56f5763c4` replayed all 293 warnings-as-errors tests and the package gates, then an independent provider-free audit reproduced interruption while persisting both cleanup records. The current in-place truncate/write can leave `session.json` or the retained consumption marker as invalid partial JSON before any unlink, so fresh reload fails closed but cannot resume the already-authorized exact cleanup. | The latest delegation authorizes plan-consistent provider-free gap repair, adversarial tests, canonical documentation, verification, and local commits. EVA-04 may change only persistence and parsing of the existing identity-recorded session and marker, preserving their inodes, exact artifact names, cleanup boundary, parent/run-directory identity checks, strict complete-record validation, and legacy single-document compatibility. It prohibits new deletion targets, provider/live/auth/credential use, CAP-02B replay, push/PR, system changes, `firstmate/`, or a fabricated MS-02 judgment. |
 | 2026-08-05 EVA-04 provider-free close | Plan commit `0f6fc45` froze the same-inode framed-record design; implementation/evidence commit `bb7b7f7` records append-only cleanup updates, bounded linear parsing, exact incomplete-tail recovery, strict complete-frame refusal, and durable retry re-sync. Red-green tests cover interruption while persisting both session intent and marker authorization, invalid digests and suffixes, impossible/oversized lengths, parser resource bounds, and ambiguous final `fsync`. Fresh replay passed 95 trusted-local and 315 total warnings-as-errors tests, full Ruff lint/format, configured strict mypy for 11 modules, locked-offline sync, source/wheel build and contents, and isolated wheel import/CLI/type-marker smoke. Independent specification and quality re-reviews found no remaining Critical or Important product-path defect. | The retained CAP-02B marker remained mode `0600` with SHA-256 `0567cd80dddba22b159932ce828648d1e5d1068513a3823bb0991824998dd344`; `firstmate/` remained ignored and untouched. The protocol preserves the existing inodes, exact three-artifact cleanup set, and legacy single-document files. EVA-04 supersedes EVA-03's overbroad persistence conclusion without changing its deletion authority. No provider, auth/credential access, live target, CAP-02B replay, system change, user-data deletion, push, or PR occurred. Only the MS-02 human product judgment and its downstream external or contingent decisions remain. |
 | 2026-08-06 MS-02 usability-acceptance preparation and bounded documentation authority | Fresh inspection at clean `f024fbb87cd2e9931b3762e930e05655b74c17b4` reconfirmed the fixture-only CLI, consumed CAP-02B marker, dormant public CAP-02C library adapter with no CLI route, exact activation/recovery contract, and open human D-01 judgment. The safe representative exercise is the deterministic FS-01 mutation in a disposable local worktree; it cannot prove model autonomy or live-provider usability. | The latest delegation authorizes only a concise operator-ready hands-on walkthrough, claim verification, and necessary local documentation/package-index changes. It prohibits provider or network calls, authentication/credential use, live adapter dispatch, live targets, CAP-02B replay, system configuration, push/PR, or manufacturing the MS-02 judgment. Any real CAP-02C exercise remains a distinct future one-shot activation and invocation packet. |
+| 2026-08-06 CAP-02C disposable exercise preflight and Execution Consent | After an earlier pre-dispatch refusal on a group-writable native package binary, the user permission-hardened the installation. Fresh inspection at clean source HEAD `374c3f3779a2a2af8c5d6cbd6c8916c08b4352cf` passed 315 tests, 95 trusted-local tests, Ruff, format, and strict mypy. The frozen packet bound fresh target HEAD `887d0da07b70ff7b602873122a419ed23d39b72f`, target fingerprint `b631e1746dfb6ea450174c9f7bf651d6a853170bdb134ae19f01eeb876da3ca0`, the unaliased owner-owned `0755` native Codex `0.146.0` ELF at SHA-256 `2e863156ed35ecc5253b1e2f907a9143077b9f7cb51942070c61996471ff6e04`, help digest `9f86f0115238ddde2514587e5f95b0ab0aa6b89495e5912878d49ad26038aa19`, model `gpt-5.6-luna`, prompt/environment digests, existing ChatGPT login, no target config/remote, and provider boundary digest `178155bc55f431efbf2764937de870255d167a4d7fa00214b59a397953183a1e`. | The human authorized exactly one fresh non-retryable trusted-local activation on that disposable target. It permitted the existing authentication/provider network path and exact target-file effect while prohibiting prior-activation reuse, retry/resume/redispatch, push/PR, system changes, credential exposure, unrelated data access, or a real project target. Activation `cap02c-live-20260806-02-4ybb2d` exhausts this authority. |
+| 2026-08-06 CAP-02C consumed `unknown-running` close and test-first correction | The contemporaneous close records one provider process, exact untracked `result.txt`, a canonical session plus `turn.completed`, process exit and stopped identity, a deprecated `web_search_request` error before `turn.started`, strict `unknown-running` classification, no retry, and exact abandoned cleanup of three identity-recorded files plus the run directory. [Sanitized event types, hashes, and classifications](evidence/CAP-02C-20260806.json) retain no transcript/result content, credentials, or private paths; those live observations are therefore non-replayable. The `0600` marker remains at SHA-256 `fd4f77dfd93c07cf7d3c7978f7dcfcfd650f3d6430cb7d54d835f5aa2c57efb8` and independently proves only that this exact activation and its frozen bindings are consumed. | A red-green provider-free regression removes only the deprecated default-disabled feature flag while retaining explicit `standalone_web_search` denial. Fake-process tests prove the corrected argv; no second live call occurred. Current code reproducibly proves the provider-free contract, while the live launch/transport, exact target effect, conservative ambiguity, no retry, and exact cleanup remain a non-replayable historical close. Nothing proves a terminal corrected live CAP-02C close, absence of outside effects, provider-side erasure, or ordinary usability. |
+| 2026-08-06 normal-use First Mate direction | The user states the product goal: normal use begins as a First Mate conversation; research and discussion produce an explicit scope and human approval, then First Mate invokes Second Mate's framework to carry ownership, preflight, execution, evidence, and recovery behind the scenes. | This is an **ACCEPTED** usability requirement, not permission to infer approval or merge Direction approval with Execution Consent. Ordinary use must not require the human to manage executable permissions, activation JSON, digests, or private-state paths. This packet may analyze and record the smallest safe bridge only; implementation begins only under a separately approved provider-free packet, and any later real run still needs fresh one-shot consent. |
 
 The historical repository cannot prove which pre-Program control or Execution
 Consent governed the original bootstrap. This record does not rewrite or
@@ -107,7 +111,7 @@ These classes audit every Delivery Map label and its prerequisites:
 | PRV-01 | **H + I** | The selected one-run boundary is recorded; the retained marker independently binds the consumed activation to the recorded provider digest and frozen target, but not to deleted provider output. |
 | CAP-02A | **R** | Offline authority, JSONL, ownership, ambiguity, cleanup, and no-reuse behavior are reproducible without a provider. |
 | CAP-02B | **I + N** | The marker proves the exact activation is consumed; Git proves the two-path recovery commit and current regression. The deleted transcript/session/control/close artifacts mean the 31-event lifecycle and exact cleanup sequence remain a contemporaneous close record, not replayable checkout proof. |
-| CAP-02C | **R** | Fake-executable qualification, exact resolved-target/current-revision binding, dispatch, streaming, cancellation from owned durable state, recovery, and cleanup behavior are reproducible. No real Codex activation follows. |
+| CAP-02C | **R + I + N** | Fake-executable qualification, exact resolved-target/current-revision binding, dispatch, streaming, cancellation from owned durable state, recovery, and cleanup behavior are reproducible. The retained marker independently proves the exact real activation is consumed and binds its provider boundary and disposable target. The sanitized record preserves hashes and classifications, but the deleted raw session, transcript, and control artifacts leave event ordering and exact cleanup as non-replayable historical evidence; the corrected argv has no terminal live proof. |
 | EVA-01 | **H + R** | The grant and clean basis are recorded; the three technical contradictions were reproduced red, repaired minimally, and replayed through current repository/package gates. |
 | EVA-02 | **H + R** | The grant and clean basis are recorded; target-root/revision drift, durable-state cancellation, and ambiguous-cancellation ownership were reproduced red, repaired minimally, and replayed through current repository/package gates. Every remaining unchecked item is tied to its exact external or contingent dependency. |
 | EVA-03 | **H + R** | The grant and clean basis are recorded; interrupted exact-cleanup recovery, directory-bound authorization, replacement refusal, and cancellation-drain ownership were reproduced and replayed. EVA-04 later corrected its cleanup-record persistence crash window. |
@@ -392,13 +396,15 @@ technical repository evidence separately from the authority records in section
    TLX-01 now selects an unsandboxed trusted-local initial mode while SBOX-01
    preserves sandboxing as deferred hardening. CAP-02A completes the offline
    coordinator-side adapter proof. PRV-01 and CAP-02B later closed exactly one
-   manually enveloped real Codex proof. CAP-02C later added a dormant process
-   adapter without another provider call or pilot authority. MS-02 and later
-   Map items remain blocked as shown below. Direction coverage remains
-   `still_remaining`.
+   manually enveloped real Codex proof. CAP-02C added a library process adapter;
+   its later disposable exercise consumed one activation as `unknown-running`
+   and selected a provider-free correction without pilot authority. The accepted
+   normal-use requirement now selects a conversation bridge before MS-02.
+   Direction coverage remains `still_remaining`.
 
-The repository has therefore reached a truthful technical terminal state for
-the fixed FS-01 fixture route, not a completed Second Mate Program or product.
+The fixed FS-01 fixture route remains terminal. The overall repository is not
+terminal because CONV-BRIDGE-01 is now a decision-ready provider-free frontier;
+Second Mate is still not a completed Program or product.
 
 ## 6. Living Delivery Map MAP-01
 
@@ -409,15 +415,17 @@ the fixed FS-01 fixture route, not a completed Second Mate Program or product.
 | DIR-INTAKE-01: Approved-Direction intake | DIR-01, DIR-02, and DIR-04; supports DIR-03 and DIR-05; constrained by DIR-06 | `completed` | Current-HEAD behavior now proves read-only preparation, exact separate Direction approval and ledger-write authority, immutable linear versions, stale/mismatched/open/pending/racing refusal, portable clone-readable history, shared FS-01 mutation coordination, recoverable atomic writes, and output consumed by `draft`. It adds no Rumble automation or provider path. |
 | TLX-01: Trusted-local initial execution decision | Preserves coordinator-side DIR-02 and DIR-04 behavior; supports DIR-03 and DIR-05; does not prove executor containment | `completed` | The human selected an unsandboxed trusted-local initial mode, explicitly accepted its broad local-machine limitation, and retained sandboxing as a later path. This design decision authorizes no implementation or run. |
 | PRV-01: One provider/host boundary | Enables DIR-03 and DIR-05 evidence; constrained by DIR-02, DIR-04, and DIR-06 | `completed for one proof` | CAP-02B selected local Codex CLI `0.146.0`, existing ChatGPT authentication/account controls, current public Second Mate data and target, normal provider/repository network access, ephemeral CLI storage, private-until-close transcript retention, exact-session/no-retry recovery, and `provider-billing-controls-only`. No API billing project or account setting changed. This boundary is consumed, not reusable. |
-| LIVE-BOUNDARY-01: Trusted-local live-direct and recovery contract | Coordinator-side DIR-02 through DIR-05; does not prove containment after dispatch | `offline proof reproducible; one real exercise historically closed; fake-process adapter reproducible` | CAP-02A reproducibly proves exact activation binding, private session/transcript/temp identity, strict bounded event parsing, cancellation, unknown-running recovery, one-owner/no-retry behavior, provider-independent evidence requirement, and cleanup restricted to exact private artifacts. CAP-02B's retained marker and fix are independent evidence; its real event stream and cleanup are non-replayable close records. CAP-02C reproducibly proves resolved target/current-revision qualification and subprocess mechanics without a provider or real target. |
+| LIVE-BOUNDARY-01: Trusted-local live-direct and recovery contract | Coordinator-side DIR-02 through DIR-05; does not prove containment after dispatch | `offline/fake proof reproducible; two live activations consumed` | CAP-02A reproducibly proves activation, lifecycle, no-retry recovery, evidence, and exact cleanup. CAP-02B is one partial historical terminal record. CAP-02C reproducibly proves the library boundary; its retained marker proves one disposable activation and frozen bindings are consumed, while the contemporaneous close records real transport, exact target output, conservative pre-turn-diagnostic ambiguity, stopped-process recovery, and exact abandoned cleanup as non-replayable history. The corrected argv has no terminal live proof. |
 | CAP-02A: Offline trusted-local adapter implementation | Coordinator-side DIR-01 through DIR-05; constrained by the trusted-local limitation and DIR-06 | `completed` | One offline-only library adapter over an injected mock local control plane proves activation/basis matching, streamed JSONL lifecycle, exact session binding, interruption/failure ambiguity, persistent private state, no provider-as-proof promotion, and non-recursive identity-bound cleanup while preserving FS-01. It supplies no sandbox, credential, provider, production process, network, live target, CAP-02B, or token-cap implementation. |
 | CAP-02B: One real trusted-local provider-owned direct run | Observed coordinator-side DIR-01 through DIR-05 only; no adversarial-containment claim | `historically closed once; retained evidence partial` | The retained marker proves one exact activation is consumed, and Git proves the two-path recovery fix. The contemporaneous close records a completed real lifecycle and exact cleanup, but those private artifacts were intentionally deleted and cannot be independently replayed now. No outside-machine-effects claim is made; retry is prohibited. |
-| CAP-02C: Dormant Codex CLI process adapter | Coordinator-side DIR-02 through DIR-05; no provider, target, usability, or containment claim | `completed provider-free` | A library-only real-process boundary binds one resolved target root/current Git revision plus executable/version/help/model/prompt/environment/argv before probes or activation consumption. It streams JSONL and private stderr, resists executable replacement, cancels exact owned process groups from `running` or `unknown-running`, retains available tail and ownership through ambiguity, and preserves no-retry recovery. Temporary Git repositories and fake executables supply all process evidence; no CLI route or real provider call exists. |
+| CAP-02C: Codex CLI process adapter | Coordinator-side DIR-02 through DIR-05; no usability or containment claim | `provider-free complete; one live unknown-running exercise consumed` | The library boundary remains reproducible with fake executables and has no CLI route. The retained marker proves the disposable activation and its hardened-binary/target bindings are consumed. The contemporaneous close records the intended file and deprecated-feature diagnostic that prevented a terminal claim; those raw observations were deleted. A red-green fix omits that default-disabled deprecated flag while retaining supported web-search denial; no second live dispatch occurred. |
+| CONV-BRIDGE-01: Approved conversation handoff | DIR-01, DIR-02, DIR-04, and DIR-05; supports the normal-use requirement without granting execution | `decision-ready; not implemented` | A transport-neutral handoff must prepare one exact proposed Direction read-only, then require its digest-bound human approval and a distinct promotion-basis-bound one-ledger-write grant before existing immutable Direction promotion and draft creation. It must be idempotent, reject stale/mismatched/replayed authority, persist no raw conversation transcript, and stop at `ready-for-preflight`; it cannot manufacture route approval or Execution Consent. |
+| RUN-FACADE-01: High-level Second Mate execution facade | DIR-02 through DIR-05; trusted-local limitations remain explicit | `blocked on CONV-BRIDGE-01` | After an approved handoff, Second Mate should resolve native executable/security and private-state details internally, show a concise human scope/effects/risk preview, require separate one-shot Execution Consent, and own lifecycle/evidence/recovery. First prove this end to end with fake/offline control planes; any live proof is a later separate activation. |
 | EVA-01: Evidence-claim and lifecycle hardening | Truthful evidence classification plus coordinator-side DIR-02 and DIR-04 | `completed provider-free` | Every current status and checked readiness claim is classified as reproducible, retained, human-authority, structural, non-replayable, or open. Red-green repairs now preserve active/ambiguous forensics, minimize `skill_search`, and make configured package typing plus wheel metadata executable. |
-| EVA-02: Remaining-plan and target/recovery hardening | Truthful dependency closure plus coordinator-side DIR-02 and DIR-04 | `completed provider-free` | The dormant adapter now binds one resolved target root, independently recomputes Git HEAD/fingerprint before local probes or activation consumption, cancels an exact still-owned process from the latest durable `unknown-running` state, and retains ownership if cancellation itself is ambiguous. Every still-open readiness item is classified without advancing an external gate. |
+| EVA-02: Remaining-plan and target/recovery hardening | Truthful dependency closure plus coordinator-side DIR-02 and DIR-04 | `completed provider-free` | The then-dormant adapter was changed to bind one resolved target root, independently recompute Git HEAD/fingerprint before local probes or activation consumption, cancel an exact still-owned process from the latest durable `unknown-running` state, and retain ownership if cancellation itself is ambiguous. Every then-open readiness item was classified without advancing an external gate. |
 | EVA-03: Interrupted exact-cleanup recovery | Coordinator-side DIR-02 and DIR-04; no provider, target, or containment claim | `completed provider-free` | Exact cleanup now persists session intent plus directory-bound authorization before unlink, resumes only identity-recorded remaining artifacts or the same empty directory, rejects absent intent/authorization, artifact/directory replacement including inode reuse, and unexpected entries, and never widens the three-file deletion boundary. |
 | EVA-04: Crash-safe cleanup-record persistence | Coordinator-side DIR-02 and DIR-04; no provider, target, or containment claim | `completed provider-free` | Cleanup-only session and marker updates append bounded, digest-checked records to the same identity-recorded files. Fresh recovery accepts only the last complete valid record plus an exact incomplete final frame, uses linear bounded parsing, re-syncs ambiguous visible updates before unlink, and refuses complete corruption or impossible lengths. |
-| MS-02: Usable manually supervised trusted-local coordinator | One-provider direct-route scope with explicit trusted-local residual risk | `blocked on human product check` | CAP-02B supplies one historically closed real packet with partial retained evidence, and CAP-02C supplies the dormant process adapter. The human must still judge whether that record plus this unactivated adapter boundary make observability, evidence, recovery, cleanup, and residual risk usable and fitting D-01, or whether one newly authorized adapter exercise is required. Full DIR-02 enforcement against executor overreach or hostile repository content remains unproved. |
+| MS-02: Usable manually supervised trusted-local coordinator | One-provider direct-route scope with explicit trusted-local residual risk | `blocked on normal-use bridge and human product check` | The consumed CAP-02C exercise makes the current usability gap concrete: normal work still requires a bespoke Python harness and exposes low-level activation/preflight concerns. CONV-BRIDGE-01 and RUN-FACADE-01 must make a First Mate conversation the ordinary entry while preserving separate approval/consent and no-retry ownership. The human then judges observability, evidence, recovery, cleanup, and D-01 fit. Full executor containment remains unproved. |
 | SBOX-01: Sandboxed hardening/deployment path | Strengthens DIR-02 and operational security evidence without changing the coordinator contract | `deferred` | Implement only when deployment, repository trust, data sensitivity, or pilot evidence requires containment. Qualify filesystem, environment, credential, network, optional-capability, cancellation, and cleanup behavior in the actual environment; failure must not downgrade to trusted-local automatically. |
 | PILOT-SELECT-01: Medium pilot target and request | Enables pilot-scoped DIR-01 through DIR-06 evidence | `blocked` | MS-02 plus a baseline-known external target, approved Direction/route, bounded data authority, and separate pilot consent. Select it before CAP-03 so Map/Foundation behavior is earned by the real pilot. |
 | CAP-03: Foundation-route records and Map frontier | DIR-01 through DIR-05; constrained by DIR-06 | `blocked` | PILOT-SELECT-01 and the limited FS-01 Backbone; implement only the minimal Foundation evidence and Map behavior the selected pilot requires. |
@@ -430,9 +438,11 @@ prove the unobserved qualities or the whole Direction. MS-02 or MS-03 must not
 declare the whole Direction proven without evidence for the actual completion
 claim.
 
-CAP-02C and EVA-01 through EVA-04 are complete provider-free. No repository-only
-packet remains selected before the product candidate order: MS-02,
-PILOT-SELECT-01, CAP-03, then MS-03. SBOX-01 is a separate deferred
+CAP-02C and EVA-01 through EVA-04 are complete provider-free, and the one live
+CAP-02C exercise is consumed without terminal proof. The newly accepted
+normal-use requirement selects CONV-BRIDGE-01 as the smallest provider-free
+frontier, then RUN-FACADE-01 and MS-02. PILOT-SELECT-01, CAP-03, and MS-03 remain
+downstream. SBOX-01 is a separate deferred
 hardening/deployment path and may be pulled forward only by an explicit trust,
 data, deployment, or pilot need. The Map changes only from evidence or an
 authorized Direction change. Distant candidates intentionally have no
@@ -670,7 +680,7 @@ reusable provider authority, close broader Direction coverage, or prove product
 usability. MS-02 now blocks on its required human product check; technical
 evidence cannot manufacture that judgment.
 
-### Completed frontier — CAP-02C dormant Codex CLI process adapter
+### Completed provider-free frontier — CAP-02C Codex CLI process adapter
 
 **Outcome.** Prepare the smallest reusable trusted-local process path without
 calling a provider: from one exact CAP-02A activation and a matching immutable
@@ -681,8 +691,9 @@ and preserve conservative cancellation and restart behavior.
 **Chosen shape and rejected alternatives.** A command builder alone would not
 prove streaming, descriptor ownership, process identity, or process-group
 cancellation. A user-facing command would create an avoidable real-dispatch
-surface before another activation exists. CAP-02C therefore adds a dormant
-library adapter whose complete process behavior is exercised against a
+surface before another activation exists. At that provider-free close, CAP-02C
+therefore added a dormant library adapter whose complete process behavior was
+exercised against a
 temporary fake executable. The public entry remains the activation-validating
 adapter; the subprocess control plane stays private, one-shot, and unavailable
 as a standalone dispatch API.
@@ -750,6 +761,11 @@ CAP-02B, establish current provider authority, close MS-02, select a pilot,
 contact a provider, push, or open a PR. A future real adapter run still requires
 a new exact model/host/auth/data/target boundary, current preflight, and
 one-shot human activation.
+
+This stop records the historical provider-free close. The separately granted
+2026-08-06 exercise later activated the library once and is governed by the
+newer authority and evidence records in section 1; it did not retroactively
+widen this packet.
 
 ### Completed frontier — EVA-01 evidence-claim and lifecycle hardening
 
@@ -969,11 +985,72 @@ weaken complete-record validation, contact a provider, inspect credentials,
 reuse CAP-02B, touch `firstmate/`, change the system, push, open a PR, or close
 MS-02.
 
+## 7A. Next decision packet — CONV-BRIDGE-01
+
+Status: **decision-ready, not implemented or authorized by this close**.
+
+**Verified current gap.** A normal conversation cannot enter Second Mate today.
+The supported CLI requires the operator to prepare/promote Direction, export it,
+create a packet/draft, and later construct preflight and grant files manually.
+`CodexCliTrustedLocalAdapter` is a library type with no supported launch facade;
+the disposable exercise required a bespoke Python harness and direct knowledge
+of executable path, mode, hashes, environment digests, activation JSON, and
+private-state paths. Second Mate already owns the underlying immutable Direction,
+mutation coordination, one-shot activation, evidence, ambiguity, and cleanup
+mechanics, but no boundary connects those mechanics into the conversational
+experience the user selected.
+
+**Smallest provider-free outcome.** Add one transport-neutral
+`ConversationHandoff` boundary with a read-only preparation step and an exact
+apply step. A First Mate-produced proposal first yields the existing candidate,
+digest, promotion basis, and concise human review view without writing. The
+apply envelope then carries a schema version, source conversation identifier,
+target repository identity, proposed Direction identifier/summary/constraints/
+acceptance text, candidate digest, a separate approval record naming approver,
+decision, time, and that same digest, plus a distinct digest-and-basis-bound
+promotion grant for the one Direction-ledger write. It must persist no raw
+conversation, private reasoning, model transcript, credential, provider session,
+or activation internals.
+
+**Authority and lifecycle.** Conversation research may propose scope; it may not
+approve it or grant a repository write. Direction approval, the one-ledger-write
+promotion grant, route approval, and later Execution Consent remain distinct
+authority states, even if an ordinary interface captures more than one explicit
+decision in the same human interaction. Import is idempotent for the exact
+envelope and refuses a replayed identifier with different bytes, stale target or
+promotion basis, digest, approver, grant, or allowed-path mismatch,
+rejected/absent approval, absent promotion authority, non-linear Direction
+history, or an open mutation/close. On success it reuses current Direction
+promotion and draft construction and returns a concise `ready-for-preflight`
+view: approved outcome, target, allowed/prohibited effects, evidence expectation,
+and the next human decision. It performs no provider probe, activation, target
+mutation beyond the exact Direction-ledger write, or execution.
+
+**Test-first proof.** Begin with one end-to-end red test from a literal handoff
+fixture through approved Direction history and draft output. Add focused red
+cases for absent or mismatched approval, absent/mismatched promotion authority,
+promotion-basis drift, same-ID/different-bytes replay, stale target, concurrent
+import versus FS-01 mutation, and interruption recovery.
+Existing DIR-INTAKE and FS-01 tests remain unchanged. Close with full warnings-
+as-errors tests, Ruff, format, strict mypy, locked-offline sync, build/package,
+and isolated-install smoke. No provider, authentication, live adapter, network,
+system configuration, `firstmate/` change, push, or PR belongs to this packet.
+
+**Following packet, not bundled.** RUN-FACADE-01 may then wrap current preflight
+and trusted-local lifecycle behind one high-level service/command. It should
+resolve executable identity and private storage internally, surface insecure
+installation or target conditions as concise refusals, show one human-readable
+scope/effects/risk preview, and require a separate digest-bound one-shot
+Execution Consent before any launch. Prove it first with offline/fake control
+planes. Only after that facade is usable may the human perform MS-02 and decide
+whether a new disposable terminal live proof is worth a separate activation.
+
 ## 8. Traceability and readiness
 
 | Outcome | Requirement | Risk or constraint | Design response | Responsibility | Required evidence |
 |---|---|---|---|---|---|
 | Human meaning survives implementation | Immutable Direction and separate coverage | Direction drift or silent deferral | Direction Version, exact approval, separate coverage status | Human approves; coordinator preserves | Approval record plus mapped evidence at close |
+| Normal conversation reaches the coordinator safely | Explicit proposed Direction handoff with separate approval and execution consent | Conversational assent is inferred as run authority or low-level machinery becomes the user experience | Digest-bound handoff, immutable Direction import, high-level preflight/consent facade, one-shot ownership | First Mate proposes; human approves/consents; Second Mate owns execution and recovery | End-to-end handoff refusals, fake-process facade proof, then human MS-02 observation |
 | No mutation is laundered through planning | Draft, preflight, consent, mutation order | Stale or inferred authority | Bound digests/fingerprints and executor guard | Human grants; coordinator validates | Negative no-call/no-change tests and grant record |
 | Trusted-local risk is not laundered into containment | Explicit mode and per-run activation acknowledgment | Broad account access or outside effects are mistaken for bounded execution | Separate trusted-local contract, narrow evidence claim, and deferred SBOX-01 | Human accepts the exact environment; coordinator records and limits its claim | Activation record, target proof, residual-uncertainty record, and no containment claim |
 | Completion is truthful and recoverable | Claim-fit proof and all-or-recoverable close | Plausible output or partial writeback | Evidence Record and Clean Close | Working agent produces; coordinator validates/persists | Clean replay, failure injection, exact revision |
@@ -982,19 +1059,20 @@ MS-02.
 
 ### Readiness gates
 
-- **Planning-ready:** POL-01 is selected, the FS-01 adoption/CAP-01 record is
-  complete, DIR-INTAKE-01 is locally complete, and TLX-01 explicitly selects
-  the initial trusted-local mode. PRV-01 and CAP-02B are historically closed
-  for one consumed run with partial independent evidence retained; CAP-02C,
-  EVA-01, EVA-02, EVA-03, and EVA-04 are proved provider-free. The next
-  planning boundary is the MS-02 human product check; it authorizes no second
-  provider run, credential/account change, target mutation, or pilot.
+- **Planning-ready:** POL-01, FS-01/CAP-01, DIR-INTAKE-01, TLX-01, PRV-01,
+  CAP-02A/C, and EVA-01 through EVA-04 are closed within their stated evidence
+  limits. CAP-02B and CAP-02C each have one consumed live activation; the latter
+  remains a nonterminal live record with a provider-free correction. The next
+  planning boundary is CONV-BRIDGE-01, then RUN-FACADE-01 and the MS-02 human
+  product check. None authorizes a second provider run, credential/account
+  change, target mutation, or pilot.
 - **Trusted-local activation-ready:** CAP-02A is independently proved offline.
   The contemporaneous record says CAP-02B satisfied this gate once; the retained
   marker independently proves its exact bindings and consumption, not its
-  deleted lifecycle. CAP-02C supplies reusable process mechanics only. The
-  CAP-02B activation is consumed, and CAP-02C has never been activated against
-  Codex. Every future run must re-resolve the current host/version/model,
+  deleted lifecycle. CAP-02C supplies reusable process mechanics and one
+  consumed `unknown-running` exercise whose corrected argv has no second live
+  proof. Both activations are exhausted. Every future run must re-resolve the
+  current host/version/model,
   authentication/account boundary, data and intended network effect, spend
   boundary, retention, cancellation, continuation, target, risk acknowledgment,
   and Execution Consent defined in `TRUSTED-LOCAL-OPERATOR.md`.
@@ -1029,29 +1107,27 @@ platform.
 
 ## 10. Next human action
 
-No further FS-01, DIR-INTAKE-01, PRV-01 proof-run, or CAP-02B run decision is
-requested. The CAP-02B activation is consumed and must not be retried, resumed,
-or redispatched. The next decision is the MS-02 human product check: whether the
-historically recorded one-run activation, partial retained evidence, recorded
-recovery/cleanup experience, and explicit trusted-local residual risk are usable
-and still fit D-01 when paired with the implemented but unactivated CAP-02C
-process adapter. Technical evidence cannot answer that product judgment.
+No further FS-01, DIR-INTAKE-01, PRV-01 proof-run, CAP-02B replay, or CAP-02C
+replay decision is requested. Both live activations are consumed and must not
+be retried, resumed, or redispatched. The accepted product direction makes the
+next decision concrete: authorize or revise provider-free CONV-BRIDGE-01, the
+smallest packet that turns an explicitly approved First Mate conversation
+handoff into durable Direction and a preflight-ready draft. It does not call a
+provider or grant Execution Consent.
 
 Use the [MS-02 operator walkthrough](MS-02-OPERATOR-WALKTHROUGH.md) for the
 provider-free hands-on fixture journey, expected evidence, D-01 acceptance
-questions, failure handling, and the exact distinction between CAP-02B's
-consumed historical proof and CAP-02C's unactivated reusable mechanics.
+questions, failure handling, and the exact limits of both consumed live records.
 
-The review should record one bounded outcome: either accept MS-02 for the
-historical manual-envelope plus dormant-adapter scope and its evidence limits,
-or keep it open and name
-the concrete usability gap. If actual adapter operation is the remaining gap,
-that is a distinct future live dispatch and needs a new exact provider/target
-boundary, preflight, and one-shot activation; this Program does not authorize
-it.
+After CONV-BRIDGE-01 and RUN-FACADE-01 are observable, the review should record
+one bounded outcome: accept MS-02 within its evidence limits or keep it open and
+name the remaining usability gap. If terminal corrected-adapter operation is
+still decision-changing, that is a distinct future live dispatch requiring a
+new exact provider/target boundary, preflight, and one-shot activation; this
+Program does not authorize it.
 
-Until that check is recorded, PILOT-SELECT-01, CAP-03, and pilot work remain
-blocked. A later live run needs a new current provider/target boundary,
+Until the bridge and check are recorded, PILOT-SELECT-01, CAP-03, and pilot work
+remain blocked. A later live run needs a new current provider/target boundary,
 preflight, and one-shot activation. No provider retry/call, credential or
 account/billing change, live-target activation, pilot, push, publication,
 deployment, or other external work is authorized by this close.
@@ -1072,11 +1148,17 @@ deployment, or other external work is authorized by this close.
 > placeholder prompt. TLX-01 selects trusted-local unsandboxed execution only
 > through an exact per-run activation; read `TRUSTED-LOCAL-OPERATOR.md` and
 > preserve its limitations. CAP-02A is the offline reference adapter. CAP-02C
-> is a dormant library process adapter proved only against fake executables; it
-> is neither activated nor a CLI command. PRV-01 and CAP-02B are historically
-> closed only for one consumed manually enveloped run; only its marker and
-> two-path fix remain independently inspectable. Do not resume, retry, or redispatch
-> that run or infer that CAP-02C reuses its authority. SBOX-01 preserves
+> is a library-only process adapter with no CLI command. Its retained marker
+> proves one disposable real activation and its bindings are consumed. The
+> contemporaneous close records `unknown-running`, exact target output, strict
+> refusal of a false terminal claim, stopped-process recovery, and abandoned
+> cleanup, but the raw artifacts are deleted and those observations are
+> non-replayable. The deprecated flag was removed under provider-free regression
+> only. The retained markers for both
+> CAP-02B and CAP-02C are exhausted authority. Do not resume, retry, redispatch,
+> or infer a corrected live result from either run. The selected provider-free
+> frontier is CONV-BRIDGE-01, which must preserve separate Direction approval,
+> ledger-promotion authority, route approval, and Execution Consent. SBOX-01 preserves
 > sandboxing as deferred hardening and must never silently downgrade if later
 > requested. MS-02 is blocked on a real human product check; do not manufacture
 > it. Prepare only non-live prerequisites. Do not probe or call a provider,

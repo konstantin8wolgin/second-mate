@@ -41,7 +41,6 @@ _DISABLED_FEATURES = (
     "skill_search",
     "skill_mcp_dependency_install",
     "standalone_web_search",
-    "web_search_request",
     "workspace_dependencies",
 )
 
@@ -539,6 +538,37 @@ def test_fake_codex_process_proves_exact_launch_stream_and_private_control(
     assert repository_sentinel.read_text(encoding="utf-8") == "preserve repository work\n"
     assert private_sentinel.read_text(encoding="utf-8") == "unrelated private data\n"
     assert (private_root / "activation.live-run-001.consumed.json").is_file()
+
+
+def test_launch_omits_deprecated_web_search_flag_while_disabling_standalone_search(
+    tmp_path: Path,
+) -> None:
+    executable = _write_fake_codex(tmp_path / "fake-codex")
+    environment = _environment(tmp_path)
+    boundary = _boundary(executable, environment)
+    repository = _git_repository(tmp_path / "repository")
+    basis = _basis_from_repository(boundary.digest(), repository)
+    private_root = _private_root(tmp_path / "private")
+    adapter = CodexCliTrustedLocalAdapter(
+        boundary=boundary, environment=environment, prompt=_PROMPT
+    )
+
+    run = adapter.start(
+        basis=basis,
+        activation_data=_activation(basis),
+        repository=repository,
+        private_root=private_root,
+    )
+    completed = adapter.finish(run)
+
+    assert completed.phase == "completed"
+    argv = json.loads((tmp_path / "record.json").read_text(encoding="utf-8"))["argv"]
+    assert "web_search_request" not in argv
+    assert any(
+        argv[index : index + 2] == ["--disable", "standalone_web_search"]
+        for index in range(len(argv) - 1)
+    )
+    adapter.cleanup(completed)
 
 
 def test_consumed_activation_cannot_launch_the_fake_process_twice(tmp_path: Path) -> None:

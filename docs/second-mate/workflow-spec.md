@@ -463,7 +463,7 @@ The activation record is defined operationally in
 
 CAP-02A now exercises these coordinator-side activation, session, event,
 ambiguity, evidence, and cleanup rules entirely offline over an injected mock
-control plane. CAP-02C additionally provides a dormant library-only Codex CLI
+control plane. CAP-02C additionally provides a library-only Codex CLI
 subprocess boundary: exact resolved target-root/current-revision and
 binary/probe/prompt/environment/argv qualification, private JSONL and stderr
 handling, Linux process identity, owned process-group cancellation from
@@ -472,11 +472,16 @@ against temporary Git repositories and fake executables. Exact cleanup also
 records durable intent plus directory-bound authorization through crash-safe
 same-inode frames and resumes only an identity-validated remainder or the same
 empty run directory after interruption.
-The package still
-contains no trusted-local CLI dispatch route, and CAP-02C made no provider call
-or real-target claim. Neither proof satisfies a current provider, target,
-human-usability, or per-run activation gate; every real use still needs a fresh
-exact boundary and separately scoped activation.
+The package still contains no trusted-local CLI dispatch route. A separately
+authorized 2026-08-06 disposable CAP-02C exercise consumed one activation and
+produced the exact target file, but a deprecated-feature diagnostic before
+`turn.started` made the strict lifecycle `unknown-running`. It was not retried;
+the stopped process and target were independently checked, exact private
+artifacts were abandoned and cleaned, and the marker remains. The deprecated
+default-disabled flag was then removed with provider-free regression evidence.
+This does not prove a terminal live-adapter close, human usability, or reusable
+per-run authority; every future real use still needs a fresh exact boundary and
+separately scoped activation.
 
 ### Deferred sandboxed execution path
 
