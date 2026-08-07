@@ -249,9 +249,7 @@ def test_one_approval_stores_two_records_and_returns_non_executable_run_intent(
     assert draft.authority.ledger_write_grant.status == "recorded"
     assert draft.authority.route_approval.status == "not-granted"
     assert draft.authority.execution_consent.status == "not-granted"
-    assert changed_paths(before, target_snapshot(repository)) == {
-        ".second-mate/directions.json"
-    }
+    assert changed_paths(before, target_snapshot(repository)) == {".second-mate/directions.json"}
 ```
 
 - [ ] **Step 2: Run the approval test and verify RED**
@@ -374,10 +372,26 @@ def test_first_mate_handoff_cli_is_readable_idempotent_and_stops_before_run(
     target = make_repository(tmp_path)
     proposal = run_cli("handoff", "prepare", "--target", target, "--input", TASK)
     approval = exact_action(proposal)
-    first = run_cli("handoff", "approve", "--target", target,
-                    "--proposal", write(proposal), "--approval", write(approval))
-    second = run_cli("handoff", "approve", "--target", target,
-                     "--proposal", write(proposal), "--approval", write(approval))
+    first = run_cli(
+        "handoff",
+        "approve",
+        "--target",
+        target,
+        "--proposal",
+        write(proposal),
+        "--approval",
+        write(approval),
+    )
+    second = run_cli(
+        "handoff",
+        "approve",
+        "--target",
+        target,
+        "--proposal",
+        write(proposal),
+        "--approval",
+        write(approval),
+    )
     assert first == second
     assert first["status"] == "ready-for-preflight"
     assert first["execution_authorized"] is False
