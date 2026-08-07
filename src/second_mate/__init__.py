@@ -1,9 +1,17 @@
 """Second Mate foundation-slice runtime."""
 
+from second_mate.conversation import (
+    ConversationProposal,
+    ConversationReview,
+    ConversationTask,
+    prepare_conversation_handoff,
+)
 from second_mate.direction import (
     ApprovedDirectionVersion,
     DirectionCandidateEnvelope,
     DirectionConflictError,
+    DirectionVersionLookup,
+    find_direction_version,
     load_direction,
     prepare_direction,
     promote_direction,
@@ -45,8 +53,12 @@ __all__ = [
     "CloseFailure",
     "CodexCliProviderBoundary",
     "CodexCliTrustedLocalAdapter",
+    "ConversationProposal",
+    "ConversationReview",
+    "ConversationTask",
     "DirectionCandidateEnvelope",
     "DirectionConflictError",
+    "DirectionVersionLookup",
     "Draft",
     "ExecutionFailure",
     "Executor",
@@ -66,9 +78,11 @@ __all__ = [
     "__version__",
     "clean_close",
     "create_draft",
+    "find_direction_version",
     "load_direction",
     "load_state",
     "preflight",
+    "prepare_conversation_handoff",
     "prepare_direction",
     "promote_direction",
     "record_evidence",

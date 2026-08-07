@@ -197,6 +197,14 @@ class DirectionLedger:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class DirectionVersionLookup:
+    """One validated immutable Direction version and whether it is current."""
+
+    version: ApprovedDirectionVersion
+    is_current: bool
+
+
 def _direction_id(value: str) -> str:
     if not _DIRECTION_ID.fullmatch(value):
         raise ValidationError(
@@ -855,6 +863,28 @@ def promote_direction(
             ledger = _append_version(current_ledger, version)
         store.save(ledger, previous_content=current_content)
     return version
+
+
+def find_direction_version(
+    repository: Path,
+    direction_id: str | None = None,
+) -> DirectionVersionLookup | None:
+    """Find a validated Direction version without treating absence as malformed state."""
+    store = _DirectionLedgerStore(repository.resolve())
+    store.reject_missing_recorded_history()
+    if not store.exists():
+        return None
+    ledger = store.load()
+    if direction_id is None:
+        return DirectionVersionLookup(version=ledger.current, is_current=True)
+    wanted = _direction_id(direction_id)
+    for version in ledger.versions:
+        if version.direction.id == wanted:
+            return DirectionVersionLookup(
+                version=version,
+                is_current=version.direction.id == ledger.current.direction.id,
+            )
+    return None
 
 
 def load_direction(repository: Path, direction_id: str | None = None) -> Direction:
