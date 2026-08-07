@@ -1,4 +1,4 @@
-"""Thin operator surface for the supervised FS-01 lifecycle."""
+"""Thin operator surface for conversation intake and supervised packet lifecycles."""
 
 from __future__ import annotations
 
@@ -9,6 +9,11 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from second_mate.conversation import (
+    approve_conversation_handoff,
+    conversation_handoff_status,
+    prepare_conversation_handoff,
+)
 from second_mate.direction import (
     DirectionConflictError,
     load_direction,
@@ -68,6 +73,31 @@ def _parser() -> argparse.ArgumentParser:
     draft = subparsers.add_parser("draft", help="validate and freeze Direction plus packet")
     draft.add_argument("--direction", required=True)
     draft.add_argument("--packet", required=True)
+
+    handoff = subparsers.add_parser(
+        "handoff",
+        help="prepare, approve, or inspect a conversation-derived task without running it",
+    )
+    handoff_commands = handoff.add_subparsers(dest="handoff_command", required=True)
+    handoff_prepare = handoff_commands.add_parser(
+        "prepare",
+        help="turn a First Mate task summary into a read-only review proposal",
+    )
+    handoff_prepare.add_argument("--target", required=True)
+    handoff_prepare.add_argument("--input", required=True)
+    handoff_approve = handoff_commands.add_parser(
+        "approve",
+        help="record task meaning and one Direction-ledger write; do not run",
+    )
+    handoff_approve.add_argument("--target", required=True)
+    handoff_approve.add_argument("--proposal", required=True)
+    handoff_approve.add_argument("--approval", required=True)
+    handoff_status = handoff_commands.add_parser(
+        "status",
+        help="show whether an exact proposal is awaiting, ready, conflicting, or superseded",
+    )
+    handoff_status.add_argument("--target", required=True)
+    handoff_status.add_argument("--proposal", required=True)
 
     direction = subparsers.add_parser(
         "direction", help="prepare, explicitly promote, or show Direction versions"
@@ -132,6 +162,25 @@ def _parser() -> argparse.ArgumentParser:
 
 def _run(args: argparse.Namespace) -> object:
     command = args.command
+    if command == "handoff":
+        handoff_command = args.handoff_command
+        if handoff_command == "prepare":
+            return prepare_conversation_handoff(
+                Path(args.target),
+                _read_json(args.input),
+            )
+        if handoff_command == "approve":
+            return approve_conversation_handoff(
+                Path(args.target),
+                _read_json(args.proposal),
+                _read_json(args.approval),
+            )
+        if handoff_command == "status":
+            return conversation_handoff_status(
+                Path(args.target),
+                _read_json(args.proposal),
+            )
+        raise AssertionError(f"unhandled handoff command: {handoff_command}")
     if command == "direction":
         direction_command = args.direction_command
         if direction_command == "prepare":
@@ -184,7 +233,7 @@ def _run(args: argparse.Namespace) -> object:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Run the fixed FS-01 operator surface and return a process exit code."""
+    """Run the fixed operator surfaces and return a process exit code."""
     parser = _parser()
     args = parser.parse_args(argv)
     try:

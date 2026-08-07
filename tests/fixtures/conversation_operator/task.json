@@ -1,0 +1,19 @@
+{
+  "acceptance": [
+    "The bridge is verified provider-free end to end."
+  ],
+  "allowed_effects": [
+    "Read and modify files required by the approved task."
+  ],
+  "assumptions": [
+    "The selected checkout is the intended project."
+  ],
+  "handoff_id": "conversation-task-17",
+  "prohibited_effects": [
+    "Do not publish or deploy."
+  ],
+  "repository_id": "fixture-project",
+  "schema_version": 1,
+  "source_conversation_id": "conversation-42",
+  "task": "Implement the approved bridge."
+}
