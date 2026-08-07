@@ -117,17 +117,21 @@ class DirectionApproval:
     candidate_digest: str
     approved_by: str
     approved_at: str
+    proposal_digest: str | None = None
 
     def to_json(self) -> JsonObject:
-        return {
+        document: JsonObject = {
             "approved_at": self.approved_at,
             "approved_by": self.approved_by,
             "candidate_digest": self.candidate_digest,
             "decision": "approved",
             "direction_id": self.direction_id,
             "id": self.id,
-            "schema_version": 1,
+            "schema_version": 1 if self.proposal_digest is None else 2,
         }
+        if self.proposal_digest is not None:
+            document["proposal_digest"] = self.proposal_digest
+        return document
 
 
 @dataclass(frozen=True, slots=True)
@@ -305,6 +309,11 @@ def _candidate_envelope_from_json(value: object) -> DirectionCandidateEnvelope:
     )
 
 
+def parse_direction_candidate(value: object) -> DirectionCandidateEnvelope:
+    """Parse and verify one exact transport-neutral Direction candidate envelope."""
+    return _candidate_envelope_from_json(value)
+
+
 def _predecessor_from_json(value: object) -> DirectionPredecessor | None:
     if value is None:
         return None
@@ -320,20 +329,20 @@ def _approval_from_json(value: object | None) -> DirectionApproval:
     if value is None:
         raise ValidationError("explicit Direction approval is required before promotion")
     data = _object(value, "Direction approval")
-    _exact_keys(
-        data,
-        {
-            "schema_version",
-            "id",
-            "decision",
-            "direction_id",
-            "candidate_digest",
-            "approved_by",
-            "approved_at",
-        },
-        "Direction approval",
-    )
-    _schema_one(data["schema_version"], "Direction approval")
+    base_keys = {
+        "schema_version",
+        "id",
+        "decision",
+        "direction_id",
+        "candidate_digest",
+        "approved_by",
+        "approved_at",
+    }
+    schema_version = data.get("schema_version")
+    if type(schema_version) is not int or schema_version not in {1, 2}:
+        raise ValidationError("Direction approval schema_version must be the integer 1 or 2")
+    expected_keys = base_keys if schema_version == 1 else {*base_keys, "proposal_digest"}
+    _exact_keys(data, expected_keys, "Direction approval")
     if data["decision"] != "approved":
         raise ValidationError("Direction approval decision must be approved")
     return DirectionApproval(
@@ -342,6 +351,11 @@ def _approval_from_json(value: object | None) -> DirectionApproval:
         candidate_digest=_sha256(data["candidate_digest"], "Direction approval digest"),
         approved_by=_text(data["approved_by"], "Direction approval approved_by"),
         approved_at=_text(data["approved_at"], "Direction approval approved_at"),
+        proposal_digest=(
+            None
+            if schema_version == 1
+            else _sha256(data["proposal_digest"], "Direction approval proposal_digest")
+        ),
     )
 
 
@@ -653,6 +667,12 @@ def _has_open_or_pending_run(repository: Path) -> bool:
     except (RuntimeError, ValidationError) as error:
         raise DirectionConflictError(f"packet run state is not safely closed: {error}") from error
     return state.run.phase != "closed" or state.route_status != "completed"
+
+
+def require_direction_promotion_idle(repository: Path) -> None:
+    """Reject approval/promotion while an existing packet run is not safely closed."""
+    if _has_open_or_pending_run(repository.resolve()):
+        raise DirectionConflictError("an open packet run must close before Direction promotion")
 
 
 @contextmanager
