@@ -37,6 +37,12 @@ types where their contracts fit, argparse, pytest, Ruff, mypy, Hatch/uv.
   route approval and Execution Consent as separate digest-bound receipts.
 - Consent is one-shot. Once launch may have been attempted, no retry or
   redispatch is automatic, including after an exception or malformed stream.
+- Every facade authority/state transition uses the existing repository-wide
+  mutation lock. Durable active or ambiguous facade ownership is visible to
+  Direction promotion and FS-01 start; only exact terminal close releases it.
+- Any observed preview, Direction, target, route, or execution-boundary drift
+  durably invalidates that consent as `stale`. Restoring old bytes never makes
+  it executable again; a new preview and **Run now** action are required.
 - Trusted-local mode is not containment. The preview must say that the agent
   may access the local machine and that repository evidence cannot prove the
   absence of outside effects.
@@ -140,6 +146,9 @@ git commit -m "feat(second-mate): prepare generic run previews"
 **Files:**
 - Modify: `src/second_mate/run_facade.py`
 - Modify: `src/second_mate/__init__.py`
+- Modify: `src/second_mate/repository.py`
+- Modify: `src/second_mate/direction.py`
+- Modify: `src/second_mate/service.py`
 - Modify: `tests/test_run_facade.py`
 
 **Public interfaces:**
@@ -170,7 +179,8 @@ state file to be durably installed before any launch. Assert exact authorization
 retry returns byte-identical status without rewriting; changed
 action/preview/basis refuses; duplicate/concurrent authority has one winner;
 symlink, replacement, permissive root, malformed state, partial write, and
-unknown file fail closed.
+unknown file fail closed. Holding `mutation_lock` must block authorization even
+though its durable bytes live outside the worktree.
 
 - [ ] **Step 3: Implement the smallest private store**
 
@@ -181,20 +191,32 @@ conversation, or private reasoning. Create the fixed Git-private directory with
 mode `0700`, use atomic exclusive file creation plus parent-directory durability,
 and revalidate identity on every update. Phases are:
 
-`authorized`, `launching`, `running`, `completed`, `failed`,
+`authorized`, `stale`, `launching`, `running`, `completed`, `failed`,
 `unknown-running`, `review-ready`, and `closed`.
 
 Any state at or after `launching` has consumed the one-shot attempt.
+`stale` is terminal for the consent and cannot transition back to `authorized`.
 
-- [ ] **Step 4: Replay Task 2 GREEN**
+- [ ] **Step 4: Implement common repository ownership visibility**
 
-Run: `uv run pytest -W error tests/test_run_facade.py -k 'authority or state or concurrent or partial' -q`
+Add one shared, strict repository-activity inspection seam. Under
+`mutation_lock`, it must validate both existing FS-01 state and the fixed
+Git-private facade state. Direction promotion, FS-01 start/restart, facade
+authorization, facade launch, and every facade transition call it with the
+identity they are allowed to own. Active, failed-unclosed, `unknown-running`,
+or review-pending facade state blocks Direction/FS-01 mutation; an open FS-01
+run blocks facade launch. Malformed/replaced activity state fails closed.
 
-- [ ] **Step 5: Commit Task 2**
+- [ ] **Step 5: Replay Task 2 GREEN**
+
+Run: `uv run pytest -W error tests/test_run_facade.py -k 'authority or state or concurrent or partial or ownership' -q`
+
+- [ ] **Step 6: Commit Task 2**
 
 ```bash
 git add src/second_mate/run_facade.py src/second_mate/__init__.py \
-  tests/test_run_facade.py
+  src/second_mate/repository.py src/second_mate/direction.py \
+  src/second_mate/service.py tests/test_run_facade.py
 git commit -m "feat(second-mate): bind one-shot run authority"
 ```
 
@@ -223,6 +245,10 @@ immediately before consuming the attempt, set `launching` durably before calling
 target drift, missing consent, reused state, or a second caller without invoking
 the boundary.
 
+Any observed preview, Direction, target, route, or boundary drift must first
+persist `stale` under the shared lock and then refuse. Tests restore the old
+bytes/fingerprint and prove the old consent still cannot launch.
+
 - [ ] **Step 2: Write ambiguity and recovery failing tests**
 
 Inject failure before launch, during launch return, malformed lifecycle, stream
@@ -232,6 +258,11 @@ transition every ambiguous case becomes `unknown-running` and never redispatches
 Recovery may load/cancel the exact owned run, but may not infer completion or
 reuse consent. Cleanup is delegated only after a terminal or explicitly
 abandoned exact run and remains limited to run-owned private artifacts.
+
+Add cross-lifecycle races proving: open FS-01 blocks facade launch; active or
+`unknown-running` facade state blocks Direction promotion and FS-01 start;
+competing facade/Direction/FS-01 starts have exactly one winner; and only exact
+terminal facade close restores repository mutation eligibility.
 
 - [ ] **Step 3: Implement the injected boundary orchestration**
 

@@ -223,9 +223,15 @@ def _object(value: object, label: str) -> dict[str, object]:
     return cast(dict[str, object], value)
 
 
-def _exact_keys(value: dict[str, object], expected: set[str], label: str) -> None:
+def _exact_keys(
+    value: dict[str, object],
+    expected: set[str],
+    label: str,
+    *,
+    schema_version: int = 1,
+) -> None:
     if set(value) != expected:
-        raise ValidationError(f"{label} fields do not match schema version 1")
+        raise ValidationError(f"{label} fields do not match schema version {schema_version}")
 
 
 def _schema_one(value: object, label: str) -> None:
@@ -342,7 +348,12 @@ def _approval_from_json(value: object | None) -> DirectionApproval:
     if type(schema_version) is not int or schema_version not in {1, 2}:
         raise ValidationError("Direction approval schema_version must be the integer 1 or 2")
     expected_keys = base_keys if schema_version == 1 else {*base_keys, "proposal_digest"}
-    _exact_keys(data, expected_keys, "Direction approval")
+    _exact_keys(
+        data,
+        expected_keys,
+        "Direction approval",
+        schema_version=schema_version,
+    )
     if data["decision"] != "approved":
         raise ValidationError("Direction approval decision must be approved")
     return DirectionApproval(
@@ -673,6 +684,12 @@ def require_direction_promotion_idle(repository: Path) -> None:
     """Reject approval/promotion while an existing packet run is not safely closed."""
     if _has_open_or_pending_run(repository.resolve()):
         raise DirectionConflictError("an open packet run must close before Direction promotion")
+
+
+def direction_promotion_recovery_pending(repository: Path) -> bool:
+    """Report whether an exact Direction exchange still requires recovery."""
+    store = _DirectionLedgerStore(repository.resolve())
+    return store.pending_exchange() is not None
 
 
 @contextmanager

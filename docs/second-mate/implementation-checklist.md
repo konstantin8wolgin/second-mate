@@ -90,7 +90,7 @@ for a provider-free implementation without first receiving its named trigger.
 - [x] **I + H** — Git retains basis `e46c6dc82df54e16ecd39d6ab826c6146d401739`; its recorded consent is limited to the four status documents.
 - [x] **H** — The selected narrow envelope permits no new Validation or Foundation expansion; each later packet remains separately gated.
 - [x] **R within the coordinator boundary** — FS-01 and trusted-local guards refuse mismatched authority. Unsandboxed executors are not technically contained after dispatch.
-- [x] **R** — The current handwritten implementation-Python inventory is 6,893 lines excluding tests, within the 4,000–9,000 scope-pressure range. This rough count proves no broader readiness.
+- [x] **R** — The current handwritten implementation-Python inventory is 7,885 lines excluding tests, within the 4,000–9,000 scope-pressure range. This rough count proves no broader readiness.
 - [x] **S** — Dependency/import and tracked-file inspection finds no FirstMate or Knowless workflow dependency.
 - [x] **I** — The nested `firstmate/` checkout is currently excluded only by local `.git/info/exclude`; it is untracked, untouched, and non-portable.
 - [x] **H** — The roadmap-reconciliation grant covered only that local boundary correction and its two canonical documents.

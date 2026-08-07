@@ -645,6 +645,37 @@ def test_tampered_or_ambiguous_direction_history_is_never_returned(tmp_path: Pat
         second_mate.load_direction(repository)
 
 
+def test_direction_schema_two_field_error_names_the_actual_schema(tmp_path: Path) -> None:
+    """Bridge approval corruption must not be diagnosed as legacy schema one."""
+    repository = make_repository(tmp_path)
+    candidate = second_mate.prepare_direction(
+        repository,
+        "Keep bridge authority exact.",
+        direction_id="D-CB-diagnostic",
+        change_note=None,
+    )
+    approval = exact_approval(candidate)
+    approval["schema_version"] = 2
+    approval["proposal_digest"] = "0" * 64
+    second_mate.promote_direction(
+        repository,
+        candidate.to_json(),
+        approval,
+        exact_promotion_grant(candidate),
+    )
+    ledger_path = repository / ".second-mate" / "directions.json"
+    ledger = strict_json_loads(ledger_path.read_bytes())
+    assert isinstance(ledger, dict)
+    ledger["versions"][0]["approval"]["unexpected"] = True
+    ledger_path.write_text(json.dumps(ledger, sort_keys=True) + "\n", encoding="utf-8")
+
+    with pytest.raises(
+        second_mate.ValidationError,
+        match="Direction approval fields do not match schema version 2",
+    ):
+        second_mate.load_direction(repository)
+
+
 def test_closed_packet_run_allows_a_new_exactly_bound_direction_promotion(tmp_path: Path) -> None:
     repository = make_repository(tmp_path)
     draft = second_mate.create_draft(fs01_direction(), valid_packet())

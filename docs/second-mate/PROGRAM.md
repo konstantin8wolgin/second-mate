@@ -979,8 +979,9 @@ trusted-local suite to 95 tests and the full warnings-as-errors suite to 315;
 Ruff lint/format, strict mypy for 11 modules, locked-offline sync,
 source/wheel build and contents, and isolated wheel import/CLI/type-marker
 smoke also pass. Independent specification and quality re-reviews found no
-remaining Critical or Important product-path defect. The implementation
-inventory is 6,893 handwritten Python lines excluding tests.
+remaining Critical or Important product-path defect. That close recorded 6,893
+handwritten implementation lines excluding tests; the current post-bridge
+inventory is 7,885, as recorded in the readiness checklist.
 
 **Stop.** Update only `trusted_local.py`, its focused tests, and the canonical
 and trusted-local operator wording needed for a truthful close, then commit

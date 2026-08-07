@@ -15,8 +15,9 @@ from test_draft import valid_direction, valid_packet
 from test_preflight import make_repository, run_git, target_snapshot
 
 import second_mate
+import second_mate.direction as direction_module
 from second_mate.repository import git_private_path
-from second_mate.store import prepare_atomic_write_intent, strict_json_loads
+from second_mate.store import PosixAtomicWriter, prepare_atomic_write_intent, strict_json_loads
 
 
 def conversation_task() -> dict[str, object]:
@@ -333,6 +334,34 @@ def test_exact_repeated_approval_is_byte_identical_and_does_not_write_again(
     assert second_metadata.st_ino == first_metadata.st_ino
     assert second_metadata.st_mtime_ns == first_metadata.st_mtime_ns
     assert target_snapshot(repository) == before_retry
+
+
+def test_exact_repeated_approval_refuses_while_shared_mutation_lock_is_held(
+    tmp_path: Path,
+) -> None:
+    """A no-write retry must not report ready across another active mutation."""
+    repository = make_repository(tmp_path)
+    proposal = second_mate.prepare_conversation_handoff(repository, conversation_task())
+    action = approval_action(proposal)
+    second_mate.approve_conversation_handoff(repository, proposal.to_json(), action)
+    before = target_snapshot(repository)
+    lock_path = Path(run_git(repository, "rev-parse", "--git-path", "second-mate-mutation.lock"))
+    if not lock_path.is_absolute():
+        lock_path = repository / lock_path
+    descriptor = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
+    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    try:
+        with pytest.raises(second_mate.ConversationConflictError, match="mutation lock"):
+            second_mate.approve_conversation_handoff(
+                repository,
+                proposal.to_json(),
+                action,
+            )
+    finally:
+        fcntl.flock(descriptor, fcntl.LOCK_UN)
+        os.close(descriptor)
+
+    assert target_snapshot(repository) == before
 
 
 @pytest.mark.parametrize("changed_field", ["id", "approved_by", "approved_at"])
@@ -703,3 +732,65 @@ def test_exact_bridge_retry_recovers_only_its_durably_marked_partial_write(
     assert target_path.read_bytes() == intended
     assert not intent.scratch.exists()
     assert not intent.marker.exists()
+
+
+def test_exact_bridge_retry_finishes_append_interrupted_after_atomic_exchange(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A ready retry must retire the exact append intent before later history."""
+    repository = make_repository(tmp_path)
+    _promote(
+        repository,
+        "D-01",
+        "Initial approved Direction.",
+        suffix="1",
+        change_note=None,
+    )
+    proposal = second_mate.prepare_conversation_handoff(repository, conversation_task())
+    action = approval_action(proposal)
+    original_exchange = PosixAtomicWriter._exchange_paths
+
+    def interrupt_after_exchange(left: Path, right: Path) -> None:
+        original_exchange(left, right)
+        raise KeyboardInterrupt("simulated interruption after bridge append exchange")
+
+    monkeypatch.setattr(
+        direction_module.PosixAtomicWriter,
+        "_exchange_paths",
+        staticmethod(interrupt_after_exchange),
+    )
+    with pytest.raises(KeyboardInterrupt, match="after bridge append exchange"):
+        second_mate.approve_conversation_handoff(
+            repository,
+            proposal.to_json(),
+            action,
+        )
+    monkeypatch.setattr(
+        direction_module.PosixAtomicWriter,
+        "_exchange_paths",
+        staticmethod(original_exchange),
+    )
+    assert tuple((repository / ".second-mate").glob("directions.json.next.*"))
+
+    recovered = second_mate.approve_conversation_handoff(
+        repository,
+        proposal.to_json(),
+        action,
+    )
+
+    assert recovered.status == "ready-for-preflight"
+    assert not tuple((repository / ".second-mate").glob("directions.json.next.*"))
+    next_candidate = second_mate.prepare_direction(
+        repository,
+        "Direction after recovered bridge append.",
+        direction_id="D-03",
+        change_note="Continue after exact bridge recovery.",
+    )
+    promoted = second_mate.promote_direction(
+        repository,
+        next_candidate.to_json(),
+        exact_approval(next_candidate, suffix="3"),
+        exact_promotion_grant(next_candidate, suffix="3"),
+    )
+    assert promoted.direction.id == "D-03"

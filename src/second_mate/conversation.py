@@ -13,6 +13,7 @@ from second_mate.direction import (
     DirectionCandidateEnvelope,
     DirectionConflictError,
     PromotionGrant,
+    direction_promotion_recovery_pending,
     find_direction_version,
     parse_direction_candidate,
     prepare_direction,
@@ -20,6 +21,7 @@ from second_mate.direction import (
     require_direction_promotion_idle,
 )
 from second_mate.domain import Approval, Direction, JsonObject, ValidationError, digest_json
+from second_mate.repository import MutationLockBusyError, mutation_lock
 
 _IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*\Z")
 _TASK_KEYS = {
@@ -760,27 +762,29 @@ def approve_conversation_handoff(
     approval, grant = _authority_records(proposal, action)
     expected = _expected_version(proposal, approval, grant)
     try:
-        require_direction_promotion_idle(repository)
-    except DirectionConflictError as error:
+        with mutation_lock(repository.resolve()):
+            require_direction_promotion_idle(repository)
+            existing = find_direction_version(
+                repository,
+                proposal.direction_candidate.candidate.id,
+            )
+            if existing is not None:
+                if not existing.is_current:
+                    if _version_matches_proposal(existing.version, proposal):
+                        raise ConversationConflictError(
+                            "the approved conversation handoff has been superseded"
+                        )
+                    raise ConversationConflictError(
+                        "the conversation handoff id belongs to different stored meaning"
+                    )
+                if existing.version != expected:
+                    raise ConversationConflictError(
+                        "the stored conversation handoff does not match this exact approval action"
+                    )
+                if not direction_promotion_recovery_pending(repository):
+                    return _handoff_draft(proposal, existing.version)
+    except (DirectionConflictError, MutationLockBusyError) as error:
         raise ConversationConflictError(str(error)) from error
-    existing = find_direction_version(
-        repository,
-        proposal.direction_candidate.candidate.id,
-    )
-    if existing is not None:
-        if not existing.is_current:
-            if _version_matches_proposal(existing.version, proposal):
-                raise ConversationConflictError(
-                    "the approved conversation handoff has been superseded"
-                )
-            raise ConversationConflictError(
-                "the conversation handoff id belongs to different stored meaning"
-            )
-        if existing.version != expected:
-            raise ConversationConflictError(
-                "the stored conversation handoff does not match this exact approval action"
-            )
-        return _handoff_draft(proposal, existing.version)
     try:
         version = promote_direction(
             repository,
