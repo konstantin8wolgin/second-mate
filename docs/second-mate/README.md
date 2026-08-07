@@ -6,17 +6,19 @@ DIR-INTAKE-01, CAP-02A, CAP-02C, EVA-01, EVA-02, EVA-03, and EVA-04 implemented 
 locally verified; PRV-01 and CAP-02B are historically closed for one consumed
 run with partial independent evidence retained; one CAP-02C disposable exercise
 is also consumed and conservatively closed as `unknown-running`, while MS-02
-still needs the human product check and the normal-use conversation bridge
+still needs RUN-FACADE-01 and the human product check
 
 Second Mate is a lean coordinator for AI coding work. It preserves human-owned product Direction, gives capable models room to solve technical problems, and requires evidence that fits each completion claim. It is a clean project, not a retrofit of FirstMate, Knowless, or their backlog and worker structures.
 
 The repository contains a Python 3.12 coordinator for approved Direction
-intake, the fixture-only FS-01 lifecycle, the CAP-02A offline adapter proof, and
-the library-only CAP-02C Codex CLI process adapter, plus partial retained
+intake, the provider-free normal-use conversation handoff, the fixture-only
+FS-01 lifecycle, the CAP-02A offline adapter proof, and the library-only CAP-02C
+Codex CLI process adapter, plus partial retained
 evidence for one historically closed, manually enveloped CAP-02B run and one
 consumed disposable CAP-02C exercise. It is
 operated manually and does not self-orchestrate. The
 [Direction operator guide](DIRECTION-OPERATOR.md),
+[conversation handoff guide](CONVERSATION-HANDOFF.md),
 [FS-01 operator guide](FS-01-OPERATOR.md), and
 [trusted-local operator contract](TRUSTED-LOCAL-OPERATOR.md) describe those
 boundaries. The [MS-02 usability walkthrough](MS-02-OPERATOR-WALKTHROUGH.md)
@@ -33,8 +35,8 @@ activation and frozen bindings are consumed. CAP-02B called one exact
 local Codex CLI host through a private manual envelope whose activation is now
 consumed. Executable evidence is recorded in [PROGRAM.md](PROGRAM.md); that
 evidence does not prove a successful terminal CAP-02C close, a second live
-dispatch, a normal conversation handoff, automated Rumble, the broader
-workflow, or product readiness.
+dispatch, a high-level Run facade, automated Rumble, the broader workflow, or
+product readiness.
 
 EVA-01 classifies every current readiness label by reproducible, retained,
 human-authority, structural, non-replayable, or open evidence. It also refuses
@@ -230,10 +232,11 @@ artifacts were cleaned after explicit abandonment, and a provider-free
 regression removes the deprecated default-disabled flag. The current code has
 not received a second live validation.
 
-MS-02 cannot be completed from technical evidence alone. The next gate remains
-the human product check on whether the observed manual activations, conservative
-CAP-02C recovery, and still-manual library boundary make the evidence, cleanup,
-and residual-risk experience usable and still fitting D-01. The user's accepted
-normal-use direction additionally requires a First Mate conversation to hand an
-explicitly approved Direction into Second Mate without exposing activation or
-executable internals; that bridge does not exist yet.
+MS-02 cannot be completed from technical evidence alone. CONV-BRIDGE-01 now
+lets a First Mate conversation prepare a readable task and turn one ordinary
+approval into two durable non-execution records plus `ready-for-preflight`.
+The remaining product boundary is RUN-FACADE-01: a concise final run preview,
+separate one-shot Execution Consent, exactly one launch, independent evidence,
+recovery, and review without exposing activation or executable internals. Only
+after that boundary is observable can the human product check judge usability,
+cleanup, residual risk, and D-01 fit.

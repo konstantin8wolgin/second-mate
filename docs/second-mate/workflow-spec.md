@@ -129,6 +129,15 @@ later hardening or deployment path. This decision is design authority for the
 mode and for this documentation revision; it is not authority to authenticate,
 use a provider, select or mutate a live target, or dispatch an agent.
 
+The 2026-08-07 CONV-BRIDGE-01 request separately authorized the provider-free
+normal-use intake boundary. Its implementation accepts a concise First
+Mate-derived task summary, prepares a readable proposal without writing, and
+turns one explicit user approval into two durable records: exact Direction
+approval and authority for one Direction-ledger write. It adds no route approval,
+Execution Consent, provider call, target-file mutation, launch, commit, merge,
+push, or deployment. [CONVERSATION-HANDOFF.md](CONVERSATION-HANDOFF.md) is the
+operator contract for that boundary.
+
 ## 3. Scaled Rumble and Direction
 
 Rumble runs on Sol at high reasoning effort. It accepts nonlinear input and scales to the request:
@@ -153,6 +162,27 @@ The Direction Summary contains only applicable what/why information:
 It contains no architecture, APIs, files, schemas, libraries, model routing, tasks, owners, estimates, test mechanics, or technical sequence. A technical suggestion is restated as the outcome, constraint, trade-off, or quality reference it protects.
 
 The human approves the exact text shown. Approved versions are immutable; a material meaning change creates a new version and a short change note. Raw Rumble transcripts and scratch reasoning are not repository authority.
+
+### Normal conversation intake
+
+The ordinary interface may compress research and clarification into a concise
+task, assumptions, requested and prohibited effects, and acceptance conditions.
+The human reviews that meaning rather than hashes, promotion bases, executable
+permissions, activation markers, or recovery state. Changed meaning is a new
+proposal; conversational assent is never inferred as approval.
+
+One visible **Approve** action may atomically record both the exact Direction
+approval and the separate one-ledger-write grant, provided the machine record
+keeps the two authority scopes distinct and displays both receipts. Neither
+record is route approval or Execution Consent. Exact import is idempotent;
+changed identity, meaning, authority, target basis, open-run state, or history
+fails closed. The returned Run Intent stops at `ready-for-preflight` and contains
+no provider, route, executable, activation, owner, or consent fact.
+
+The later execution boundary remains separate: resolve the current target and
+route, perform read-only preflight, show one concise final effects/risk preview,
+and consume a digest-bound one-shot **Run now** Execution Consent before exactly
+one launch. Ambiguous launch state never permits automatic redispatch.
 
 ## 4. Ultra synthesis, challenge, and route choice
 
@@ -367,6 +397,7 @@ Existing repository quality gates remain floors. A disposable Validation Slice a
 The first implementation supports only the state required to survive a clean handoff:
 
 - immutable approved Direction versions;
+- provider-free conversation proposals and their non-executable Run Intents;
 - the recorded route decision and reason;
 - the Foundation Backbone and Foundation evidence review when the Foundation route is used;
 - one current Living Delivery Map when the direct route is insufficient;

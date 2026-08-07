@@ -2,12 +2,13 @@
 
 Status: canonical readiness checklist; POL-01 is narrowly selected, the
 verified FS-01 baseline is canonically adopted, CAP-01 and MS-01 are complete,
-DIR-INTAKE-01 and CAP-02A are implemented and locally verified, PRV-01 plus
-CAP-02B are historically closed for one consumed run with only partial
-independent evidence retained, and CAP-02C plus EVA-01/EVA-02/EVA-03/EVA-04 are
-reproducible provider-free. One CAP-02C disposable live exercise is consumed
-and conservatively closed as `unknown-running`; MS-02 remains blocked on the
-normal-use conversation bridge and human product check
+DIR-INTAKE-01, CONV-BRIDGE-01, and CAP-02A are implemented and locally verified,
+PRV-01 plus CAP-02B are historically closed for one consumed run with only
+partial independent evidence retained, and CAP-02C plus
+EVA-01/EVA-02/EVA-03/EVA-04 are reproducible provider-free. One CAP-02C
+disposable live exercise is consumed and conservatively closed as
+`unknown-running`; MS-02 remains blocked on RUN-FACADE-01 and the human product
+check
 
 This checklist records gates and observable readiness. It does not assign tasks, define a backlog, impose ordering beyond the workflow's authority gates, or recreate a Milestone Spine.
 
@@ -67,8 +68,8 @@ cannot supply the missing observation or decision.
 | Combining evidence classes only when needed | EVA-01 through EVA-04 classify current evidence without treating prose or provider output as proof. | **Future claim-specific judgment:** this is not a universally enforceable runtime property. |
 | Recovery pressure across Packet/Map/Foundation/Direction | FS-01 and Direction recovery examples are executable; Map/Foundation pressure is not. | **Pilot evidence:** a real invalid premise at those broader layers. |
 | Model-tier routing | No model router exists, consistent with manual invocation and DIR-06. | **External operating choice:** use the documented roles when an authorized model run is selected. |
-| Normal First Mate conversation handoff | Direction intake and draft are manual CLI/file operations; the live adapter is a library with no supported launch facade. | **Provider-free product packet:** one explicit approved-Direction handoff and high-level consent/preflight facade; no live dispatch is required to build or test it. |
-| MS-02 usability | Both live activations are consumed, CAP-02C closed conservatively, and the accepted normal-use conversation bridge does not exist. | **Bridge implementation plus human product judgment**; a later terminal live proof remains a separate decision. |
+| Normal First Mate conversation handoff | CONV-BRIDGE-01 reproducibly prepares a readable task, records one approval as distinct Direction/write authority, and stops at a non-executable `ready-for-preflight` Run Intent. | **Provider-free RUN-FACADE-01:** resolve target/route/preflight and expose one separate final Run confirmation; no live dispatch is required to build or test the facade. |
+| MS-02 usability | Both live activations are consumed, CAP-02C closed conservatively, and the conversation-to-ready bridge is reproducible. | **RUN-FACADE-01 plus human product judgment**; a later terminal live proof remains a separate decision. |
 | SBOX-01 | Only the non-downgrading sandbox contract exists. | **External environment and authority:** select and qualify a real sandbox mechanism. |
 | Pilot target selection | No external target, Direction, data envelope, or pilot grant is selected. | **Human/external target:** MS-02 plus PILOT-SELECT-01 decisions and consent. |
 | Pilot observations | No pilot has run. | **External pilot execution and observation.** |
@@ -105,6 +106,7 @@ for a provider-free implementation without first receiving its named trigger.
 - [x] **H + R** — EVA-02 is authorized from clean `196dbbc`; its target/recovery repairs and remaining-plan audit are reproducible provider-free, with all live/provider/system/push boundaries still closed.
 - [x] **H + R** — EVA-03 was authorized from clean `ee32d05`; durable exact-cleanup recovery, adversarial refusals, and cancellation-drain descriptor ownership are reproducible provider-free, with all live/provider/system/push and broader-deletion boundaries still closed.
 - [x] **H + R** — EVA-04 was authorized from clean `52db12f`; same-inode crash-safe cleanup records, bounded linear parsing, strict corruption refusal, and ambiguous-durability retry are reproducible provider-free, with all live/provider/system/push and broader-deletion boundaries still closed.
+- [x] **H + R** — CONV-BRIDGE-01's standing local authority and exact design are recorded; its prepare/approve/status behavior, two durable non-execution records, exact retry, and provider-free refusals are reproducible. No run authority follows.
 
 ## Direction and routing
 
@@ -115,6 +117,7 @@ for a provider-free implementation without first receiving its named trigger.
 - [x] **R** — The current route record stores a short reason without a score.
 - [x] **R, fixed FS-01 scope** — One small isolated fixture packet executes directly without Map or Foundation runtime; arbitrary-work route classification remains unproved.
 - [x] **R** — DIR-INTAKE-01 preserves separate approval/write authority, portable durable history, and the schema consumed by `draft`.
+- [x] **R** — CONV-BRIDGE-01 turns a concise First Mate-derived task into a readable proposal and immutable approved Direction without persisting raw conversation or granting route/execution authority.
 
 ## Foundation readiness
 
@@ -131,13 +134,13 @@ for a provider-free implementation without first receiving its named trigger.
 - [ ] An independent Sol Ultra Challenger checks coverage, product meaning, Foundation fit, order, assumptions, proof, and packet breadth.
 - [x] **H** — The human approved the initial Foundation route only, not the later staircase or mutation.
 - [x] **H** — The human approved the exact test-first DIR-INTAKE-01 plan before its bounded mutation.
-- [x] **S** — No packet is currently `ready`; completed EVA-04 is detailed and the next product step remains the undetailed MS-02 human gate.
+- [x] **S** — No execution packet is currently `ready`; CONV-BRIDGE-01 is complete and RUN-FACADE-01 is the detailed provider-free next boundary before the MS-02 human gate.
 - [x] **R + S** — Runtime state and the Map keep route status distinct from binding Direction coverage.
 - [x] **S** — The Map contains no full backlog, dependency graph, universal task schema, or Milestone Spine.
 
 ## Packet execution and close
 
-- [x] **S** — No packet is currently `ready`; completed EVA-04 has one bounded persistence outcome, named red-green proof, adversarial refusal coverage, and explicit stop conditions.
+- [x] **S** — No execution packet is currently `ready`; completed CONV-BRIDGE-01 has one bounded provider-free outcome, named red-green proof, adversarial refusal coverage, and explicit stop conditions.
 - [x] **R + S, packet-scoped** — Executable preflight resolves the repository/instruction/basis fields it owns; EVA-02 inspected every remaining Program dependency, EVA-03 pressure-tested interrupted cleanup, and EVA-04 independently pressure-tested its persistence crash windows. This is not a universal automated preflight claim.
 - [ ] User-facing bugs are reproduced end to end before the fix and replayed after it.
 - [ ] The working model may plan, diagnose, implement, test, and iterate freely inside the contract.
@@ -169,7 +172,8 @@ for a provider-free implementation without first receiving its named trigger.
 - [x] **R** — Cleanup refuses active runs; `unknown-running` cleanup needs explicit `abandoned` recovery disposition and refuses while this adapter still owns the process. It validates the private directory, session, exact names, identities, and retained marker, then appends bounded digest-checked `cleanup-pending` and run-directory/private-root-bound authorization records to the same identity-recorded files before deleting only the three run files and empty directory. Fresh recovery accepts only the last complete valid record and an exact viable incomplete final frame, re-syncs visible cleanup authority before unlink, and then accepts only the identity-recorded remainder or same empty directory. Complete corruption, impossible/oversized lengths, missing authorization/intent/session, inode-reuse replacement, artifact replacement, and unexpected entries fail closed. Parsing is linearly bounded; cleanup never recurses or touches repository/system/provider data.
 - [x] **I + N** — CAP-02B's marker and two-path fix are independently retained. Its real JSONL lifecycle, historical gate output, close document, and cleanup identities were deleted and are now non-replayable close records, not current proof. No outside-effects claim follows.
 - [x] **R + I/N** — CAP-02C plus EVA-04 reproducibly prove resolved-root/current-revision qualification, memory-only inputs, capability-minimized argv, descriptor-bound fake dispatch, private streams, cancellation, no-retry recovery, and crash-safe exact cleanup. The consumed marker independently proves the live activation and frozen bindings are exhausted; the contemporaneous close records real transport, exact target output, conservative diagnostic handling, no retry, and cleanup, but the deleted raw artifacts make those observations non-replayable and do not establish a terminal close. The deprecated default-disabled flag is removed with a red-green fake-process regression; no CLI route or second live claim follows.
-- [ ] A normal First Mate conversation can submit an explicit proposed Direction, capture exact human Direction approval and distinct basis-bound ledger-promotion authority separately from route approval and execution consent, and invoke a high-level Second Mate facade that owns preflight, one-shot state, evidence, and recovery without exposing low-level activation or executable-permission mechanics.
+- [x] **R** — A normal First Mate conversation can submit an explicit proposed task, capture exact human Direction approval and distinct basis-bound ledger-promotion authority separately from route approval and Execution Consent, and receive a readable `ready-for-preflight` Run Intent without low-level activation or executable mechanics.
+- [ ] RUN-FACADE-01 resolves the real target/current revision, shows the final effects/risk/verification preview, consumes separate one-shot Execution Consent, launches exactly once, independently verifies, handles ambiguity without duplicate dispatch, and offers review/optional separately authorized commit or merge without exposing low-level mechanics.
 - [ ] MS-02 receives the human product check after that normal-use bridge is observable. Technical completion cannot manufacture this judgment or reuse either consumed activation.
 - [ ] SBOX-01, when a trust/data/deployment need pulls it forward, proves filesystem, environment, credential, network, optional-capability, cancellation, and cleanup containment in the actual environment and fails closed without automatic trusted-local downgrade.
 - [ ] The pilot target is medium-sized, baseline-known, and rich enough to exercise Foundation choice, several packets, one meaningful milestone, and honest recovery if evidence demands it.

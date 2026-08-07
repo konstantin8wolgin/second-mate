@@ -168,17 +168,19 @@ the existing draft flow. They do not prove automated or high-quality Rumble, a
 provider run, route or Map execution, pilot usefulness, or complete Direction
 coverage.
 
-## Normal-use conversation gap
+## Normal-use conversation entry
 
-The intended ordinary entry is a First Mate conversation that researches and
-clarifies scope, presents one exact proposed Direction for explicit human
-approval, and hands that approved proposal to Second Mate. That handoff is not
-implemented today; operators still perform the commands above manually.
+The intended ordinary entry is now implemented provider-free. A First Mate
+conversation can research and clarify scope, prepare one readable exact task,
+and turn one explicit user approval into a digest-bound Direction approval plus
+a distinct basis-bound one-ledger-write grant. See
+[CONVERSATION-HANDOFF.md](CONVERSATION-HANDOFF.md).
 
-The planned bridge must preserve this guide's authority split. Conversation may
-propose Direction but cannot infer approval, promote different bytes, or grant
-Execution Consent. Second Mate should own durable import, preflight, one-shot
-execution state, evidence, and recovery behind a high-level facade without
-requiring the human to manage digests, activation JSON, executable modes, or
-private-state paths. `PROGRAM.md` owns the bounded CONV-BRIDGE-01 plan; this
-guide does not authorize its implementation or a live run.
+The bridge preserves this guide's authority split. Conversation may propose
+Direction but cannot infer approval, promote different bytes, or grant route
+approval or Execution Consent. Its exact retry is idempotent, and it stops at
+`ready-for-preflight` without a provider or task-file mutation. RUN-FACADE-01
+must later own preflight, one-shot execution state, evidence, and recovery
+behind a high-level boundary without requiring the human to manage digests,
+activation JSON, executable modes, or private-state paths. No live run is
+authorized or implemented by the conversation bridge.

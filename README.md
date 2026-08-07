@@ -1,9 +1,10 @@
 # Second Mate
 
 Second Mate is a lean AI coding-workflow coordinator. The repository now
-contains a Python 3.12 implementation of approved Direction intake, FS-01, and
-the CAP-02A offline trusted-local proof plus the library-only CAP-02C Codex CLI
-process adapter, alongside retained consumed markers for CAP-02B and CAP-02C.
+contains a Python 3.12 implementation of approved Direction intake, the
+provider-free First Mate conversation handoff, FS-01, and the CAP-02A offline
+trusted-local proof plus the library-only CAP-02C Codex CLI process adapter,
+alongside retained consumed markers for CAP-02B and CAP-02C.
 Their deleted private event/close artifacts are not replayable from this
 checkout. FS-01 carries one supervised, local direct
 packet against a deterministic fixture through explicit consent, claim-fit
@@ -26,15 +27,17 @@ revalidation. The recovery audits also close stopped-process stdout when a
 cancellation drain cannot be prepared, without widening deletion or live-run
 authority. CAP-02B previously
 manually enveloped exactly one consumed real Codex CLI run. See the
-[Direction operator guide](docs/second-mate/DIRECTION-OPERATOR.md) and
+[Direction operator guide](docs/second-mate/DIRECTION-OPERATOR.md),
+[conversation handoff guide](docs/second-mate/CONVERSATION-HANDOFF.md), and
 [trusted-local contract](docs/second-mate/TRUSTED-LOCAL-OPERATOR.md). The
 [MS-02 walkthrough](docs/second-mate/MS-02-OPERATOR-WALKTHROUGH.md) provides a
 provider-free hands-on product review without reactivating either consumed run.
 
-Those local capabilities are not the whole intended workflow. CAP-02C has no
-user-facing launch route or successful terminal live-adapter close, and the
-repository has no normal First Mate conversation handoff, automated Rumble,
-general Foundation or Delivery Map execution, deployment, or pilot evidence.
+Those local capabilities are not the whole intended workflow. The conversation
+bridge stops at `ready-for-preflight`; CAP-02C has no user-facing launch route
+or successful terminal live-adapter close, and the repository has no
+RUN-FACADE-01, automated Rumble, general Foundation or Delivery Map execution,
+deployment, or pilot evidence.
 The canonical
 [Second Mate package](docs/second-mate/README.md) keeps the remaining product
 decisions and human authority gates explicit.
